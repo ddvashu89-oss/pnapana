@@ -1,0 +1,294 @@
+.container {
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+  color: var(--text-primary-dark);
+  padding: 1.5rem;
+  padding-bottom: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* --- Animated Background Orbs --- */
+.orb1, .orb2, .orb3 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  z-index: 0;
+  animation: floatOrb 20s infinite alternate ease-in-out;
+}
+
+.orb1 {
+  width: 300px;
+  height: 300px;
+  background: rgba(211, 106, 50, 0.15); /* Orange */
+  top: -100px;
+  left: -100px;
+}
+
+.orb2 {
+  width: 400px;
+  height: 400px;
+  background: rgba(42, 105, 60, 0.15); /* Green */
+  bottom: -150px;
+  right: -100px;
+  animation-delay: -5s;
+}
+
+.orb3 {
+  width: 250px;
+  height: 250px;
+  background: rgba(52, 152, 219, 0.1); /* Blue */
+  top: 40%;
+  left: 60%;
+  animation-delay: -10s;
+}
+
+@keyframes floatOrb {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50px, 30px) scale(1.1); }
+  100% { transform: translate(-30px, 60px) scale(0.9); }
+}
+
+.header {
+  margin-bottom: 2.5rem;
+  margin-top: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.header h1 {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(90deg, #fff, #bbb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: var(--text-secondary-dark);
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Glassmorphism Cards --- */
+.ritualCard {
+  border-radius: 24px;
+  padding: 1.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s, border-color 0.4s;
+}
+
+.ritualCard:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.morningCard { background: linear-gradient(135deg, rgba(211, 106, 50, 0.15) 0%, rgba(211, 106, 50, 0.05) 100%); }
+.eveningCard { background: linear-gradient(135deg, rgba(52, 152, 219, 0.15) 0%, rgba(52, 152, 219, 0.05) 100%); }
+.weeklyCard  { background: linear-gradient(135deg, rgba(42, 105, 60, 0.15) 0%, rgba(42, 105, 60, 0.05) 100%); }
+
+.ritualCard:hover.morningCard { box-shadow: 0 15px 35px rgba(211, 106, 50, 0.2); }
+.ritualCard:hover.eveningCard { box-shadow: 0 15px 35px rgba(52, 152, 219, 0.2); }
+.ritualCard:hover.weeklyCard  { box-shadow: 0 15px 35px rgba(42, 105, 60, 0.2); }
+
+
+.ritualHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+/* --- Glowing Tags --- */
+.tag {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.8rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.morningTag { background: rgba(211, 106, 50, 0.2); color: #ffa07a; border: 1px solid rgba(211, 106, 50, 0.4); }
+.eveningTag { background: rgba(52, 152, 219, 0.2); color: #85c1e9; border: 1px solid rgba(52, 152, 219, 0.4); }
+.weeklyTag  { background: rgba(42, 105, 60, 0.2);  color: #82e0aa; border: 1px solid rgba(42, 105, 60, 0.4); }
+
+.ritualHeader h2 {
+  font-size: 1.6rem;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.ritualHeader p {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.95rem;
+}
+
+/* --- Glowing Icons --- */
+.iconCircle {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.ritualCard:hover .iconCircle {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.morningIcon { color: #ffa07a; box-shadow: inset 0 0 15px rgba(211, 106, 50, 0.3); }
+.eveningIcon { color: #85c1e9; box-shadow: inset 0 0 15px rgba(52, 152, 219, 0.3); }
+.weeklyIcon  { color: #82e0aa; box-shadow: inset 0 0 15px rgba(42, 105, 60, 0.3); }
+
+/* --- Action Buttons --- */
+.startBtn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 16px;
+  border: none;
+  color: white;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: transform 0.2s, filter 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.morningBtn { background: var(--accent-orange); }
+.eveningBtn { background: #3498db; }
+.weeklyBtn  { background: var(--accent-green); }
+
+.startBtn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+/* --- Premium Meditation Player --- */
+.meditationBox {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  padding: 2rem;
+  margin-top: 1rem;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.meditationBox::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent 60%);
+  pointer-events: none;
+}
+
+.meditationBox h3 {
+  font-size: 1.4rem;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.meditationBox p {
+  color: rgba(255,255,255,0.6);
+  font-size: 0.95rem;
+  margin-bottom: 2rem;
+}
+
+.playControls {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.playBtn {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-orange), #ff8f66);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(211, 106, 50, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: pulse 3s infinite alternate;
+}
+
+.playBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(211, 106, 50, 0.6);
+  animation: none;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(211, 106, 50, 0.4); }
+  100% { box-shadow: 0 0 0 15px rgba(211, 106, 50, 0); }
+}
+
+.progressTrack {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  position: relative;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.progressBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  background: linear-gradient(90deg, var(--accent-orange), #ff8f66);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(211, 106, 50, 0.5);
+}
+
+.progressBar::after {
+  content: '';
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.time {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.7);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
