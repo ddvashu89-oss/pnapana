@@ -1,12 +1,18 @@
 <?php
 require_once '../db.php';
+require_once 'auth.php';
+
+$user = authenticate($conn);
+$user_id = $user['id'];
 
 $data = json_decode(file_get_contents("php://input"));
 $plant_id = isset($data->id) ? intval($data->id) : 0;
 
 if ($plant_id > 0) {
-    $stmt = $conn->prepare("DELETE FROM plants WHERE id = :id");
+    // Only allow deletion if the plant belongs to the user
+    $stmt = $conn->prepare("DELETE FROM plants WHERE id = :id AND user_id = :user_id");
     $stmt->bindParam(':id', $plant_id);
+    $stmt->bindParam(':user_id', $user_id);
     
     if ($stmt->execute()) {
         echo json_encode(["status" => "success", "message" => "Plant removed."]);

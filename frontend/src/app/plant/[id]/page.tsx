@@ -1,14 +1,28 @@
 'use client';
 import { useEffect, useState, use, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer } from '@/lib/motion';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import Loader from '@/components/Loader';
 import styles from './Plant.module.css';
+
+function getToken(): string | undefined {
+  const stored = localStorage.getItem('user');
+  return stored ? JSON.parse(stored).token : undefined;
+}
 
 export default function PlantDetails({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
+  const router = useRouter();
+  const { t } = useLanguage();
+  const [hasUser, setHasUser] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [plant, setPlant] = useState<any>({
-    name: 'Loading...',
+    name: '',
     species: '',
-    status: 'Loading',
+    status: '',
     status_color: 'green',
     image_url: '',
     native_region: '',
@@ -17,7 +31,7 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
     humidity: '',
     pet_friendly: false
   });
-  
+
   const [activeTab, setActiveTab] = useState('Passport');
   
   // AI Scanner States
@@ -29,17 +43,29 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Fetch real data when backend is ready
   useEffect(() => {
-    fetch(`http://localhost/pnapana/backend/api/get_plant_details.php?id=${unwrappedParams.id}`)
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      router.push('/login');
+      return;
+    }
+    setHasUser(true);
+
+    fetch(`http://127.0.0.1/pnapana/backend/api/get_plant_details.php?id=${unwrappedParams.id}`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    })
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setPlant(data.plant); });
-      
+      .then(data => { if(data.status === "success") setPlant(data.plant); })
+      .finally(() => setIsLoading(false));
+
     fetchScans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unwrappedParams.id]);
 
   function fetchScans() {
-    fetch(`http://localhost/pnapana/backend/api/get_plant_scans.php?plant_id=${unwrappedParams.id}`)
+    fetch(`http://127.0.0.1/pnapana/backend/api/get_plant_scans.php?plant_id=${unwrappedParams.id}`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    })
       .then(res => res.json())
       .then(data => { if(data.status === "success") setScans(data.scans); });
   }
@@ -54,7 +80,7 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
-      alert("Could not access camera. Please allow permissions.");
+      alert(t('plant.cameraPermissionError'));
       setIsCapturing(false);
     }
   };
@@ -84,9 +110,9 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
     setIsScanning(true);
     
     try {
-      const res = await fetch('http://localhost/pnapana/backend/api/analyze_plant.php', {
+      const res = await fetch('http://127.0.0.1/pnapana/backend/api/analyze_plant.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify({ plant_id: unwrappedParams.id, image_url: capturedImage })
       });
       const data = await res.json();
@@ -94,17 +120,21 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
         fetchScans();
         setCapturedImage(null);
         // refresh plant data to update status color
-        fetch(`http://localhost/pnapana/backend/api/get_plant_details.php?id=${unwrappedParams.id}`)
+        fetch(`http://127.0.0.1/pnapana/backend/api/get_plant_details.php?id=${unwrappedParams.id}`, {
+          headers: { 'Authorization': `Bearer ${getToken()}` }
+        })
           .then(r => r.json())
           .then(d => { if(d.status === "success") setPlant(d.plant); });
       }
     } catch (e) {
       console.error(e);
-      alert("Failed to run AI scan.");
+      alert(t('plant.aiScanFailed'));
     } finally {
       setIsScanning(false);
     }
   }
+
+  if (!hasUser || isLoading) return <Loader fullScreen label={t('common.loading')} />;
 
   return (
     <div className={styles.container}>
@@ -137,27 +167,32 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
         </div>
 
         <div className={styles.tabs}>
-          <button className={`${styles.tab} ${activeTab === 'Passport' ? styles.active : ''}`} onClick={() => setActiveTab('Passport')}>Passport</button>
-          <button className={`${styles.tab} ${activeTab === 'AI Scan' ? styles.active : ''}`} onClick={() => setActiveTab('AI Scan')}>AI Scan</button>
-          <button className={`${styles.tab} ${activeTab === 'Care' ? styles.active : ''}`} onClick={() => setActiveTab('Care')}>Care</button>
+          <button className={`${styles.tab} ${activeTab === 'Passport' ? styles.active : ''}`} onClick={() => setActiveTab('Passport')}>{t('plant.tabPassport')}</button>
+          <button className={`${styles.tab} ${activeTab === 'AI Scan' ? styles.active : ''}`} onClick={() => setActiveTab('AI Scan')}>{t('plant.tabAiScan')}</button>
+          <button className={`${styles.tab} ${activeTab === 'Care' ? styles.active : ''}`} onClick={() => setActiveTab('Care')}>{t('plant.tabCare')}</button>
         </div>
 
         <div className={styles.tabContent}>
-          
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
+        >
           {activeTab === 'Passport' && (
             <>
-              <p>Your plant&apos;s identity & preferences.</p>
+              <p>{t('plant.passportSubtitle')}</p>
               <div className={styles.attributeList}>
                 <div className={styles.attributeItem}>
-                  <span className={styles.attrLabel}>Native</span>
+                  <span className={styles.attrLabel}>{t('plant.native')}</span>
                   <span className={styles.attrValue}>{plant.native_region}</span>
                 </div>
                 <div className={styles.attributeItem}>
-                  <span className={styles.attrLabel}>Light</span>
+                  <span className={styles.attrLabel}>{t('plant.light')}</span>
                   <span className={styles.attrValue}>{plant.light_requirement}</span>
                 </div>
                 <div className={styles.attributeItem}>
-                  <span className={styles.attrLabel}>Water</span>
+                  <span className={styles.attrLabel}>{t('plant.water')}</span>
                   <span className={styles.attrValue}>{plant.water_requirement}</span>
                 </div>
               </div>
@@ -166,14 +201,14 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
 
           {activeTab === 'AI Scan' && (
             <div className={styles.aiScannerArea}>
-              <h3 style={{marginBottom: '1rem'}}>Daily Health Check 🤖🌿</h3>
+              <h3 style={{marginBottom: '1rem'}}>{t('plant.dailyHealthCheck')}</h3>
               <p style={{marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
-                Snap a daily picture and let PNA AI analyze your plant&apos;s health.
+                {t('plant.aiScanText')}
               </p>
-              
+
               {!isCapturing && !capturedImage && (
                 <button className={styles.aiScanBtn} onClick={startCamera}>
-                  📸 Open Camera
+                  {t('plant.openCamera')}
                 </button>
               )}
 
@@ -182,8 +217,8 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
                   <video ref={videoRef} autoPlay playsInline className={styles.cameraView} />
                   <canvas ref={canvasRef} style={{ display: 'none' }} />
                   <div className={styles.cameraActions}>
-                    <button type="button" onClick={captureImage} className={styles.snapBtn}>Snap Photo</button>
-                    <button type="button" onClick={stopCamera} className={styles.cancelCamBtn}>Cancel</button>
+                    <button type="button" onClick={captureImage} className={styles.snapBtn}>{t('plant.snapPhoto')}</button>
+                    <button type="button" onClick={stopCamera} className={styles.cancelCamBtn}>{t('plant.cancel')}</button>
                   </div>
                 </div>
               )}
@@ -194,27 +229,27 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
                   {isScanning ? (
                     <div className={styles.scanningAnim}>
                       <div className={styles.scanLine}></div>
-                      <p>PNA AI is analyzing...</p>
+                      <p>{t('plant.aiAnalyzing')}</p>
                     </div>
                   ) : (
                     <div className={styles.cameraActions}>
-                      <button type="button" onClick={submitScan} className={styles.submitScanBtn}>🔍 Run AI Scan</button>
-                      <button type="button" onClick={() => setCapturedImage(null)} className={styles.cancelCamBtn}>Retake</button>
+                      <button type="button" onClick={submitScan} className={styles.submitScanBtn}>{t('plant.runAiScan')}</button>
+                      <button type="button" onClick={() => setCapturedImage(null)} className={styles.cancelCamBtn}>{t('plant.retake')}</button>
                     </div>
                   )}
                 </div>
               )}
 
               <div className={styles.scanHistory}>
-                <h4>Scan History</h4>
+                <h4>{t('plant.scanHistory')}</h4>
                 {scans.length === 0 ? (
-                  <p className={styles.noScans}>No scans yet.</p>
+                  <p className={styles.noScans}>{t('plant.noScansYet')}</p>
                 ) : (
                   scans.map(scan => (
                     <div key={scan.id} className={`${styles.scanCard} ${styles[scan.status]}`}>
                       <div className={styles.scanCardTop}>
                         <strong>{new Date(scan.created_at).toLocaleDateString()}</strong>
-                        <span className={styles.scanBadge}>{scan.status === 'healthy' ? '✅ All Good' : '⚠️ Issue Detected'}</span>
+                        <span className={styles.scanBadge}>{scan.status === 'healthy' ? t('plant.allGood') : t('plant.issueDetected')}</span>
                       </div>
                       <p>{scan.ai_analysis}</p>
                     </div>
@@ -224,10 +259,80 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
             </div>
           )}
           
-          {activeTab === 'Care' && (
-             <p>Care instructions will appear here.</p>
-          )}
+          {activeTab === 'Care' && (() => {
+            let cp: any = null;
+            try { cp = plant.care_plan ? JSON.parse(plant.care_plan) : null; } catch { cp = null; }
+            if (!cp) {
+              return <p>{t('plant.noCarePlan')}</p>;
+            }
+            return (
+              <motion.div
+                className={styles.carePlanList}
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+              >
+                {cp.water?.instructions && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>💧 {t('plant.careWatering')}</span>
+                    <p>{cp.water.instructions}</p>
+                  </motion.div>
+                )}
+                {cp.light?.detail && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>☀️ {t('plant.careLight')}</span>
+                    <p>{cp.light.detail}</p>
+                  </motion.div>
+                )}
+                {cp.humidity?.detail && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>💦 {t('plant.careHumidity')}</span>
+                    <p>{cp.humidity.detail}</p>
+                  </motion.div>
+                )}
+                {cp.soil && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🌱 {t('plant.careSoil')}</span>
+                    <p>{cp.soil}</p>
+                  </motion.div>
+                )}
+                {cp.temperature && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🌡️ {t('plant.careTemperature')}</span>
+                    <p>{cp.temperature}</p>
+                  </motion.div>
+                )}
+                {cp.fertilizing && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🧪 {t('plant.careFertilizing')}</span>
+                    <p>{cp.fertilizing}</p>
+                  </motion.div>
+                )}
+                {cp.pruning && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>✂️ {t('plant.carePruning')}</span>
+                    <p>{cp.pruning}</p>
+                  </motion.div>
+                )}
+                {cp.toxicity?.detail && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>⚠️ {t('plant.careToxicity')}</span>
+                    <p>{cp.toxicity.detail}</p>
+                  </motion.div>
+                )}
+                {cp.common_issues?.length > 0 && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🩺 {t('plant.careCommonIssues')}</span>
+                    {cp.common_issues.map((ci: any, i: number) => (
+                      <p key={i}><strong>{ci.issue}:</strong> {ci.solution}</p>
+                    ))}
+                  </motion.div>
+                )}
+              </motion.div>
+            );
+          })()}
 
+        </motion.div>
         </div>
       </main>
     </div>

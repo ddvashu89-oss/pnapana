@@ -1,14 +1,18 @@
 <?php
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
 
 require_once '../db.php';
+require_once '../config.php';
+require_once 'auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
+
+$user = authenticate($pdo);
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -20,8 +24,20 @@ if (!isset($data->plant_id) || !isset($data->image_url)) {
 $plant_id = $data->plant_id;
 $image_url = $data->image_url;
 
-// To use real AI, place your Gemini API key here:
-$GEMINI_API_KEY = ""; // e.g. "AIzaSy..."
+// Only the plant's owner can submit a scan for it — otherwise anyone with a
+// plant_id could write fake scans into another user's history and burn the
+// site's paid Gemini API quota on arbitrary attacker-supplied images.
+$ownerCheckStmt = $pdo->prepare("SELECT user_id FROM plants WHERE id = ?");
+$ownerCheckStmt->execute([$plant_id]);
+$ownerId = $ownerCheckStmt->fetchColumn();
+
+if (!$ownerId || (int)$ownerId !== (int)$user['id']) {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "You don't have permission to scan this plant."]);
+    exit;
+}
+
+$GEMINI_API_KEY = GEMINI_API_KEY;
 
 $ai_status = 'healthy';
 $ai_analysis = '';
@@ -47,12 +63,13 @@ if (!empty($GEMINI_API_KEY)) {
             ]
         ]
     ];
-    
-    $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' . $GEMINI_API_KEY);
+
+    $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/' . GEMINI_MODEL . ':generateContent?key=' . $GEMINI_API_KEY);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    curl_setopt($ch, CURLOPT_TIMEOUT, 45);
     $response = curl_exec($ch);
     curl_close($ch);
     
@@ -102,6 +119,14 @@ try {
     
     $updateStmt = $pdo->prepare("UPDATE plants SET status = ?, status_color = ? WHERE id = ?");
     $updateStmt->execute([$plant_status_text, $plant_color, $plant_id]);
+
+    $ownerStmt = $pdo->prepare("SELECT user_id FROM plants WHERE id = ?");
+    $ownerStmt->execute([$plant_id]);
+    $owner = $ownerStmt->fetchColumn();
+    if ($owner) {
+        $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'ai_scan')");
+        $eventStmt->execute([$owner, $plant_id]);
+    }
 
     echo json_encode([
         "status" => "success",

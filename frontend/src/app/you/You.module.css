@@ -1,16 +1,32 @@
 .container {
   min-height: 100vh;
-  background-color: var(--bg-dark);
-  color: var(--text-primary-dark);
-  padding: 1.5rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   padding-bottom: 100px;
 }
 
 .header {
+  position: relative;
   margin-bottom: 2rem;
-  margin-top: 1rem;
+  padding: 5rem 1.5rem 2.5rem;
   display: flex;
   justify-content: center;
+  overflow: hidden;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7,9,8,0.3) 0%, rgba(7,9,8,0.92) 100%),
+    url('https://images.unsplash.com/photo-1521334884684-d80222895322?w=1200&q=80') center 25%/cover;
+  z-index: 0;
+}
+
+.header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .profileInfo {
@@ -37,7 +53,7 @@
 }
 
 .profileInfo p {
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
   font-size: 0.9rem;
   margin-bottom: 1rem;
 }
@@ -55,6 +71,7 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  padding: 0 1.5rem;
 }
 
 .statsGrid {
@@ -82,7 +99,7 @@
 
 .statLabel {
   font-size: 0.8rem;
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
 }
 
 .menuList {
@@ -93,7 +110,7 @@
 
 .menuGroup h3 {
   font-size: 0.9rem;
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.8rem;
@@ -108,10 +125,14 @@
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.02);
   padding: 1rem 1.2rem;
-  color: white;
+  color: var(--text-primary);
   font-size: 1rem;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.menuItem:hover {
+  transform: translateX(6px);
 }
 
 .menuItem:first-of-type {
@@ -138,7 +159,7 @@
   align-items: center;
   justify-content: center;
   margin-right: 1rem;
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
 }
 
 .menuItem span:not(.menuValue) {
@@ -147,12 +168,36 @@
 }
 
 .menuItem svg:last-child {
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
 }
 
 .menuValue {
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+.langToggle {
+  display: flex;
+  gap: 0.3rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 0.25rem;
+  flex-shrink: 0;
+}
+
+.langOption {
+  padding: 0.35rem 0.8rem;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.langOptionActive {
+  background: var(--accent-green);
+  color: #000;
+  font-weight: 600;
 }
 
 .logoutBtn {
@@ -164,7 +209,7 @@
   padding: 1rem;
   background: rgba(211, 106, 50, 0.1);
   color: var(--accent-orange);
-  border: 1px solid rgba(211, 106, 50, 0.2);
+  border: 1px solid var(--accent-orange-dim);
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 500;
@@ -174,5 +219,5 @@
 }
 
 .logoutBtn:hover {
-  background: rgba(211, 106, 50, 0.2);
+  background: var(--accent-orange-dim);
 }

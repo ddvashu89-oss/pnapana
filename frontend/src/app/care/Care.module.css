@@ -1,15 +1,30 @@
 .container {
   min-height: 100vh;
-  background-color: var(--bg-dark);
-  color: var(--text-primary-dark);
-  padding: 1.5rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   padding-bottom: 90px;
-  background-image: radial-gradient(circle at 0% 0%, rgba(42, 105, 60, 0.05) 0%, transparent 50%);
 }
 
 .header {
-  margin-bottom: 2rem;
-  margin-top: 1rem;
+  position: relative;
+  padding: 6rem 1.5rem 2.5rem;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7,9,8,0.35) 0%, rgba(7,9,8,0.92) 100%),
+    url('https://images.unsplash.com/photo-1515150144380-bca9f1650ed9?w=1200&q=80') center 30%/cover;
+  z-index: 0;
+}
+
+.header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .header h1 {
@@ -20,11 +35,12 @@
 }
 
 .subtitle {
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
   font-size: 1rem;
 }
 
 .content {
+  padding: 0 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 2rem;
@@ -37,6 +53,7 @@
 }
 
 .dateCard {
+  position: relative;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -46,23 +63,30 @@
   border-radius: 16px;
   border: 1px solid rgba(255,255,255,0.05);
   cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.dateCard.active {
-  background: var(--accent-green);
-  border-color: var(--accent-green);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(42, 105, 60, 0.3);
+  transition: background 0.3s ease, border-color 0.3s ease;
+  overflow: hidden;
 }
 
 .dateCard:hover:not(.active) {
   background: rgba(255,255,255,0.08);
 }
 
+.activePill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent-green);
+  box-shadow: 0 5px 15px rgba(42, 105, 60, 0.3);
+  z-index: 0;
+}
+
+.day, .date {
+  position: relative;
+  z-index: 1;
+}
+
 .day {
   font-size: 0.8rem;
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
   margin-bottom: 0.3rem;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -140,7 +164,7 @@
 
 .taskInfo p {
   font-size: 0.85rem;
-  color: var(--text-secondary-dark);
+  color: var(--text-secondary);
 }
 
 .checkBtn {

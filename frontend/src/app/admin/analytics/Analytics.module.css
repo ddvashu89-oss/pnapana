@@ -1,0 +1,168 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.chartCard {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: 24px;
+  padding: 1.8rem;
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.2rem;
+}
+
+.chartHeader h4 {
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.chartStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.chartValue {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.chartDelta {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+}
+
+.deltaUp {
+  color: var(--accent-green);
+  background: var(--accent-green-dim);
+}
+
+.deltaDown {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.chartSvg {
+  width: 100%;
+  height: 160px;
+  overflow: visible;
+}
+
+.gridLine {
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 1;
+}
+
+.areaFill {
+  fill: var(--accent-green);
+  opacity: 0.1;
+  stroke: none;
+}
+
+.trendLine {
+  fill: none;
+  stroke: var(--accent-green);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.endDot {
+  fill: var(--accent-green);
+  stroke: var(--bg-secondary);
+  stroke-width: 2;
+}
+
+.crosshair {
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1;
+}
+
+.hoverDot {
+  fill: var(--accent-green);
+  stroke: var(--bg-secondary);
+  stroke-width: 2;
+}
+
+.tooltipBox {
+  fill: var(--bg-secondary);
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1;
+}
+
+.tooltipValue {
+  fill: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tooltipDate {
+  fill: var(--text-secondary);
+  font-size: 9px;
+}
+
+/* Species bar chart */
+.barList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 40px;
+  align-items: center;
+  gap: 1rem;
+}
+
+.barLabel {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barTrack {
+  height: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--accent-green);
+  border-radius: 9px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.barValue {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .grid { grid-template-columns: 1fr; }
+  .barRow { grid-template-columns: 90px 1fr 30px; gap: 0.6rem; }
+}

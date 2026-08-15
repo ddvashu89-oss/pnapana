@@ -1,0 +1,238 @@
+/* --- Core Variables for Enhanced Light Mode --- */
+
+
+
+.container {
+  padding: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* --- Animated Premium Mesh Background --- */
+.meshBg {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: #f7f9f6;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.meshOrb1, .meshOrb2, .meshOrb3 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: float 20s infinite alternate ease-in-out;
+}
+
+.meshOrb1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--accent-orange-dim), transparent 70%); }
+.meshOrb2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(48, 124, 70, 0.15), transparent 70%); animation-delay: -5s; }
+.meshOrb3 { top: 40%; left: 40%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(52, 152, 219, 0.1), transparent 70%); animation-delay: -10s; }
+
+@keyframes float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(50px, 50px) scale(1.1); }
+}
+
+/* --- Header --- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding-top: 1rem;
+}
+
+.backBtn {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.8);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: all 0.3s ease;
+}
+.backBtn:hover {
+  background: var(--bg-secondary); transform: translateX(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.header h1 {
+  font-size: 2.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+
+
+/* --- Settings Cards --- */
+.settingsContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 4rem;
+}
+
+.settingsCard {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: 32px;
+  padding: 2rem;
+  box-shadow: var(--glass-shadow);
+}
+
+.cardTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: var(--glass-border);
+}
+
+/* --- Profile Section --- */
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.profilePicLarge {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+.profilePicLarge img { width: 100%; height: 100%; object-fit: cover; }
+
+.profileInfo { flex: 1; }
+.profileInfo h2 { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; }
+.profileInfo p { font-size: 0.95rem; color: var(--primary-green); font-weight: 500; }
+
+.editBtn {
+  background: rgba(48, 124, 70, 0.1);
+  color: var(--primary-green);
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.editBtn:hover { background: var(--primary-green); color: var(--text-primary); }
+
+/* --- Setting Rows --- */
+.settingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.settingRow:last-child { margin-bottom: 0; }
+
+.settingInfo {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.settingIcon {
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.settingInfo h4 { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; }
+.settingInfo p { font-size: 0.85rem; color: var(--text-muted); }
+
+/* --- Custom UI Elements --- */
+/* Switch */
+.switch { position: relative; display: inline-block; width: 54px; height: 30px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc; transition: .4s; border-radius: 34px;
+}
+.slider:before {
+  position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px;
+  background-color: var(--bg-secondary); transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+input:checked + .slider { background-color: var(--primary-green); }
+input:checked + .slider:before { transform: translateX(24px); }
+
+/* Time Picker */
+.timePicker {
+  background: var(--glass-bg);
+  border: 1px solid rgba(0,0,0,0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  outline: none;
+}
+.timePicker:focus { border-color: var(--primary-green); }
+
+/* --- Account Actions --- */
+.actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.logoutBtn, .deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
+}
+
+.logoutBtn {
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.logoutBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+
+.deleteBtn {
+  background: rgba(231, 76, 60, 0.1);
+  color: #c0392b;
+}
+.deleteBtn:hover { background: #e74c3c; color: var(--text-primary); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(231, 76, 60, 0.2); }
+
+.appVersion {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 1rem;
+  font-weight: 500;
+}
+
+/* --- Responsive --- */
+@media (max-width: 600px) {
+  .profileHeader { flex-direction: column; text-align: center; }
+  .settingRow { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .actionGrid { grid-template-columns: 1fr; }
+}

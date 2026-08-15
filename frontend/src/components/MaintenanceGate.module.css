@@ -1,0 +1,59 @@
+.container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  padding: 2rem;
+}
+
+.card {
+  max-width: 480px;
+  text-align: center;
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: 32px;
+  padding: 3.5rem 2.5rem;
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.sprout {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.card h1 {
+  font-family: var(--font-serif);
+  font-size: 1.9rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+.card p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.contact {
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.contact a {
+  color: var(--accent-green);
+  text-decoration: none;
+}
+
+.contact a:hover {
+  text-decoration: underline;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}

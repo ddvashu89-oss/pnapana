@@ -4,13 +4,10 @@ header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: GET');
 
 require_once '../db.php';
+require_once 'auth.php';
 
-if (!isset($_GET['user_id'])) {
-    echo json_encode(["status" => "error", "message" => "Missing user_id"]);
-    exit();
-}
-
-$user_id = $_GET['user_id'];
+$user = authenticate($pdo);
+$user_id = $user['id'];
 
 try {
     // Find plants where last_watered + water_freq days is in the past

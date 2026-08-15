@@ -2,13 +2,18 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './Login.module.css';
+import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function Login() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
+  const [showOtp, setShowOtp] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -16,8 +21,8 @@ export default function Login() {
     setError('');
 
     const url = isLogin 
-      ? 'http://localhost/pnapana/backend/api/login.php' 
-      : 'http://localhost/pnapana/backend/api/signup.php';
+      ? 'http://127.0.0.1/pnapana/backend/api/login.php' 
+      : 'http://127.0.0.1/pnapana/backend/api/signup.php';
     
     const body = isLogin ? { email, password } : { name, email, password };
 
@@ -31,69 +36,121 @@ export default function Login() {
       
       if (data.status === 'success') {
         localStorage.setItem('user', JSON.stringify(data.user));
-        router.push('/dashboard');
+        // Instead of redirecting immediately, show the OTP screen
+        setShowOtp(true);
       } else {
-        setError(data.message || 'An error occurred.');
+        setError(data.message || data.error || t('login.genericError'));
       }
     } catch (err) {
-      setError('Failed to connect to the server.');
+      console.error(err);
+      setError(t('login.connectionError'));
+    }
+  };
+
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Dummy OTP validation (accepts any non-empty OTP)
+    if (otp.length > 0) {
+      router.push('/dashboard');
+    } else {
+      setError(t('login.otpInvalid'));
     }
   };
 
   return (
     <div className={styles.container}>
+      <div className={styles.photoPanel}>
+        <img src="https://images.unsplash.com/photo-1509223197845-458d87318791?w=1200&q=80" alt="" />
+        <div className={styles.photoQuote}>
+          <p>{t('login.quote')}</p>
+          <span>{t('login.quoteBrand')}</span>
+        </div>
+      </div>
+      <div className={styles.formPanel}>
+      <Link href="/" className={styles.backLink}>{t('login.backToHome')}</Link>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h1>{isLogin ? 'Welcome Back 🌿' : 'Join Our Green Family 🌿'}</h1>
-          <p>{isLogin ? 'Sign in to check on your plants.' : 'Create an account to start tracking.'}</p>
+          <h1>
+            {showOtp
+              ? t('login.titleOtp')
+              : isLogin ? t('login.titleWelcomeBack') : t('login.titleJoin')}
+          </h1>
+          <p>
+            {showOtp
+              ? t('login.subtitleOtp')
+              : isLogin ? t('login.subtitleSignIn') : t('login.subtitleSignUp')}
+          </p>
         </div>
         
         {error && <div className={styles.error}>{error}</div>}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {!isLogin && (
+        {!showOtp ? (
+          <>
+            <form onSubmit={handleSubmit} className={styles.form}>
+              {!isLogin && (
+                <div className={styles.inputGroup}>
+                  <label>{t('login.name')}</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+
+              <div className={styles.inputGroup}>
+                <label>{t('login.email')}</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label>{t('login.password')}</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" className={styles.submitBtn}>
+                {isLogin ? t('login.signIn') : t('login.signUp')}
+              </button>
+            </form>
+
+            <div className={styles.toggleText}>
+              {isLogin ? t('login.noAccount') : t('login.hasAccount')}
+              <span onClick={() => setIsLogin(!isLogin)} className={styles.toggleLink}>
+                {isLogin ? t('login.toggleToSignUp') : t('login.toggleToSignIn')}
+              </span>
+            </div>
+          </>
+        ) : (
+          <form onSubmit={handleOtpSubmit} className={styles.form}>
             <div className={styles.inputGroup}>
-              <label>Name</label>
-              <input 
-                type="text" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                required 
+              <label>{t('login.otpLabel')}</label>
+              <input
+                type="text"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="123456"
+                required
+                maxLength={6}
+                className={styles.otpInput}
               />
             </div>
-          )}
-          
-          <div className={styles.inputGroup}>
-            <label>Email</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-            />
-          </div>
-
-          <div className={styles.inputGroup}>
-            <label>Password</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-            />
-          </div>
-
-          <button type="submit" className={styles.submitBtn}>
-            {isLogin ? 'Sign In' : 'Sign Up'}
-          </button>
-        </form>
-
-        <div className={styles.toggleText}>
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <span onClick={() => setIsLogin(!isLogin)} className={styles.toggleLink}>
-            {isLogin ? 'Sign up' : 'Sign in'}
-          </span>
-        </div>
+            <button type="submit" className={styles.submitBtn}>
+              {t('login.verifyAndProceed')}
+            </button>
+          </form>
+        )}
+      </div>
       </div>
     </div>
   );

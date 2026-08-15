@@ -1,12 +1,33 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Droplets, Scissors, FlaskConical } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
+import Loader from '@/components/Loader';
 import styles from './Home.module.css';
+
+const AFFIRMATIONS_EN = [
+  "Bloom where you are planted. 🌸",
+  "To plant a garden is to believe in tomorrow.",
+  "Nature does not hurry, yet everything is accomplished.",
+  "Just like your plants, you are growing every day.",
+  "Deep roots are not reached by the frost."
+];
+
+const AFFIRMATIONS_HI = [
+  "जहां लगाए जाओ, वहीं खिलो। 🌸",
+  "बगीचा लगाना कल पर भरोसा करना है।",
+  "प्रकृति जल्दी नहीं करती, फिर भी सब कुछ पूरा हो जाता है।",
+  "अपने पौधों की तरह, आप भी हर दिन बढ़ रहे हैं।",
+  "गहरी जड़ों तक पाला नहीं पहुंचता।"
+];
 
 export default function Home() {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: number, name: string } | null>(null);
+  const { t, language } = useLanguage();
+  const [user, setUser] = useState<{ id: number, name: string, token?: string } | null>(null);
   const [plants, setPlants] = useState<any[]>([]);
   const [thirstyPlants, setThirstyPlants] = useState<number[]>([]);
   const notifiedIds = useRef<Set<number>>(new Set());
@@ -14,10 +35,21 @@ export default function Home() {
   // Weather state
   const [weather, setWeather] = useState<{ temp: number | string, humidity: number | string }>({ temp: '--', humidity: '--' });
   const [weatherAQI, setWeatherAQI] = useState<{ value: number | string, status: string }>({ value: '--', status: 'Loading' });
+  const [locationName, setLocationName] = useState('Locating...');
 
   // Add Plant Modal state
   const [isAddPlantModalOpen, setIsAddPlantModalOpen] = useState(false);
-  const [newPlant, setNewPlant] = useState({ name: '', species: '', image_url: '' });
+  const [newPlant, setNewPlant] = useState<{
+    name: string, species: string, image_url: string,
+    native_region: string, light_requirement: string, water_requirement: string,
+    humidity: string, pet_friendly: boolean,
+    water_freq: number, light_req: string, care_plan: any
+  }>({
+    name: '', species: '', image_url: '',
+    native_region: '', light_requirement: '', water_requirement: '',
+    humidity: '', pet_friendly: false,
+    water_freq: 7, light_req: 'Medium', care_plan: null
+  });
   const [isAdding, setIsAdding] = useState(false);
   
   // Camera state
@@ -25,15 +57,24 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Daily Tip state
-  const [dailyTip, setDailyTip] = useState<{ title: string, content: string } | null>(null);
+  // AI & Identification State
+  const [isIdentifying, setIsIdentifying] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [plantInfo, setPlantInfo] = useState<{ species: string, description: string } | null>(null);
+  const [cameraMode, setCameraMode] = useState<'capture' | 'identify' | 'diagnose'>('capture');
+  const [healthStatus, setHealthStatus] = useState<{ diagnosis: string, treatment: string } | null>(null);
+  const [isDiagnosingModalOpen, setIsDiagnosingModalOpen] = useState(false);
 
-  const TIPS = [
-    { title: "Don't Overwater!", content: "Most indoor plants prefer their soil to dry out between waterings. When in doubt, wait a day!" },
-    { title: "Let There Be Light", content: "Check if your plant needs direct or indirect sunlight. Too much direct sun can burn delicate leaves." },
-    { title: "Dust Those Leaves", content: "Wipe down your plant's leaves with a damp cloth every few weeks to help them photosynthesize better." },
-    { title: "Check for Pests", content: "Always inspect the undersides of leaves when watering. Catching pests early is key!" }
-  ];
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // New Features State
+  const [affirmation, setAffirmation] = useState('');
+
+  // Gamification State
+  const [streakDays, setStreakDays] = useState(0);
+  const [coins, setCoins] = useState(0);
+  const [badges, setBadges] = useState<{ id: string, label: string, icon: string, description: string, unlocked: boolean, progress: string }[]>([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -45,19 +86,19 @@ export default function Home() {
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
 
-    fetchPlants(parsedUser.id);
+    fetchPlants(parsedUser.id, parsedUser.token);
     fetchWeather();
+    fetchGamification(parsedUser.token);
 
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
       Notification.requestPermission();
     }
 
-    // Set a random daily tip
-    setDailyTip(TIPS[Math.floor(Math.random() * TIPS.length)]);
-
     const checkWateringNeeds = async () => {
       try {
-        const res = await fetch(`http://localhost/pnapana/backend/api/get_notifications.php?user_id=${parsedUser.id}`);
+        const res = await fetch(`http://127.0.0.1/pnapana/backend/api/get_notifications.php?user_id=${parsedUser.id}`, {
+          headers: { 'Authorization': `Bearer ${parsedUser.token}` }
+        });
         const data = await res.json();
         if (data.status === 'success') {
           const tPlants = data.notifications;
@@ -80,28 +121,86 @@ export default function Home() {
     };
 
     checkWateringNeeds();
-    const interval = setInterval(checkWateringNeeds, 30000); // Check every 30s
+    const interval = setInterval(checkWateringNeeds, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  function fetchPlants(userId: number) {
-    fetch(`http://localhost/pnapana/backend/api/get_plants.php?user_id=${userId}`)
+  useEffect(() => {
+    const affirmations = language === 'hi' ? AFFIRMATIONS_HI : AFFIRMATIONS_EN;
+    setAffirmation(affirmations[Math.floor(Math.random() * affirmations.length)]);
+  }, [language]);
+
+  function fetchPlants(userId: number, token?: string) {
+    const activeToken = token || (user?.token);
+    fetch(`http://127.0.0.1/pnapana/backend/api/get_plants.php?user_id=${userId}`, {
+      headers: { 'Authorization': `Bearer ${activeToken}` }
+    })
       .then(res => res.json())
       .then(data => { if(data.status === "success") setPlants(data.plants); });
   }
 
+  function fetchGamification(token?: string) {
+    const activeToken = token || user?.token;
+    fetch('http://127.0.0.1/pnapana/backend/api/get_gamification.php', {
+      headers: { 'Authorization': `Bearer ${activeToken}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          setStreakDays(data.streak_days);
+          setCoins(data.coins);
+          setBadges(data.badges);
+        }
+      })
+      .catch(e => console.error('Failed to fetch gamification data', e));
+  }
+
   async function fetchWeather() {
-    try {
-      // Bangalore coordinates as default
-      const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.9716&longitude=77.5946&current=temperature_2m,relative_humidity_2m&timezone=auto');
-      const data = await res.json();
-      if (data.current) {
-        setWeather({ temp: Math.round(data.current.temperature_2m), humidity: data.current.relative_humidity_2m });
-        // Mock AQI for now as open-meteo basic doesn't have it easily
-        setWeatherAQI({ value: 38, status: 'Air Good' }); 
+    const fetchWeatherData = async (lat: number, lon: number, locationFallback: string = 'Bangalore') => {
+      try {
+        try {
+          const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+          const geoData = await geoRes.json();
+          setLocationName(geoData.city || geoData.locality || locationFallback);
+        } catch (e) {
+          console.error(e);
+          setLocationName(locationFallback);
+        }
+
+        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`);
+        const weatherData = await weatherRes.json();
+        if (weatherData.current) {
+          setWeather({ temp: Math.round(weatherData.current.temperature_2m), humidity: weatherData.current.relative_humidity_2m });
+        }
+
+        try {
+          const aqiRes = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`);
+          const aqiData = await aqiRes.json();
+          if (aqiData.current) {
+            setWeatherAQI({ value: aqiData.current.us_aqi, status: 'Active' });
+          }
+        } catch (e) {
+          console.error(e);
+          setWeatherAQI({ value: '--', status: 'Error' });
+        }
+      } catch (e) {
+        console.error("Failed to fetch weather", e);
       }
-    } catch (e) {
-      console.error("Failed to fetch weather", e);
+    };
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchWeatherData(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.warn("Geolocation denied or failed", error);
+          fetchWeatherData(12.9716, 77.5946, 'Bangalore');
+        }
+      );
+    } else {
+      fetchWeatherData(12.9716, 77.5946, 'Bangalore');
     }
   }
 
@@ -111,16 +210,25 @@ export default function Home() {
     setIsAdding(true);
     
     try {
-      const res = await fetch('http://localhost/pnapana/backend/api/add_plant.php', {
+      const res = await fetch('http://127.0.0.1/pnapana/backend/api/add_plant.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
         body: JSON.stringify({ ...newPlant, user_id: user.id })
       });
       const data = await res.json();
       if (data.status === 'success') {
         setIsAddPlantModalOpen(false);
-        setNewPlant({ name: '', species: '', image_url: '' });
+        setNewPlant({
+          name: '', species: '', image_url: '',
+          native_region: '', light_requirement: '', water_requirement: '',
+          humidity: '', pet_friendly: false,
+          water_freq: 7, light_req: 'Medium', care_plan: null
+        });
         fetchPlants(user.id);
+        fetchGamification();
       } else {
         alert(data.message);
       }
@@ -131,7 +239,10 @@ export default function Home() {
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = async (mode: 'capture' | 'identify' | 'diagnose' = 'capture') => {
+    setCameraMode(mode);
+    if (mode === 'diagnose') setIsDiagnosingModalOpen(true);
+    
     setIsCapturing(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -140,8 +251,9 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Error accessing camera", err);
-      alert("Could not access camera");
+      alert(t('dashboard.couldNotAccessCamera'));
       setIsCapturing(false);
+      setIsDiagnosingModalOpen(false);
     }
   };
 
@@ -161,43 +273,145 @@ export default function Home() {
       canvas.height = video.videoHeight;
       canvas.getContext('2d')?.drawImage(video, 0, 0);
       const imageUrl = canvas.toDataURL('image/jpeg');
-      setNewPlant({ ...newPlant, image_url: imageUrl });
+      
+      if (cameraMode === 'identify') {
+        identifyPlantFromImage(imageUrl);
+      } else if (cameraMode === 'diagnose') {
+        diagnosePlant(imageUrl);
+      } else {
+        validateImageIsPlant(imageUrl);
+      }
       stopCamera();
     }
   };
 
+  const validateImageIsPlant = async (imageUrl: string) => {
+    setIsIdentifying(true);
+    setAiError(null);
+    try {
+      const res = await fetch('http://127.0.0.1/pnapana/backend/api/identify_plant.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`
+        },
+        body: JSON.stringify({ image_base64: imageUrl })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setNewPlant(prev => ({ ...prev, image_url: imageUrl }));
+      } else {
+        setAiError(data.message || t('dashboard.aiCouldNotDetect'));
+      }
+    } catch (err) {
+      console.error(err);
+      setAiError(t('dashboard.aiCouldNotDetect'));
+    } finally {
+      setIsIdentifying(false);
+    }
+  };
+
+  const identifyPlantFromImage = async (imageUrl: string) => {
+    setIsIdentifying(true);
+    setPlantInfo(null);
+    setAiError(null);
+    try {
+      const res = await fetch('http://127.0.0.1/pnapana/backend/api/identify_plant.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`
+        },
+        body: JSON.stringify({ image_base64: imageUrl })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        const { identification: id, care_plan: cp } = data;
+        setNewPlant(prev => ({
+          ...prev,
+          species: id.species,
+          image_url: imageUrl,
+          native_region: cp.native_region || '',
+          light_requirement: cp.light?.detail || '',
+          water_requirement: cp.water?.instructions || '',
+          humidity: cp.humidity?.level || '',
+          pet_friendly: !!cp.toxicity?.pet_friendly,
+          water_freq: cp.water?.frequency_days || 7,
+          light_req: cp.light?.level || 'Medium',
+          care_plan: cp
+        }));
+        setPlantInfo({ species: id.species, description: id.description });
+      } else {
+        setAiError(data.message || t('dashboard.noPlantDetected'));
+        setNewPlant(prev => ({ ...prev, image_url: '' }));
+      }
+    } catch (err) {
+      console.error(err);
+      setAiError(t('dashboard.aiIdentifyFailed'));
+      setNewPlant(prev => ({ ...prev, image_url: '' }));
+    } finally {
+      setIsIdentifying(false);
+    }
+  };
+
+  const diagnosePlant = (imageUrl: string) => {
+    console.log("diagnosePlant", imageUrl);
+    setIsIdentifying(true);
+    setHealthStatus(null);
+    setTimeout(() => {
+      const mockHealth = {
+        diagnosis: "Mild Sunburn",
+        treatment: "Move the plant away from direct, harsh sunlight. Mist leaves gently to recover moisture."
+      };
+      setHealthStatus(mockHealth);
+      setIsIdentifying(false);
+    }, 3000);
+  };
+
   const closeModal = () => {
     setIsAddPlantModalOpen(false);
+    setIsDiagnosingModalOpen(false);
+    setPlantInfo(null);
+    setHealthStatus(null);
+    setIsIdentifying(false);
+    setAiError(null);
     stopCamera();
   };
 
   const removePlant = (id: number) => {
-    fetch('http://localhost/pnapana/backend/api/remove_plant.php', {
+    fetch('http://127.0.0.1/pnapana/backend/api/remove_plant.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${user?.token}`
+      },
       body: JSON.stringify({ id })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          setPlants(plants.filter(plant => plant.id !== id));
-        }
-      });
+    }).then(res => res.json()).then(data => {
+      if (data.status === 'success') {
+        setPlants(plants.filter(plant => plant.id !== id));
+      }
+    });
   };
 
   const handleWaterPlant = async (id: number) => {
     try {
-      const res = await fetch('http://localhost/pnapana/backend/api/water_plant.php', {
+      const res = await fetch('http://127.0.0.1/pnapana/backend/api/water_plant.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.token}`
+        },
         body: JSON.stringify({ id })
       });
       const data = await res.json();
       if (data.status === 'success') {
         notifiedIds.current.delete(id);
         setThirstyPlants(prev => prev.filter(pId => pId !== id));
+        fetchGamification();
       }
-    } catch(e) {}
+    } catch(e) {
+      console.error(e);
+    }
   };
 
   const handleLogout = () => {
@@ -205,37 +419,92 @@ export default function Home() {
     router.push('/login');
   };
 
-  if (!user) return <div className={styles.container} style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}>Loading...</div>;
+  const filteredPlants = useMemo(() => {
+    if (!searchQuery) return plants;
+    return plants.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.species.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [plants, searchQuery]);
+
+  const thirstyPlantsList = plants.filter(p => thirstyPlants.includes(p.id));
+  const needsAttentionCount = plants.filter(p => thirstyPlants.includes(p.id) || p.status_color === 'orange').length;
+  const healthyCount = plants.length - needsAttentionCount;
+  const healthPercent = plants.length > 0 ? Math.round((healthyCount / plants.length) * 100) : 100;
+
+  if (!user) return <Loader fullScreen label={t('common.loading')} />;
 
   return (
     <div className={styles.container}>
+      
+      {/* Animated Mesh Background for Premium Feel */}
+      <div className={styles.meshBg}>
+        <div className={styles.meshOrb1}></div>
+        <div className={styles.meshOrb2}></div>
+        <div className={styles.meshOrb3}></div>
+      </div>
+
+      {/* --- ADD PLANT MODAL --- */}
       {isAddPlantModalOpen && (
-        <div className={styles.modalOverlay} onClick={closeModal}>
-          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+        <motion.div
+          className={styles.modalOverlay}
+          onClick={closeModal}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+        >
+          <motion.div
+            className={styles.modalContent}
+            onClick={e => e.stopPropagation()}
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
             <button type="button" className={styles.closeBtn} onClick={closeModal}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
-            <h2>Add a New Plant</h2>
+            <h2>{t('dashboard.modalAddTitle')}</h2>
             <form onSubmit={handleAddPlant}>
               <div className={styles.inputGroup}>
-                <label>Plant Name (e.g. Charlie)</label>
-                <input type="text" required value={newPlant.name} onChange={e => setNewPlant({...newPlant, name: e.target.value})} placeholder="My lovely monstera" />
+                <label>{t('dashboard.plantNameLabel')}</label>
+                <input type="text" required value={newPlant.name} onChange={e => setNewPlant({...newPlant, name: e.target.value})} placeholder={t('dashboard.plantNamePlaceholder')} />
               </div>
               <div className={styles.inputGroup}>
-                <label>Species</label>
-                <input type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder="Monstera Deliciosa" />
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{t('dashboard.speciesLabel')}</span>
+                  <button type="button" onClick={() => startCamera('identify')} className={styles.identifyBtn}>
+                    {t('dashboard.aiIdentify')}
+                  </button>
+                </label>
+                <input type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
               </div>
-              
+
+              {isIdentifying && (
+                <div className={styles.identifyingState} style={{marginBottom: '1rem'}}>
+                  <div className={styles.scanSpinner}></div>
+                  <p>{cameraMode === 'identify' ? t('dashboard.analyzingFeatures') : t('dashboard.validatingImage')}</p>
+                </div>
+              )}
+
+              {aiError && (
+                <div className={styles.aiErrorCard} style={{background: 'rgba(231, 76, 60, 0.1)', color: '#c0392b', padding: '1rem', borderRadius: '12px', border: '1px solid rgba(231, 76, 60, 0.3)', marginBottom: '1rem', fontWeight: 500}}>
+                  ⚠️ {aiError}
+                </div>
+              )}
+
+              {plantInfo && !isIdentifying && cameraMode === 'identify' && !aiError && (
+                <div className={styles.plantInfoCard}>
+                  <h4>{t('dashboard.aboutThisPlant')}</h4>
+                  <p>{plantInfo.description}</p>
+                </div>
+              )}
+
               <div className={styles.inputGroup}>
-                <label>Plant Photo</label>
-                
-                {isCapturing ? (
+                <label>{t('dashboard.plantPhotoLabel')}</label>
+                {isCapturing && cameraMode !== 'diagnose' ? (
                   <div>
                     <video ref={videoRef} autoPlay playsInline className={styles.cameraView} />
                     <canvas ref={canvasRef} style={{ display: 'none' }} />
                     <div className={styles.cameraActions}>
-                      <button type="button" onClick={captureImage} className={styles.snapBtn}>Snap Photo</button>
-                      <button type="button" onClick={stopCamera} className={styles.cancelCamBtn}>Cancel</button>
+                      <button type="button" onClick={captureImage} className={styles.snapBtn}>{t('dashboard.snapPhoto')}</button>
+                      <button type="button" onClick={stopCamera} className={styles.cancelCamBtn}>{t('dashboard.cancel')}</button>
                     </div>
                   </div>
                 ) : (
@@ -243,36 +512,96 @@ export default function Home() {
                     {newPlant.image_url ? (
                       <div>
                         <img src={newPlant.image_url} alt="Preview" className={styles.imagePreview} />
-                        <button type="button" onClick={() => setNewPlant({...newPlant, image_url: ''})} className={styles.cameraBtn}>Remove Photo</button>
+                        <button type="button" onClick={() => setNewPlant({...newPlant, image_url: ''})} className={styles.cameraBtn}>{t('dashboard.removePhoto')}</button>
                       </div>
                     ) : (
                       <div>
-                        <input type="url" value={newPlant.image_url} onChange={e => setNewPlant({...newPlant, image_url: e.target.value})} placeholder="https://... (or capture one)" style={{marginBottom: '0.5rem'}} />
-                        <button type="button" onClick={startCamera} className={styles.cameraBtn}>
-                          📸 Capture Photo
-                        </button>
+                        <input type="url" value={newPlant.image_url} onChange={e => setNewPlant({...newPlant, image_url: e.target.value})} placeholder={t('dashboard.urlPlaceholder')} style={{marginBottom: '0.5rem'}} />
+                        <button type="button" onClick={() => startCamera('capture')} className={styles.cameraBtn}>{t('dashboard.capturePhoto')}</button>
                       </div>
                     )}
                   </div>
                 )}
               </div>
               <button type="submit" className={styles.submitBtn} disabled={isAdding || isCapturing}>
-                {isAdding ? 'Adding...' : 'Add Plant'}
+                {isAdding ? t('dashboard.adding') : t('dashboard.addPlant')}
               </button>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* --- AI DOCTOR MODAL --- */}
+      {isDiagnosingModalOpen && (
+        <motion.div
+          className={styles.modalOverlay}
+          onClick={closeModal}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+        >
+          <motion.div
+            className={styles.modalContent}
+            onClick={e => e.stopPropagation()}
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <button type="button" className={styles.closeBtn} onClick={closeModal}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h2>{t('dashboard.aiDoctorTitle')}</h2>
+
+            {!healthStatus && !isIdentifying && isCapturing && (
+              <>
+                <p style={{marginBottom: '1rem', color: 'var(--text-secondary)'}}>{t('dashboard.aiDoctorSnapPrompt')}</p>
+                <div style={{position: 'relative', overflow: 'hidden', borderRadius: '16px'}}>
+                  <video ref={videoRef} autoPlay playsInline className={styles.cameraView} style={{margin: 0}} />
+                  <div className={styles.focusFrame}>
+                    <div className={styles.focusCornerTL}></div><div className={styles.focusCornerTR}></div>
+                    <div className={styles.focusCornerBL}></div><div className={styles.focusCornerBR}></div>
+                  </div>
+                </div>
+                <canvas ref={canvasRef} style={{ display: 'none' }} />
+                <div className={styles.cameraActions}>
+                  <button type="button" onClick={captureImage} className={styles.snapBtn}>{t('dashboard.analyzeHealth')}</button>
+                </div>
+              </>
+            )}
+
+            {isIdentifying && cameraMode === 'diagnose' && (
+              <div className={styles.identifyingState} style={{marginTop: '2rem'}}>
+                <div className={styles.scanLine}></div>
+                <div className={styles.scanSpinner}></div>
+                <p>{t('dashboard.diagnosing')}</p>
+              </div>
+            )}
+
+            {healthStatus && (
+              <div className={styles.diagnosisCard}>
+                <div className={styles.diagHeader}>
+                  <span className={styles.diagIcon}>⚠️</span>
+                  <h3>{healthStatus.diagnosis}</h3>
+                </div>
+                <div className={styles.diagBody}>
+                  <h4>{t('dashboard.treatmentPlan')}</h4>
+                  <p>{healthStatus.treatment}</p>
+                </div>
+                <button className={styles.submitBtn} onClick={closeModal} style={{marginTop: '1.5rem'}}>{t('dashboard.gotItThanks')}</button>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
       )}
 
       <header className={styles.header}>
         <div className={styles.greeting}>
-          <h1>Namaste, {user.name} 🌿</h1>
-          <p className={styles.sanskrit}>सर्वे भवन्तु सुखिनः</p>
-          <p className={styles.subtitle}>May all beings be happy and thrive.</p>
+          <h1>{t('dashboard.greeting', { name: user.name })}</h1>
+          <p className={styles.affirmation}>{affirmation}</p>
         </div>
         <div className={styles.actions}>
-          <button className={styles.iconButton} onClick={handleLogout} title="Logout">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <button className={styles.iconButton} onClick={handleLogout} title={t('dashboard.logout')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           </button>
           <div className={styles.profilePic}>
             <img src={`https://ui-avatars.com/api/?name=${user.name}&background=c17b54&color=fff`} alt="Profile" />
@@ -280,130 +609,222 @@ export default function Home() {
         </div>
       </header>
 
-      <section className={styles.snapshotCard}>
-        <div className={styles.snapshotTop}>
-          <div>
-            <h2>Today&apos;s Snapshot</h2>
-            <p>Bangalore, KA</p>
-          </div>
-          <div className={styles.weather}>
-            <div className={styles.temp}>
-              {weather.temp}°
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d36a32" strokeWidth="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
-            </div>
-            <div className={styles.airQuality}>
-              {weatherAQI.status} <div className={styles.airDot}></div>
-            </div>
-          </div>
-        </div>
-        <div className={styles.snapshotStats}>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Light</span>
-            <span className={`${styles.statValue} ${styles.optimal}`}>Optimal <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg></span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Humidity</span>
-            <span className={styles.statValue}>{weather.humidity}% <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg></span>
-          </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>AQI</span>
-            <span className={styles.statValue}>{weatherAQI.value} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg></span>
-          </div>
-        </div>
-      </section>
 
-      <div className={styles.quickActionsList}>
-        <div className={styles.quickActionBtn} onClick={() => setIsAddPlantModalOpen(true)}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-          Scan Plant
+
+      {/* --- PREMIUM BENTO BOX GRID --- */}
+      <div className={styles.bentoGrid}>
+        
+        {/* Tile 1: Weather Snapshot */}
+        <div className={`${styles.bentoTile} ${styles.weatherTile}`}>
+          <div className={styles.bentoHeader}>
+            <div>
+              <h3>{locationName}</h3>
+              <span>{t('dashboard.todaysOutlook')}</span>
+            </div>
+          </div>
+          <div className={styles.weatherMain}>
+            <div className={styles.tempLarge}>{weather.temp}°</div>
+            <div className={styles.weatherIcon}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="url(#orange-grad)" strokeWidth="1.5"><defs><linearGradient id="orange-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#f39c12" /><stop offset="100%" stopColor="#d35400" /></linearGradient></defs><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </div>
+          </div>
+          <div className={styles.weatherStats}>
+            <div className={styles.wStat}>
+              <span className={styles.wLabel}>{t('dashboard.humidity')}</span>
+              <span className={styles.wValue}>{weather.humidity}%</span>
+            </div>
+            <div className={styles.wStat}>
+              <span className={styles.wLabel}>{t('dashboard.aqi')}</span>
+              <span className={styles.wValue}>{weatherAQI.value}</span>
+            </div>
+          </div>
         </div>
-        <Link href="/rituals" className={styles.quickActionBtn} style={{textDecoration: 'none'}}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-          Schedule
-        </Link>
-        <Link href="/explore" className={styles.quickActionBtn} style={{textDecoration: 'none'}}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          Explore
-        </Link>
-        <Link href="/care" className={styles.quickActionBtn} style={{textDecoration: 'none'}}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-          Care Guide
-        </Link>
+
+        {/* Tile 2: Action Needed */}
+        <div className={`${styles.bentoTile} ${styles.tasksTile}`}>
+          <div className={styles.bentoHeader}>
+            <h3>{t('dashboard.actionNeeded')}</h3>
+            {thirstyPlantsList.length > 0 && <span className={styles.badgePulse}>{thirstyPlantsList.length}</span>}
+          </div>
+
+          <div className={styles.taskList}>
+            {thirstyPlantsList.length > 0 ? (
+              thirstyPlantsList.map(plant => (
+                <div key={plant.id} className={styles.taskItem}>
+                  <div className={styles.taskInfo}>
+                    <div className={styles.taskDot}></div>
+                    <div>
+                      <h4>{t('care.waterPlant', { name: plant.name })}</h4>
+                      <p>{t('dashboard.soilDry')}</p>
+                    </div>
+                  </div>
+                  <button className={styles.taskBtn} onClick={(e) => { e.stopPropagation(); handleWaterPlant(plant.id); }}>{t('dashboard.done')}</button>
+                </div>
+              ))
+            ) : (
+              <div className={styles.allDone}>
+                <div className={styles.doneCircle}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                </div>
+                <p>{t('dashboard.allDone')}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tile 3: Achievement Badges */}
+        <div className={`${styles.bentoTile} ${styles.milestonesTile}`}>
+          <div className={styles.bentoHeader}>
+            <h3>{t('dashboard.achievements')}</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span className={styles.coinPill}>🪙 {coins}</span>
+              <span>{badges.filter(b => b.unlocked).length}/{badges.length}</span>
+            </div>
+          </div>
+          <div className={styles.badgeGrid}>
+            {badges.map(b => (
+              <div key={b.id} className={`${styles.badgeItem} ${!b.unlocked ? styles.locked : ''}`} title={t(`badges.${b.id}.description`)}>
+                <div className={styles.badgeIconWrap}>
+                  {b.icon}
+                  {b.unlocked && <span className={styles.badgeCheck}>✓</span>}
+                </div>
+                <span className={styles.badgeLabel}>{t(`badges.${b.id}.label`)}</span>
+                {!b.unlocked && <span className={styles.badgeProgress}>{b.progress}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tile 4: Stats & Streak */}
+        <div className={`${styles.bentoTile} ${styles.statsTile}`}>
+          <div className={styles.streakWidget}>
+            <div className={styles.streakFlame}>🔥</div>
+            <div className={styles.streakInfo}>
+              <h4>{streakDays} {streakDays === 1 ? t('dashboard.day') : t('dashboard.days')}</h4>
+              <p>{streakDays > 0 ? t('dashboard.wateringStreak') : t('dashboard.startStreak')}</p>
+            </div>
+          </div>
+          <div className={styles.statDivider}></div>
+          <div className={styles.happinessWidget}>
+            <div className={styles.statCircle}>
+              <svg viewBox="0 0 36 36" className={styles.circularChart}>
+                <defs>
+                  <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor={healthPercent >= 70 ? '#2ecc71' : healthPercent >= 40 ? '#f39c12' : '#e74c3c'} />
+                    <stop offset="100%" stopColor={healthPercent >= 70 ? '#27ae60' : healthPercent >= 40 ? '#d35400' : '#c0392b'} />
+                  </linearGradient>
+                </defs>
+                <path className={styles.circleBg} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <motion.path
+                  className={styles.circle}
+                  strokeDasharray="100, 100"
+                  initial={{ strokeDasharray: '0, 100' }}
+                  animate={{ strokeDasharray: `${healthPercent}, 100` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <text x="18" y="20.8" className={styles.percentage}>{healthPercent}%</text>
+              </svg>
+            </div>
+            <p className={styles.statsLabel}>{t('dashboard.collectionHealth')}</p>
+            {plants.length > 0 && (
+              <p className={styles.statsSubLabel}>{t('dashboard.thriving', { healthy: healthyCount, total: plants.length })}</p>
+            )}
+          </div>
+        </div>
+
       </div>
 
-      {dailyTip && (
-        <section className={styles.dailyTipCard}>
-          <div className={styles.tipIcon}>💡</div>
-          <div className={styles.tipContent}>
-            <h4>{dailyTip.title}</h4>
-            <p>{dailyTip.content}</p>
-          </div>
-        </section>
-      )}
-
-      <section>
+      {/* --- PLANT COLLECTION --- */}
+      <section className={styles.collectionSection}>
         <div className={styles.sectionHeader}>
-          <h3>Your Green Family</h3>
-          {plants.length > 0 && (
-            <button className={styles.addPlantBtn} onClick={() => setIsAddPlantModalOpen(true)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              Add Plant
-            </button>
-          )}
+          <h3>{t('dashboard.yourGreenFamily')}</h3>
         </div>
-        
+
+        {plants.length > 0 && (
+          <div className={styles.searchBar}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input
+              type="text"
+              placeholder={t('dashboard.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        )}
+
         {plants.length === 0 ? (
           <div className={styles.emptyState}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
-            <p>You don&apos;t have any plants yet.</p>
+            <div className={styles.emptyStateIconWrapper}>
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+            </div>
+            <p>{t('dashboard.emptyStateText')}</p>
             <button className={styles.emptyStateBtn} onClick={() => setIsAddPlantModalOpen(true)}>
-              + Add your first plant
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              {t('dashboard.addFirstPlant')}
             </button>
           </div>
+        ) : filteredPlants.length === 0 ? (
+          <div className={styles.emptySearch}>{t('dashboard.noPlantsFound', { query: searchQuery })}</div>
         ) : (
-          <div className={styles.plantList}>
-            {plants.map(plant => {
-              const isThirsty = thirstyPlants.includes(plant.id);
-              return (
-                <Link href={`/plant/${plant.id}`} key={plant.id} className={styles.plantCard} style={isThirsty ? { border: '2px solid #3498db' } : {}}>
-                  <button 
-                    className={styles.removeBtn} 
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); removePlant(plant.id); }}
-                    title="Remove Plant"
+          <motion.div 
+            className={styles.plantListGrid}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ staggerChildren: 0.1 }}
+          >
+              {filteredPlants.map(plant => {
+                const isThirsty = thirstyPlants.includes(plant.id);
+                return (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    key={plant.id}
+                    className={`${styles.plantCardWrapper}`}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                  </button>
-                  <img src={plant.image_url} alt={plant.name} className={styles.plantImage} />
-                  <div className={styles.plantName}>{plant.name}</div>
-                  <div className={styles.plantStatus}>
-                    <div className={`${styles.statusDot} ${styles[isThirsty ? 'blue' : plant.status_color || 'green']}`} style={isThirsty ? { backgroundColor: '#3498db' } : {}}></div>
-                    {isThirsty ? 'Needs Water' : plant.status || 'Happy'}
-                  </div>
-                  {isThirsty && (
-                    <button 
-                      className={styles.waterNowBtn}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleWaterPlant(plant.id); }}
-                    >
-                      💧 Water Now
-                    </button>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+                    <Link href={`/plant/${plant.id}`} className={`${styles.plantCard} ${isThirsty ? styles.thirstyCard : ''}`}>
+                      <button
+                        className={styles.removeBtn}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); removePlant(plant.id); }}
+                        title={t('dashboard.removePlant')}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                      </button>
+                      <div className={styles.plantImageWrapper}>
+                        <img src={plant.image_url} alt={plant.name} className={styles.plantImage} />
+                        {isThirsty && <div className={styles.thirstyOverlay}>💧 {t('dashboard.water')}</div>}
+                      </div>
+                      <div className={styles.plantInfo}>
+                        <div className={styles.plantName}>{plant.name}</div>
+                        <div className={styles.plantSpecies}>{plant.species}</div>
+                      </div>
+                      <div className={styles.plantStatus}>
+                        <div className={`${styles.statusDot} ${styles[isThirsty ? 'blue' : plant.status_color || 'green']}`}></div>
+                        {isThirsty ? t('dashboard.needsWater') : plant.status || t('dashboard.happy')}
+                      </div>
+                      
+                      {/* Quick Actions Hover Menu */}
+                      <div className={styles.quickActionsOverlay}>
+                        <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleWaterPlant(plant.id); }} title={t('dashboard.water')}>
+                          <Droplets size={16} />
+                        </button>
+                        <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} title={t('dashboard.prune')}>
+                          <Scissors size={16} />
+                        </button>
+                        <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} title={t('dashboard.fertilize')}>
+                          <FlaskConical size={16} />
+                        </button>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+          </motion.div>
         )}
       </section>
 
-      <section className={styles.ritualCard}>
-        <div className={styles.ritualInfo}>
-          <h3>Amrit Ritual &middot; Evening</h3>
-          <p>Misting & gratitude time</p>
-          <button className={styles.ritualBtn} onClick={() => router.push('/rituals')}>Start Ritual</button>
-        </div>
-        <img src="https://cdn-icons-png.flaticon.com/512/2928/2928929.png" alt="Watering Can" className={styles.ritualImage} />
-      </section>
-
-      <button className={styles.fabButton} onClick={() => setIsAddPlantModalOpen(true)} title="Add Plant">
+      <button className={styles.fabButton} onClick={() => setIsAddPlantModalOpen(true)} title={t('dashboard.addPlant')}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       </button>
 

@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   description: "Plant care app",
 };
 
-import TopNav from "@/components/TopNav";
+import Sidebar from "@/components/Sidebar";
+import Footer from "@/components/Footer";
+import MaintenanceGate from "@/components/MaintenanceGate";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 export default function RootLayout({
   children,
@@ -16,8 +19,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <TopNav />
-        {children}
+        <LanguageProvider>
+          <MaintenanceGate>
+            <div className="app-layout">
+              <Sidebar />
+              <main className="main-content">
+                {children}
+                <Footer />
+              </main>
+            </div>
+          </MaintenanceGate>
+        </LanguageProvider>
       </body>
     </html>
   );
