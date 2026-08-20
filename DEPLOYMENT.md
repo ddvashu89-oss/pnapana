@@ -88,13 +88,36 @@ Node.js required on the server**. `next.config.ts` is already set to
 
 ```bash
 cd frontend
-cp .env.production.example .env.production
-#   NEXT_PUBLIC_API_URL=https://your-domain.com/backend/api
+echo "NEXT_PUBLIC_API_URL=/backend/api" > .env.production.local
 npm ci
 npm run build
 ```
 
-That writes ~255 files (~2.5 MB) to `frontend/out/`.
+That writes ~337 files (~2.9 MB) to `frontend/out/`.
+
+**Use `.env.production.local`, not `.env.production`.** Next.js resolves env
+files in priority order — `.env.production.local`, then `.env.local`, then
+`.env.production`, then `.env`. Since local development leaves a `.env.local`
+holding a `127.0.0.1` URL, a value placed in `.env.production` is silently
+outranked by it and never reaches the build.
+
+**A relative `/backend/api` is preferred over an absolute URL.** The frontend
+and the API are served from the same origin under this layout, so a relative
+base needs no domain baked in, survives a domain change without a rebuild, and
+makes every request same-origin — which sidesteps CORS entirely. An absolute
+`https://your-domain.com/backend/api` also works if you serve the API from a
+different host.
+
+Either way, `next build` succeeds whether or not the variable was picked up,
+because `src/lib/api.ts` falls back to the localhost URL when it is unset. A
+wrong build is indistinguishable from a right one until it is live. Verify
+before uploading:
+
+```bash
+cd frontend && grep -rhoE "https?://[^\"' ]*/backend/api|\"/backend/api\"" out/_next/static | sort -u
+```
+
+If `127.0.0.1` appears in that output, the build is not shippable.
 
 ### Where the files go
 
@@ -111,7 +134,7 @@ public_html/
 ├── ...
 └── backend/            <- the backend/ folder from this repo
     ├── api/
-    ├── config.php
+    ├── .env            <- created on the server, never uploaded from the repo
     ├── .htaccess
     └── storage/
 ```
@@ -119,6 +142,11 @@ public_html/
 Upload the **contents** of `frontend/out/` into `public_html/`, then the whole
 `backend/` folder alongside it. The API then lives at
 `https://your-domain.com/backend/api/...`, matching `NEXT_PUBLIC_API_URL`.
+
+**Do not upload your development `backend/config.php`.** `cors.php` prefers a
+defined `ALLOWED_ORIGINS` constant over the `.env` file, so a config.php left
+over from local work silently overrides production settings with localhost
+origins. On the server, configuration belongs in `backend/.env` alone.
 
 > If you must serve from a subfolder, set `basePath` in `next.config.ts` and
 > rebuild — otherwise every asset 404s.
