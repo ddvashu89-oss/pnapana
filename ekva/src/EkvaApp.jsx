@@ -2233,7 +2233,23 @@ function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col gap-4 border-t border-soil-800 py-7 sm:flex-row sm:items-center sm:justify-between">
+        {/* CC-BY requires visible attribution wherever the images are shown. */}
+        <div className="mt-14 border-t border-soil-800 pt-6">
+          <p className="eyebrow mb-3">Photography</p>
+          <ul className="flex flex-wrap gap-x-6 gap-y-1.5">
+            {PHOTO_CREDITS.map(([what, who, lic]) => (
+              <li key={what} className="font-mono text-[0.6rem] leading-relaxed tracking-wide text-parchment-dim">
+                {what} — {who} ({lic})
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 font-mono text-[0.6rem] tracking-wide text-parchment-dim">
+            Remaining imagery released under CC0. Demonstration build — all figures, batch telemetry
+            and testimonials on this page are illustrative sample data, not records of a real facility.
+          </p>
+        </div>
+
+        <div className="mt-10 flex flex-col gap-4 border-t border-soil-800 py-7 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-mono text-[0.62rem] tracking-wide text-parchment-dim">
             © 2026 Ekva Living Systems Pvt. Ltd. · Sonipat, Haryana · Made from fallen things.
           </p>
