@@ -1,0 +1,166 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-soil-950: #100c0a;
+  --color-soil-900: #1c1613;
+  --color-soil-850: #241b17;
+  --color-soil-800: #2b211c;
+  --color-soil-700: #3a2e27;
+  --color-soil-600: #4e3e34;
+  --color-soil-500: #6b564a;
+
+  --color-moss-900: #12281e;
+  --color-moss-800: #1a382b;
+  --color-moss-700: #234a39;
+  --color-moss-600: #2f5a44;
+  --color-moss-500: #4e7c5e;
+  --color-moss-400: #7ba88c;
+
+  --color-gold-700: #7d6420;
+  --color-gold-600: #a8862a;
+  --color-gold-500: #d4af37;
+  --color-gold-400: #e3c765;
+  --color-gold-300: #f0dda0;
+
+  --color-parchment: #f4f1ea;
+  --color-parchment-muted: #cec4b3;
+  --color-parchment-dim: #94897a;
+
+  --color-terracotta: #c25a38;
+  --color-terracotta-soft: #d98a6c;
+
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Karla', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+  --ground: #100c0a;
+  --ink: #f4f1ea;
+  --rail: rgba(212, 175, 55, 0.22);
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-weight: 350;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Matte earth grain: keeps the black reading as soil rather than screen. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.32;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  text-wrap: balance;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background: var(--color-gold-500);
+  color: #100c0a;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold-500);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}
+
+@layer utilities {
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-gold-500);
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  .glass {
+    background: linear-gradient(
+      165deg,
+      rgba(43, 33, 28, 0.72),
+      rgba(16, 12, 10, 0.62)
+    );
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+  }
+  .hairline {
+    border: 1px solid rgba(212, 175, 55, 0.16);
+  }
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-soil-600) transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #100c0a;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a2e27;
+  border-radius: 99px;
+  border: 2px solid #100c0a;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold-700);
+}
+
+/* Recharts overrides so charts inherit the soil palette, not library defaults. */
+.recharts-cartesian-axis-tick text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: #94897a;
+}
+.recharts-surface:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
