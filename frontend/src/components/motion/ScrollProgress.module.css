@@ -1,0 +1,13 @@
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--grad-premium);
+  transform-origin: 0 50%;
+  /* Above the marketing nav (100) and its mobile drawer/overlay (150). */
+  z-index: 300;
+  will-change: transform;
+  pointer-events: none;
+}

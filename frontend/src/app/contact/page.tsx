@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import MarketingNav from '@/components/MarketingNav';
+import { getApiUrl } from '@/lib/api';
 import styles from '../Landing.module.css';
 
 const CATEGORIES = [
@@ -25,7 +26,7 @@ export default function Contact() {
     setResult(null);
 
     try {
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/submit_contact.php', {
+      const res = await fetch(getApiUrl('submit_contact.php'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, category, subject, message })
@@ -66,7 +67,7 @@ export default function Contact() {
         >
           <h1 className={styles.title} style={{ fontSize: '4.5rem' }}>Get in <span className={styles.highlight}>Touch</span></h1>
           <p className={styles.subtitle}>
-            Have questions about your plants or the app? We're here to help.
+            Have questions about your plants or the app? We&apos;re here to help.
           </p>
         </motion.div>
 

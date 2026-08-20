@@ -1,11 +1,24 @@
 <?php
-require_once 'backend/db.php';
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    echo "Forbidden: Database migration scripts can only be run via CLI.";
+    exit;
+}
+
+require_once __DIR__ . '/../db.php';
 
 try {
     $conn->exec("ALTER TABLE users ADD COLUMN is_admin TINYINT(1) NOT NULL DEFAULT 0");
     echo "Column 'is_admin' added to users successfully.\n";
 } catch(PDOException $e) {
     echo "Note (is_admin column): " . $e->getMessage() . "\n";
+}
+
+try {
+    $conn->exec("ALTER TABLE users ADD COLUMN gemini_api_key VARCHAR(255) DEFAULT NULL");
+    echo "Column 'gemini_api_key' added to users successfully.\n";
+} catch(PDOException $e) {
+    echo "Note (gemini_api_key column): " . $e->getMessage() . "\n";
 }
 
 try {

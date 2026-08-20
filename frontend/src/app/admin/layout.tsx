@@ -91,6 +91,12 @@ export default function AdminLayout({
             🌱 Plants
           </Link>
           <Link
+            href="/admin/payments"
+            className={`${styles.navItem} ${pathname === '/admin/payments' ? styles.active : ''}`}
+          >
+            💳 Payments
+          </Link>
+          <Link
             href="/admin/community"
             className={`${styles.navItem} ${pathname === '/admin/community' ? styles.active : ''}`}
           >

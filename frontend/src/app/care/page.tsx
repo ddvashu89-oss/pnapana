@@ -5,12 +5,13 @@ import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import { authFetch } from '@/lib/api';
 import styles from './Care.module.css';
 
-export default function Care() {
-  const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+export default function CareSchedule() {
+  const [user, setUser] = useState<{ id: number, name: string } | null>(null);
   const [plants, setPlants] = useState<any[]>([]);
+  const router = useRouter();
   const [activeDayIndex, setActiveDayIndex] = useState(1);
   const { t } = useLanguage();
 
@@ -31,11 +32,10 @@ export default function Care() {
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
     
-    fetch('http://127.0.0.1/pnapana/backend/api/get_plants.php', {
-      headers: { 'Authorization': `Bearer ${parsedUser.token}` }
-    })
+    authFetch('get_plants.php')
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setPlants(data.plants); });
+      .then(data => { if(data.status === "success") setPlants(data.plants); })
+      .catch(() => {});
   }, [router]);
 
   if (!user) return <Loader fullScreen label={t('common.loading')} />;

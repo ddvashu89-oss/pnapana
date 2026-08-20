@@ -30,7 +30,7 @@ export default function CommunityModeration() {
   function load() {
     setIsLoading(true);
     setError('');
-    adminFetchJson('http://127.0.0.1/pnapana/backend/api/admin_get_posts.php')
+    adminFetchJson('admin_get_posts.php')
       .then(data => setPosts(data.posts))
       .catch(err => setError(err.message || 'Failed to load community posts.'))
       .finally(() => setIsLoading(false));
@@ -39,7 +39,7 @@ export default function CommunityModeration() {
   async function handleDelete(id: number) {
     if (!confirm('Remove this post from the community feed?')) return;
     try {
-      const res = await adminFetch('http://127.0.0.1/pnapana/backend/api/admin_delete_post.php', {
+      const res = await adminFetch('admin_delete_post.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })

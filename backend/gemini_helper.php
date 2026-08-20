@@ -1,7 +1,12 @@
 <?php
 // Shared helper for calling Gemini's vision API with structured JSON output.
 // Returns the decoded response array (Gemini's candidate text, json_decode'd), or null on any failure.
-function gemini_vision_json_call($base64Image, $prompt) {
+function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
+    $activeKey = !empty($apiKey) ? $apiKey : (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '');
+    if (empty($activeKey)) {
+        return null;
+    }
+
     $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $base64Image);
 
     $payload = [
@@ -14,7 +19,8 @@ function gemini_vision_json_call($base64Image, $prompt) {
         "generationConfig" => ["response_mime_type" => "application/json"]
     ];
 
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . GEMINI_MODEL . ':generateContent?key=' . GEMINI_API_KEY;
+    $model = defined('GEMINI_MODEL') ? GEMINI_MODEL : 'gemini-flash-lite-latest';
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . $activeKey;
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

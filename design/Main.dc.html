@@ -1,0 +1,436 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #070908;
+      color: #ffffff;
+      font-family: 'Outfit', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: #52bf78; text-decoration: none; }
+    a:hover { color: #74e59c; }
+    h1, h2, h3 { margin: 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
+    p { margin: 0; }
+
+    /* ---- Scroll-driven motion -------------------------------------------
+       Every animated element is authored in its FINAL state, so a browser
+       without scroll timelines shows the finished page rather than a blank
+       one. The motion is layered on only where it is supported.          */
+    @keyframes riseIn   { from { opacity: 0; transform: translateY(48px); } to { opacity: 1; transform: none; } }
+    @keyframes wipeIn   { from { clip-path: inset(0 100% 0 0); }           to { clip-path: inset(0 0 0 0); } }
+    @keyframes growLine { from { transform: scaleY(0); }                   to { transform: scaleY(1); } }
+    @keyframes drawPath { from { stroke-dashoffset: 620; }                 to { stroke-dashoffset: 0; } }
+    @keyframes progress { from { transform: scaleX(0); }                   to { transform: scaleX(1); } }
+    @keyframes driftUp  { from { transform: translateY(90px); }            to { transform: translateY(-90px); } }
+    @keyframes sinkAway { from { opacity: 1; transform: scale(1); }        to { opacity: 0; transform: scale(0.94); } }
+    @keyframes railRun  { from { transform: scaleX(0); }                   to { transform: scaleX(1); } }
+
+    @supports (animation-timeline: view()) {
+      .reveal {
+        animation: riseIn linear both;
+        animation-timeline: view();
+        animation-range: entry 5% cover 26%;
+      }
+      .reveal-wipe {
+        animation: wipeIn linear both;
+        animation-timeline: view();
+        animation-range: entry 10% cover 34%;
+      }
+      /* The hero settles as you leave it, so the fold hands off to the story. */
+      .hero-settle {
+        animation: sinkAway linear both;
+        animation-timeline: view();
+        animation-range: exit 0% exit 90%;
+      }
+      /* Depth: background layers drift slower than the content in front. */
+      .parallax-slow {
+        animation: driftUp linear both;
+        animation-timeline: view();
+        animation-range: cover;
+      }
+      /* The reading-progress bar and the section rail both track raw scroll. */
+      .scroll-progress {
+        animation: progress linear both;
+        animation-timeline: scroll();
+        transform-origin: 0 50%;
+      }
+      .rail-fill {
+        animation: growLine linear both;
+        animation-timeline: view();
+        animation-range: cover 8% cover 72%;
+        transform-origin: 50% 0;
+      }
+      .draw-leaf {
+        animation: drawPath linear both;
+        animation-timeline: view();
+        animation-range: entry 20% cover 55%;
+      }
+      .stat-rail {
+        animation: railRun linear both;
+        animation-timeline: view();
+        animation-range: entry 30% cover 45%;
+        transform-origin: 0 50%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal, .reveal-wipe, .hero-settle, .parallax-slow,
+      .rail-fill, .draw-leaf, .stat-rail { animation: none !important; }
+    }
+
+    /* ---- Surfaces lifted from the app's token set ---------------------- */
+    .glass {
+      background: rgba(15, 19, 17, 0.4);
+      backdrop-filter: blur(32px);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .pill-cta {
+      display: inline-block;
+      background: linear-gradient(135deg, #52bf78 0%, #ff9d66 100%);
+      color: #000;
+      padding: 1.2rem 3rem;
+      border-radius: 50px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      box-shadow: 0 8px 30px rgba(82, 191, 120, 0.3);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .pill-cta:hover { transform: translateY(-4px) scale(1.02); color: #000; box-shadow: 0 15px 40px rgba(82, 191, 120, 0.5); }
+    .eyebrow {
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.22em;
+      text-transform: uppercase; color: #6b7a71;
+    }
+    .sticky-cap { position: sticky; top: 0; }
+  </style>
+</helmet>
+
+<div style="--accent: {{accent}}; position: relative; width: 100%; overflow-x: hidden; background: #070908;">
+
+  <!-- Reading progress: tracks the whole document scroll ------------------->
+  <div style="position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 90; background: rgba(255,255,255,0.05);">
+    <div class="scroll-progress" style="height: 100%; background: linear-gradient(90deg, var(--accent, #52bf78), #ff9d66);"></div>
+  </div>
+
+  <!-- Nav ---------------------------------------------------------------->
+  <nav class="glass" style="position: sticky; top: 3px; z-index: 80; display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 4rem;">
+    <div style="display: flex; align-items: baseline; gap: 0.5rem; font-family: 'Playfair Display', Georgia, serif; font-size: 1.6rem; letter-spacing: -0.02em; color: #fff;">
+      pnapana
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #52bf78)" stroke-width="1.6" stroke-linecap="round">
+        <path d="M12 21V11"></path>
+        <path d="M12 11c0-4 3-7 8-7 0 5-3 8-8 8z"></path>
+        <path d="M12 15c0-3-2.5-5-6-5 0 3.5 2.5 5 6 5z"></path>
+      </svg>
+    </div>
+    <div style="display: flex; align-items: center; gap: 2.4rem; font-size: 0.95rem; letter-spacing: 0.02em; color: #9db2a5;">
+      <a href="#how" style="color: #9db2a5;">How it works</a>
+      <a href="#features" style="color: #9db2a5;">Features</a>
+      <a href="#pricing" style="color: #9db2a5;">Pricing</a>
+      <a href="#" style="color: #fff;">Log in</a>
+      <a href="#" style="background: rgba(82,191,120,0.12); border: 1px solid rgba(132,230,164,0.2); color: #fff; padding: 0.6rem 1.5rem; border-radius: 50px;">Start free</a>
+    </div>
+  </nav>
+
+  <!-- Hero ---------------------------------------------------------------->
+  <header style="position: relative; min-height: 940px; display: flex; align-items: center; padding: 0 4rem; overflow: hidden;">
+    <div class="parallax-slow" aria-hidden="true" style="position: absolute; inset: -10% -10% 0 -10%; background:
+        radial-gradient(620px circle at 78% 32%, rgba(82,191,120,0.16), transparent 62%),
+        radial-gradient(520px circle at 20% 72%, rgba(255,157,102,0.12), transparent 60%);"></div>
+
+    <div aria-hidden="true" style="position: absolute; inset: 0; opacity: 0.5; background-image:
+        linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px);
+        background-size: 88px 88px; mask-image: radial-gradient(circle at 50% 40%, #000 30%, transparent 78%);"></div>
+
+    <div class="hero-settle" style="position: relative; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 4rem; align-items: center; width: 100%; max-width: 1280px; margin: 0 auto;">
+      <div>
+        <div class="glass" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(132,230,164,0.2); border-radius: 50px; font-size: 0.9rem; letter-spacing: 0.05em; color: #9db2a5; margin-bottom: 2.2rem;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent, #52bf78);"></span>
+          AI plant care, built for Indian homes
+        </div>
+
+        <h1 style="font-size: 5.5rem; line-height: 0.98; letter-spacing: -0.03em; margin-bottom: 1.8rem;">
+          Stop guessing.<br>
+          <span style="font-style: italic; background: linear-gradient(135deg, #74e59c 0%, #ff9d66 100%); -webkit-background-clip: text; background-clip: text; color: transparent;">Start growing.</span>
+        </h1>
+
+        <p style="font-size: 1.35rem; line-height: 1.6; color: #9db2a5; max-width: 30ch; margin-bottom: 2.6rem;">
+          Photograph any plant. Pnapana names it, reads its health, and builds a care plan around your light, your city, your weather.
+        </p>
+
+        <div style="display: flex; align-items: center; gap: 1.6rem;">
+          <a href="#" class="pill-cta">Identify my plant</a>
+          <a href="#how" style="display: inline-flex; align-items: center; gap: 0.6rem; color: #fff; font-size: 1.15rem; padding: 1.2rem 0;">
+            See how it works
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- The leaf draws itself as the hero enters view -->
+      <div style="display: flex; justify-content: center; align-items: center;">
+        <svg width="330" height="400" viewBox="0 0 220 280" fill="none" aria-hidden="true">
+          <path class="draw-leaf" d="M110 268 V128 M110 128 C110 62 152 24 208 20 C208 84 166 122 110 128 Z M110 176 C110 130 76 104 20 104 C20 152 60 176 110 176 Z"
+                stroke="var(--accent, #52bf78)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                stroke-dasharray="620" style="stroke-dashoffset: 0;"></path>
+          <circle cx="110" cy="128" r="3.5" fill="#ff9d66"></circle>
+        </svg>
+      </div>
+    </div>
+
+    <div style="position: absolute; bottom: 2.6rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.7rem;">
+      <span class="eyebrow">Scroll</span>
+      <span style="width: 1px; height: 46px; background: linear-gradient(180deg, var(--accent, #52bf78), transparent);"></span>
+    </div>
+  </header>
+
+  <!-- How it works: a pinned caption beside a rail that fills as you read -->
+  <section id="how" style="position: relative; padding: 9rem 4rem; border-top: 1px solid rgba(255,255,255,0.04);">
+    <div style="display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 5rem; max-width: 1280px; margin: 0 auto;">
+      <div class="sticky-cap" style="align-self: start; padding-top: 1rem; top: 6rem;">
+        <div class="eyebrow" style="margin-bottom: 1.2rem;">The loop</div>
+        <h2 class="reveal-wipe" style="font-size: 3.4rem; line-height: 1.06; letter-spacing: -0.02em; margin-bottom: 1.4rem;">
+          Four steps,<br>then it runs itself.
+        </h2>
+        <p style="color: #9db2a5; font-size: 1.1rem; line-height: 1.7; max-width: 34ch;">
+          Most plants die from care that arrives on the wrong day. Pnapana moves the schedule to match the plant in front of you.
+        </p>
+      </div>
+
+      <div style="position: relative; padding-left: 3.4rem;">
+        <div aria-hidden="true" style="position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: rgba(255,255,255,0.06);"></div>
+        <div class="rail-fill" aria-hidden="true" style="position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: linear-gradient(180deg, var(--accent, #52bf78), #ff9d66);"></div>
+
+        <sc-for list="{{steps}}" as="step" hint-placeholder-count="4">
+          <div class="reveal" style="position: relative; padding-bottom: 4.2rem;">
+            <div style="position: absolute; left: -3.4rem; top: 2px; width: 24px; height: 24px; border-radius: 50%; background: #070908; border: 2px solid var(--accent, #52bf78); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: var(--accent, #52bf78);">{{step.n}}</div>
+            <h3 style="font-size: 1.9rem; letter-spacing: -0.01em; margin-bottom: 0.7rem;">{{step.title}}</h3>
+            <p style="color: #9db2a5; font-size: 1.05rem; line-height: 1.7; max-width: 46ch;">{{step.body}}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats: each rail runs out as the band enters ------------------------->
+  <section style="padding: 5rem 4rem; background: #0f1311; border-top: 1px solid rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.04);">
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3rem; max-width: 1280px; margin: 0 auto;">
+      <sc-for list="{{stats}}" as="stat" hint-placeholder-count="4">
+        <div class="reveal">
+          <div style="font-family: 'Playfair Display', Georgia, serif; font-size: 3.2rem; line-height: 1; letter-spacing: -0.02em; margin-bottom: 0.6rem;">{{stat.value}}</div>
+          <div style="height: 2px; background: rgba(255,255,255,0.07); margin-bottom: 0.9rem;">
+            <div class="stat-rail" style="height: 100%; width: 100%; background: var(--accent, #52bf78);"></div>
+          </div>
+          <div style="color: #6b7a71; font-size: 0.9rem; letter-spacing: 0.04em;">{{stat.label}}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <!-- Features ------------------------------------------------------------>
+  <section id="features" style="padding: 9rem 4rem;">
+    <div style="max-width: 1280px; margin: 0 auto;">
+      <div style="max-width: 44ch; margin-bottom: 4.5rem;">
+        <div class="eyebrow" style="margin-bottom: 1.2rem;">What you get</div>
+        <h2 class="reveal-wipe" style="font-size: 3.4rem; line-height: 1.06; letter-spacing: -0.02em;">A caretaker that remembers.</h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem;">
+        <div class="reveal glass" style="padding: 3.5rem 2.5rem; border-radius: 32px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(82,191,120,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.8rem; color: var(--accent, #52bf78);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z"></path></svg>
+          </div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 0.8rem;">Instant identification</h3>
+          <p style="color: #9db2a5; font-size: 1rem; line-height: 1.7;">Species, scientific name, category, and a confidence score you can actually act on.</p>
+        </div>
+
+        <div class="reveal glass" style="padding: 3.5rem 2.5rem; border-radius: 32px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(82,191,120,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.8rem; color: var(--accent, #52bf78);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"></path><path d="m4.9 4.9 1.4 1.4"></path><path d="M2 12h2"></path><path d="M19.1 4.9l-1.4 1.4"></path><path d="M20 12h2"></path><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path><path d="M6 20h12"></path></svg>
+          </div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 0.8rem;">Weather-aware watering</h3>
+          <p style="color: #9db2a5; font-size: 1rem; line-height: 1.7;">Reminders shift with the forecast in your city. Rain tomorrow postpones today&#39;s watering.</p>
+        </div>
+
+        <div class="reveal glass" style="padding: 3.5rem 2.5rem; border-radius: 32px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(82,191,120,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.8rem; color: var(--accent, #52bf78);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+          </div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 0.8rem;">Health diagnosis</h3>
+          <p style="color: #9db2a5; font-size: 1rem; line-height: 1.7;">Upload a photo of a struggling plant and get ranked possible causes with the actions to try first.</p>
+        </div>
+
+        <div class="reveal glass" style="padding: 3.5rem 2.5rem; border-radius: 32px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(82,191,120,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.8rem; color: var(--accent, #52bf78);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"></path><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path></svg>
+          </div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 0.8rem;">Plant timeline</h3>
+          <p style="color: #9db2a5; font-size: 1rem; line-height: 1.7;">Every watering, photo, and health check kept as one record you can scroll back through.</p>
+        </div>
+
+        <div class="reveal glass" style="padding: 3.5rem 2.5rem; border-radius: 32px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(82,191,120,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.8rem; color: var(--accent, #52bf78);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 0.8rem;">Context-aware chat</h3>
+          <p style="color: #9db2a5; font-size: 1rem; line-height: 1.7;">Ask why leaves are yellowing. It already knows the plant, its history, and when you last watered.</p>
+        </div>
+
+        <div class="reveal glass" style="padding: 3.5rem 2.5rem; border-radius: 32px;">
+          <div style="width: 46px; height: 46px; border-radius: 14px; background: rgba(82,191,120,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 1.8rem; color: var(--accent, #52bf78);">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 1-3s0 2 2 2 2-4-3-9z"></path></svg>
+          </div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 0.8rem;">Care streaks</h3>
+          <p style="color: #9db2a5; font-size: 1rem; line-height: 1.7;">Coins, badges, and a running streak — the small nudge that keeps the routine alive.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diagnosis: sticky visual, scrolling narrative ------------------------>
+  <section style="padding: 6rem 4rem 9rem; background: #0f1311; border-top: 1px solid rgba(255,255,255,0.04);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; max-width: 1280px; margin: 0 auto; align-items: start;">
+      <div class="sticky-cap glass" style="top: 6rem; border-radius: 28px; padding: 2.4rem; border: 1px solid rgba(132,230,164,0.2);">
+        <div class="eyebrow" style="margin-bottom: 1.4rem;">Health check</div>
+        <div style="aspect-ratio: 4 / 3; border-radius: 20px; background:
+            radial-gradient(420px circle at 30% 25%, rgba(82,191,120,0.22), transparent 60%),
+            linear-gradient(160deg, #171d1a, #0b0f0d); display: flex; align-items: center; justify-content: center; margin-bottom: 1.8rem;">
+          <svg width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #52bf78)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21V11"></path><path d="M12 11c0-4 3-7 8-7 0 5-3 8-8 8z"></path><path d="M12 15c0-3-2.5-5-6-5 0 3.5 2.5 5 6 5z"></path>
+          </svg>
+        </div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.6rem;">
+          <span style="color: #9db2a5; font-size: 0.95rem;">Health score</span>
+          <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 1.7rem;">82%</span>
+        </div>
+        <div style="height: 6px; border-radius: 999px; background: rgba(255,255,255,0.07); overflow: hidden;">
+          <div style="width: 82%; height: 100%; background: linear-gradient(90deg, var(--accent, #52bf78), #ff9d66);"></div>
+        </div>
+      </div>
+
+      <div style="padding-top: 1rem;">
+        <h2 class="reveal-wipe" style="font-size: 3.4rem; line-height: 1.06; letter-spacing: -0.02em; margin-bottom: 2.6rem;">
+          It tells you why,<br>not just what.
+        </h2>
+        <sc-for list="{{diagnosis}}" as="d" hint-placeholder-count="3">
+          <div class="reveal" style="padding: 1.9rem 0; border-top: 1px solid rgba(255,255,255,0.06);">
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.6rem;">{{d.title}}</h3>
+            <p style="color: #9db2a5; font-size: 1.05rem; line-height: 1.7; max-width: 46ch;">{{d.body}}</p>
+          </div>
+        </sc-for>
+        <p style="margin-top: 2rem; color: #6b7a71; font-size: 0.92rem; line-height: 1.6; max-width: 46ch;">
+          Pnapana reports possible causes ranked by likelihood — never a guaranteed diagnosis.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -------------------------------------------------------------->
+  <section id="pricing" style="padding: 9rem 4rem;">
+    <div style="max-width: 1040px; margin: 0 auto;">
+      <div style="text-align: center; margin-bottom: 4rem;">
+        <div class="eyebrow" style="margin-bottom: 1.2rem;">Pricing</div>
+        <h2 class="reveal-wipe" style="font-size: 3.4rem; letter-spacing: -0.02em; display: inline-block;">Two plants free. Forever.</h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem;">
+        <div class="reveal glass" style="padding: 3rem 2.5rem; border-radius: 32px;">
+          <div class="eyebrow" style="margin-bottom: 1.4rem;">Free</div>
+          <div style="font-family: 'Playfair Display', Georgia, serif; font-size: 3.6rem; letter-spacing: -0.02em; margin-bottom: 1.8rem;">₹0</div>
+          <sc-for list="{{freePlan}}" as="row" hint-placeholder-count="4">
+            <div style="display: flex; gap: 0.8rem; align-items: flex-start; padding: 0.55rem 0; color: #9db2a5; font-size: 1rem;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6b7a71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><path d="M20 6 9 17l-5-5"></path></svg>
+              {{row}}
+            </div>
+          </sc-for>
+        </div>
+
+        <div class="reveal glass" style="padding: 3rem 2.5rem; border-radius: 32px; border: 1px solid rgba(132,230,164,0.2); position: relative; overflow: hidden;">
+          <div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(600px circle at 80% -10%, rgba(82,191,120,0.14), transparent 60%);"></div>
+          <div style="position: relative;">
+            <div class="eyebrow" style="color: var(--accent, #52bf78); margin-bottom: 1.4rem;">Premium</div>
+            <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 1.8rem;">
+              <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 3.6rem; letter-spacing: -0.02em;">₹29</span>
+              <span style="color: #6b7a71; font-size: 1rem;">/ month</span>
+            </div>
+            <sc-for list="{{premiumPlan}}" as="row" hint-placeholder-count="5">
+              <div style="display: flex; gap: 0.8rem; align-items: flex-start; padding: 0.55rem 0; color: #ffffff; font-size: 1rem;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #52bf78)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 3px;"><path d="M20 6 9 17l-5-5"></path></svg>
+                {{row}}
+              </div>
+            </sc-for>
+            <a href="#" class="pill-cta" style="display: block; text-align: center; margin-top: 2.2rem; padding: 1rem 2rem; font-size: 1.05rem;">Go Premium</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Close ---------------------------------------------------------------->
+  <section style="position: relative; padding: 10rem 4rem; text-align: center; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.04);">
+    <div class="parallax-slow" aria-hidden="true" style="position: absolute; inset: -20% 0; background: radial-gradient(700px circle at 50% 50%, rgba(82,191,120,0.13), transparent 65%);"></div>
+    <div style="position: relative; max-width: 720px; margin: 0 auto;">
+      <h2 class="reveal" style="font-size: 4.2rem; line-height: 1.04; letter-spacing: -0.03em; margin-bottom: 1.6rem;">
+        Your plants are<br>already telling you.
+      </h2>
+      <p class="reveal" style="color: #9db2a5; font-size: 1.25rem; line-height: 1.6; margin-bottom: 2.8rem;">Start with the one on your windowsill.</p>
+      <a href="#" class="pill-cta">Identify my plant</a>
+    </div>
+  </section>
+
+  <footer style="padding: 3rem 4rem; border-top: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; color: #6b7a71; font-size: 0.88rem;">
+    <span style="font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; color: #9db2a5;">pnapana</span>
+    <span>Growing a garden, one drop at a time.</span>
+  </footer>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{
+  "accent": {"editor": "color", "default": "#52bf78", "options": ["#52bf78", "#ff9d66", "#74e59c", "#9db2a5"], "section": "Theme"}
+}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      accent: this.props.accent ?? '#52bf78',
+
+      steps: [
+        { n: '1', title: 'Photograph it',
+          body: 'One picture. Pnapana returns the species, its scientific name, and how confident it is — so you know when to trust the answer.' },
+        { n: '2', title: 'Answer three questions',
+          body: 'Where it lives, how much light reaches it, which city you are in. That is the whole setup.' },
+        { n: '3', title: 'Get a plan built for that plant',
+          body: 'Watering intervals, light, feeding, and repotting windows — written for your conditions, not a generic care card.' },
+        { n: '4', title: 'Let the reminders find you',
+          body: 'Never "water today". Always "check the top 2cm today" — and it moves when rain is forecast.' }
+      ],
+
+      stats: [
+        { value: '96%', label: 'Identification confidence' },
+        { value: '4', label: 'Care tasks tracked per plant' },
+        { value: '₹29', label: 'Premium, per month' },
+        { value: '2', label: 'Plants free, forever' }
+      ],
+
+      diagnosis: [
+        { title: 'Yellowing leaves', body: 'Overwatering, poor drainage, or too little light — ordered by what your care history makes most likely.' },
+        { title: 'Brown tips', body: 'Usually humidity or salt build-up. It checks your recent watering pattern before suggesting either.' },
+        { title: 'Wilting after water', body: 'Often root rot, not thirst. The one case where more water makes it worse.' }
+      ],
+
+      freePlan: ['Up to 2 plants', 'Plant identification', 'Basic care plans', 'Watering reminders'],
+      premiumPlan: ['Unlimited plants', 'AI health diagnosis', 'Context-aware plant chat', 'Weather-based care', 'Full plant health history']
+    };
+  }
+}
+</script>
+</body>
+</html>

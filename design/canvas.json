@@ -1,0 +1,16 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Homepage — scroll", "x": 0, "y": 0, "w": 1440, "h": 900, "expand": "fill" },
+    { "file": "Motion.dc.html", "title": "Motion spec", "x": 1560, "y": 0, "w": 1000, "h": 900 }
+  ],
+  "annotations": [
+    {
+      "id": "scroll-note",
+      "x": 0,
+      "y": -150,
+      "w": 520,
+      "text": "Scroll INSIDE the homepage artboard — the animation is driven by scroll position, not a timer.\n\nExpand it (Fit off) for a full-window read."
+    }
+  ],
+  "launch": { "view": "focused", "file": "Main.dc.html" }
+}

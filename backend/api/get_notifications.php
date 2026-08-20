@@ -1,8 +1,7 @@
 <?php
-header('Access-Control-Allow-Origin: *');
+require_once __DIR__ . '/../cors.php';
+pnapana_cors('GET, OPTIONS');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: GET');
-
 require_once '../db.php';
 require_once 'auth.php';
 
@@ -21,6 +20,9 @@ try {
         "notifications" => $thirsty_plants
     ]);
 } catch(PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+    // Log the detail for the operator; never expose schema internals to the client.
+    error_log("get_notifications error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Something went wrong. Please try again."]);
 }
 ?>

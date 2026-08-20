@@ -5,13 +5,15 @@ import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import { getApiUrl } from '@/lib/api';
 import styles from './Explore.module.css';
 
 export default function Explore() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: number, name: string } | null>(null);
   const [plants, setPlants] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ export default function Explore() {
     setUser(JSON.parse(storedUser));
     
     // Fetch all community plants
-    fetch('http://127.0.0.1/pnapana/backend/api/get_all_plants.php')
+    fetch(getApiUrl('get_all_plants.php'))
       .then(res => res.json())
       .then(data => {
         if (data.status === 'success' && data.plants) {

@@ -1,13 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import { authFetch } from '@/lib/api';
 import styles from './You.module.css';
 
 export default function You() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: number, name: string, email: string } | null>(null);
   const [plantsCount, setPlantsCount] = useState<number>(0);
   const { language, setLanguage, t } = useLanguage();
 
@@ -20,9 +22,10 @@ export default function You() {
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
 
-    fetch(`http://127.0.0.1/pnapana/backend/api/get_plants.php?user_id=${parsedUser.id}`)
+    authFetch('get_plants.php')
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setPlantsCount(data.plants.length); });
+      .then(data => { if(data.status === "success") setPlantsCount(data.plants.length); })
+      .catch(() => {});
   }, [router]);
 
   const handleLogout = () => {
@@ -61,6 +64,15 @@ export default function You() {
         </div>
 
         <div className={styles.menuList}>
+
+          <div className={styles.menuGroup}>
+            <h3>Plan &amp; billing</h3>
+            <Link href="/subscription" className={styles.menuItem}>
+              <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+              <span>Subscription &amp; payments</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+            </Link>
+          </div>
 
           <div className={styles.menuGroup}>
             <h3>{t('you.settings')}</h3>

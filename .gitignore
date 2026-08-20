@@ -1,1 +1,16 @@
 backend/config.php
+
+# Environment secrets
+backend/.env
+.env
+backend/.env.production
+
+# Deploy archives, rebuilt on demand -- frontend.zip alone is 1.2 GB
+*.zip
+
+# Raw InnoDB table files from a local recovery: users.ibd holds real
+# email addresses and password hashes. Never belongs in the repo.
+db_recovery_backup/
+
+# Customer payment proofs are uploaded at runtime and are private.
+backend/storage/payment_screenshots/

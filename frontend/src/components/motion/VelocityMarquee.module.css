@@ -1,0 +1,30 @@
+.viewport {
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+.group {
+  display: flex;
+  gap: 2.5rem;
+  padding-right: 2.5rem;
+}
+
+/* prefers-reduced-motion path: a plain swipeable row, no autonomous movement. */
+.scrollable {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 1rem;
+}
+
+.scrollable .group > * {
+  scroll-snap-align: center;
+}

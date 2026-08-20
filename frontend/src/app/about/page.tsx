@@ -34,7 +34,7 @@ export default function About() {
       <main style={{ padding: '0 5% 8rem', position: 'relative', zIndex: 2 }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', background: 'var(--glass-bg)', padding: '4rem', borderRadius: '32px', border: 'var(--glass-border)', boxShadow: 'var(--glass-shadow)', backdropFilter: 'var(--glass-blur)' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', lineHeight: '1.8', marginBottom: '2rem' }}>
-            Pnapana started as a simple idea: what if you could have a pocket botanist that tells you exactly when to water, how much light to give, and what's wrong with your yellowing leaves?
+            Pnapana started as a simple idea: what if you could have a pocket botanist that tells you exactly when to water, how much light to give, and what&apos;s wrong with your yellowing leaves?
           </p>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', lineHeight: '1.8', marginBottom: '2rem' }}>
             Today, we are building the ultimate premium platform for plant care. Our AI-driven diagnostic tools, hyper-local weather tracking, and community-driven explore feed are all designed to give you confidence in your indoor jungle.

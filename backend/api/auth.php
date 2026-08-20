@@ -3,19 +3,26 @@ require_once '../config.php';
 require_once '../jwt_helper.php';
 
 function authenticate($conn) {
-    // Check Authorization header first
-    $headers = null;
+    // HTTP header names are case-insensitive (RFC 7230), and clients differ:
+    // fetch()'s Headers object normalizes to "authorization", while a plain
+    // object literal keeps "Authorization". Normalize before looking it up.
+    $headers = array();
     if (function_exists('apache_request_headers')) {
-        $headers = apache_request_headers();
-    } else {
-        $headers = array(
-            'Authorization' => isset($_SERVER['HTTP_AUTHORIZATION']) ? $_SERVER['HTTP_AUTHORIZATION'] : ''
-        );
+        foreach (apache_request_headers() as $key => $value) {
+            $headers[strtolower($key)] = $value;
+        }
+    }
+    // Fall back to $_SERVER, including the REDIRECT_ prefix Apache adds when
+    // the header is passed through a rewrite or CGI/FastCGI handler.
+    foreach (array('HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION') as $serverKey) {
+        if (empty($headers['authorization']) && !empty($_SERVER[$serverKey])) {
+            $headers['authorization'] = $_SERVER[$serverKey];
+        }
     }
 
     $token = '';
-    if (isset($headers['Authorization']) && !empty($headers['Authorization'])) {
-        $token = str_replace('Bearer ', '', $headers['Authorization']);
+    if (!empty($headers['authorization'])) {
+        $token = trim(preg_replace('/^\s*Bearer\s+/i', '', $headers['authorization']));
     } elseif (isset($_GET['token'])) {
         $token = $_GET['token'];
     } else {

@@ -1,20 +1,17 @@
 'use client';
-import { useEffect, useState, use, useRef } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { fadeInUp, staggerContainer } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import { authFetch } from '@/lib/api';
 import styles from './Plant.module.css';
 
-function getToken(): string | undefined {
-  const stored = localStorage.getItem('user');
-  return stored ? JSON.parse(stored).token : undefined;
-}
-
-export default function PlantDetails({ params }: { params: Promise<{ id: string }> }) {
-  const unwrappedParams = use(params);
+function PlantDetailsInner() {
+  const searchParams = useSearchParams();
+  const plantId = searchParams.get('id') ?? '';
   const router = useRouter();
   const { t } = useLanguage();
   const [hasUser, setHasUser] = useState(false);
@@ -51,21 +48,17 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
     }
     setHasUser(true);
 
-    fetch(`http://127.0.0.1/pnapana/backend/api/get_plant_details.php?id=${unwrappedParams.id}`, {
-      headers: { 'Authorization': `Bearer ${getToken()}` }
-    })
+    authFetch(`get_plant_details.php?id=${plantId}`)
       .then(res => res.json())
       .then(data => { if(data.status === "success") setPlant(data.plant); })
       .finally(() => setIsLoading(false));
 
     fetchScans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unwrappedParams.id]);
+  }, [plantId]);
 
   function fetchScans() {
-    fetch(`http://127.0.0.1/pnapana/backend/api/get_plant_scans.php?plant_id=${unwrappedParams.id}`, {
-      headers: { 'Authorization': `Bearer ${getToken()}` }
-    })
+    authFetch(`get_plant_scans.php?plant_id=${plantId}`)
       .then(res => res.json())
       .then(data => { if(data.status === "success") setScans(data.scans); });
   }
@@ -110,19 +103,16 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
     setIsScanning(true);
     
     try {
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/analyze_plant.php', {
+      const res = await authFetch('analyze_plant.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-        body: JSON.stringify({ plant_id: unwrappedParams.id, image_url: capturedImage })
+        body: JSON.stringify({ plant_id: plantId, image_url: capturedImage })
       });
       const data = await res.json();
       if (data.status === 'success') {
         fetchScans();
         setCapturedImage(null);
         // refresh plant data to update status color
-        fetch(`http://127.0.0.1/pnapana/backend/api/get_plant_details.php?id=${unwrappedParams.id}`, {
-          headers: { 'Authorization': `Bearer ${getToken()}` }
-        })
+        authFetch(`get_plant_details.php?id=${plantId}`)
           .then(r => r.json())
           .then(d => { if(d.status === "success") setPlant(d.plant); });
       }
@@ -336,5 +326,13 @@ export default function PlantDetails({ params }: { params: Promise<{ id: string 
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PlantDetails() {
+  return (
+    <Suspense fallback={<Loader fullScreen label="Loading..." />}>
+      <PlantDetailsInner />
+    </Suspense>
   );
 }

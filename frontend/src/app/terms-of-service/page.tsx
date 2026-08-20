@@ -38,7 +38,7 @@ export default function TermsOfService() {
 
           <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '1rem' }}>2. Use License</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
-            Permission is granted to temporarily download one copy of the materials (information or software) on Pnapana's website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.
+            Permission is granted to temporarily download one copy of the materials (information or software) on Pnapana&apos;s website for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title.
           </p>
 
           <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '1rem' }}>3. User Accounts</h2>
@@ -48,7 +48,7 @@ export default function TermsOfService() {
 
           <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '1rem' }}>4. Disclaimer</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
-            The materials on Pnapana's website are provided on an 'as is' basis. Pnapana makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights. We do not guarantee your plants will survive, although we try our best to help!
+            The materials on Pnapana&apos;s website are provided on an &lsquo;as is&rsquo; basis. Pnapana makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including, without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights. We do not guarantee your plants will survive, although we try our best to help!
           </p>
         </div>
       </main>

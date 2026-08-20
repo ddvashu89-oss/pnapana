@@ -21,7 +21,7 @@ export default function AdminAnalytics() {
   function load() {
     setIsLoading(true);
     setError('');
-    adminFetchJson('http://127.0.0.1/pnapana/backend/api/admin_get_analytics.php')
+    adminFetchJson('admin_get_analytics.php')
       .then(data => {
         setMetrics(data.metrics);
         setTopSpecies(data.top_species);

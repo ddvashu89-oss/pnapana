@@ -1,9 +1,14 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import MarketingNav from '@/components/MarketingNav';
+import ScrollProgress from '@/components/motion/ScrollProgress';
+import { Reveal, Stagger, StaggerItem } from '@/components/motion/Reveal';
+import TiltCard from '@/components/motion/TiltCard';
+import CountUp from '@/components/motion/CountUp';
+import VelocityMarquee from '@/components/motion/VelocityMarquee';
 import styles from './Landing.module.css';
 
 const TESTIMONIALS = [
@@ -81,6 +86,45 @@ const TESTIMONIALS = [
   }
 ];
 
+const STEPS = [
+  { emoji: '📸', number: '01', titleKey: 'landing.step1Title', textKey: 'landing.step1Text' },
+  { emoji: '🌤️', number: '02', titleKey: 'landing.step2Title', textKey: 'landing.step2Text' },
+  { emoji: '🌱', number: '03', titleKey: 'landing.step3Title', textKey: 'landing.step3Text' }
+];
+
+const FEATURES = [
+  {
+    image: 'https://images.unsplash.com/photo-1596018653491-d65730d20e2b?w=500&q=80',
+    icon: '🔔',
+    titleKey: 'landing.feature1Title',
+    textKey: 'landing.feature1Text'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1637226168180-0f275ed6ec57?w=500&q=80',
+    icon: '🌧️',
+    titleKey: 'landing.feature2Title',
+    textKey: 'landing.feature2Text'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1631536121875-28e737e31f78?w=500&q=80',
+    icon: '📔',
+    titleKey: 'landing.feature3Title',
+    textKey: 'landing.feature3Text'
+  }
+];
+
+/**
+ * PLACEHOLDER marketing figures — these are invented for the count-up animation and
+ * are NOT real product metrics. Replace them with real numbers (or delete the band)
+ * before this page is shown to actual visitors.
+ */
+const STATS = [
+  { value: 48000, suffix: '+', labelKey: 'landing.statPlants' },
+  { value: 12500, suffix: '+', labelKey: 'landing.statParents' },
+  { value: 320000, suffix: '+', labelKey: 'landing.statReminders' },
+  { value: 47, suffix: '', labelKey: 'landing.statStreak' }
+];
+
 const HERO_PHRASES_EN = ['Plant Companion', 'Garden Guide', 'Growth Partner', 'Green Ally'];
 const HERO_PHRASES_HI = ['साथी पौधा', 'बगीचे का गाइड', 'ग्रोथ पार्टनर', 'हरा सहयोगी'];
 const TYPE_SPEED = 70;
@@ -125,54 +169,42 @@ function useTypewriter(phrases: string[]) {
 
 export default function LandingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [heroLoaded, setHeroLoaded] = useState(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const { t, language } = useLanguage();
   const typedPhrase = useTypewriter(language === 'hi' ? HERO_PHRASES_HI : HERO_PHRASES_EN);
+  const reduce = useReducedMotion();
+
+  const heroRef = useRef<HTMLElement>(null);
+  const stepsRef = useRef<HTMLDivElement>(null);
+
+  // Hero parallax: tracked from the page sitting at the top until the hero has
+  // fully scrolled past the top of the viewport.
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start']
+  });
+  const photoY = useTransform(heroProgress, [0, 1], ['0%', '18%']);
+  const photoScale = useTransform(heroProgress, [0, 1], [1, 1.18]);
+  const contentY = useTransform(heroProgress, [0, 1], [0, -90]);
+  const contentOpacity = useTransform(heroProgress, [0, 0.65], [1, 0]);
+  const cueOpacity = useTransform(heroProgress, [0, 0.12], [1, 0]);
+
+  // Rail that fills as the three steps pass through the middle of the viewport.
+  const { scrollYProgress: stepsProgress } = useScroll({
+    target: stepsRef,
+    offset: ['start 0.85', 'end 0.55']
+  });
+  const railScaleY = useSpring(stepsProgress, { stiffness: 90, damping: 26, restDelta: 0.001 });
 
   useEffect(() => {
-    // Check login status
     if (localStorage.getItem('user')) {
       setIsLoggedIn(true);
     }
-    
-    // Trigger hero animations shortly after mount
-    setTimeout(() => {
-      setHeroLoaded(true);
-    }, 100);
-
-    // Setup intersection observer for scroll animations
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add(styles.animate);
-          observerRef.current?.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.1 });
-
-    const animatedElements = document.querySelectorAll(`.${styles.animateOnScroll}`);
-
-    if (window.location.hash) {
-      // Landed directly on a deep link (e.g. /#how-it-works) — the browser's native
-      // anchor-jump races with this observer's setup and can leave content stuck at
-      // opacity:0. Scroll-reveal only makes sense when scrolling down from the top,
-      // so just show everything immediately instead.
-      animatedElements.forEach((el) => el.classList.add(styles.animate));
-    } else {
-      animatedElements.forEach((el) => observerRef.current?.observe(el));
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
   }, []);
 
   return (
     <div className={styles.container}>
+      <ScrollProgress />
+
       {/* Navigation */}
       <MarketingNav labels={{
         explore: t('nav.explore'),
@@ -185,165 +217,190 @@ export default function LandingPage() {
       }} />
 
       {/* Hero Section */}
-      <header className={styles.hero}>
-        <div className={styles.heroPhoto}>
-          <img src="https://images.unsplash.com/photo-1503149779833-1de50ebe5f8a?w=1600&q=80" alt="" />
-        </div>
+      <header className={styles.hero} ref={heroRef}>
         <motion.div
-          className={styles.heroContent}
-          initial="hidden"
-          animate="visible"
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { 
-              opacity: 1,
-              transition: { staggerChildren: 0.15, delayChildren: 0.1 }
-            }
-          }}
+          className={styles.heroPhoto}
+          style={reduce ? undefined : { y: photoY, scale: photoScale }}
         >
-          <motion.div 
-            className={`${styles.heroBadge}`}
+          <img src="https://images.unsplash.com/photo-1503149779833-1de50ebe5f8a?w=1600&q=80" alt="" />
+        </motion.div>
+
+        {/* Outer layer owns the scroll-linked drift; the inner one owns the entrance
+            cascade, so the two never fight over the same transform/opacity. */}
+        <motion.div
+          className={styles.heroParallax}
+          style={reduce ? undefined : { y: contentY, opacity: contentOpacity }}
+        >
+          <motion.div
+            className={styles.heroContent}
+            initial="hidden"
+            animate="visible"
             variants={{
-              hidden: { opacity: 0, y: -20, scale: 0.95 },
-              visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 20 } }
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+              }
             }}
           >
-            {t('landing.badge')}
-          </motion.div>
-          <motion.h1 
-            className={`${styles.title}`}
-            variants={{
-              hidden: { opacity: 0, y: 40, filter: 'blur(10px)' },
-              visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
-            }}
-          >
-            {t('landing.titlePrefix')}{' '}
-            <span className={styles.highlight}>
-              {typedPhrase}
-              <span className={styles.typeCursor} aria-hidden="true">|</span>
-            </span>
-          </motion.h1>
-          <motion.p 
-            className={`${styles.subtitle}`}
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0, transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
-            }}
-          >
-            {t('landing.subtitle')}
-          </motion.p>
-          <motion.div 
-            className={`${styles.ctaGroup}`}
-            variants={{
-              hidden: { opacity: 0, y: 20 },
-              visible: { opacity: 1, y: 0, transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
-            }}
-          >
-            <Link href={isLoggedIn ? "/dashboard" : "/login"} className={styles.primaryCta}>
-              {isLoggedIn ? t('landing.ctaDashboard') : t('landing.ctaPrimary')}
-            </Link>
-            <a href="#how-it-works" className={styles.secondaryCta}>
-              {t('landing.ctaSecondary')}
-            </a>
+            <motion.div
+              className={`${styles.heroBadge}`}
+              variants={{
+                hidden: { opacity: 0, y: -20, scale: 0.95 },
+                visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 20 } }
+              }}
+            >
+              {t('landing.badge')}
+            </motion.div>
+            <motion.h1
+              className={`${styles.title}`}
+              variants={{
+                hidden: { opacity: 0, y: 40, filter: 'blur(10px)' },
+                visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
+              }}
+            >
+              {t('landing.titlePrefix')}{' '}
+              <span className={styles.highlight}>
+                {typedPhrase}
+                <span className={styles.typeCursor} aria-hidden="true">|</span>
+              </span>
+            </motion.h1>
+            <motion.p
+              className={`${styles.subtitle}`}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
+              }}
+            >
+              {t('landing.subtitle')}
+            </motion.p>
+            <motion.div
+              className={`${styles.ctaGroup}`}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
+              }}
+            >
+              <Link href={isLoggedIn ? "/dashboard" : "/login"} className={styles.primaryCta}>
+                {isLoggedIn ? t('landing.ctaDashboard') : t('landing.ctaPrimary')}
+              </Link>
+              <a href="#how-it-works" className={styles.secondaryCta}>
+                {t('landing.ctaSecondary')}
+              </a>
+            </motion.div>
           </motion.div>
         </motion.div>
-        
+
+        {/* Scroll affordance — fades out as soon as the visitor starts scrolling. */}
+        <motion.a
+          href="#how-it-works"
+          className={styles.scrollCue}
+          style={reduce ? undefined : { opacity: cueOpacity }}
+          aria-label={t('landing.ctaSecondary')}
+        >
+          <span className={styles.scrollCueMouse}>
+            <motion.span
+              className={styles.scrollCueDot}
+              animate={reduce ? undefined : { y: [0, 12, 0], opacity: [1, 0.2, 1] }}
+              transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </span>
+        </motion.a>
+
         {/* Decorative elements */}
-        <motion.div 
+        <motion.div
           className={styles.blob1}
-          animate={{ 
-            scale: [1, 1.1, 1],
-            rotate: [0, 90, 0]
-          }}
+          animate={reduce ? undefined : { scale: [1, 1.1, 1], rotate: [0, 90, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
         />
-        <motion.div 
+        <motion.div
           className={styles.blob2}
-          animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, -90, 0]
-          }}
+          animate={reduce ? undefined : { scale: [1, 1.2, 1], rotate: [0, -90, 0] }}
           transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
         />
       </header>
 
       {/* How It Works Section */}
       <section id="how-it-works" className={styles.howItWorks}>
-        <h2 className={`${styles.sectionTitle} ${styles.animateOnScroll}`}>{t('landing.howItWorksTitle')}</h2>
-        <p className={`${styles.sectionSubtitle} ${styles.animateOnScroll}`}>
-          {t('landing.howItWorksSubtitle')}
-        </p>
+        <Reveal blur>
+          <h2 className={styles.sectionTitle}>{t('landing.howItWorksTitle')}</h2>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <p className={styles.sectionSubtitle}>{t('landing.howItWorksSubtitle')}</p>
+        </Reveal>
 
-        <div className={styles.stepsContainer}>
-          <div className={`${styles.step} ${styles.animateOnScroll}`}>
-            <div className={styles.stepImage}>📸</div>
-            <div className={styles.stepContent}>
-              <div className={styles.stepNumber}>01</div>
-              <h3>{t('landing.step1Title')}</h3>
-              <p>{t('landing.step1Text')}</p>
-            </div>
+        <div className={styles.stepsContainer} ref={stepsRef}>
+          <div className={styles.railTrack} aria-hidden="true">
+            <motion.div
+              className={styles.railFill}
+              style={reduce ? { scaleY: 1 } : { scaleY: railScaleY }}
+            />
           </div>
 
-          <div className={`${styles.step} ${styles.animateOnScroll}`}>
-            <div className={styles.stepImage}>🌤️</div>
-            <div className={styles.stepContent}>
-              <div className={styles.stepNumber}>02</div>
-              <h3>{t('landing.step2Title')}</h3>
-              <p>{t('landing.step2Text')}</p>
-            </div>
-          </div>
-
-          <div className={`${styles.step} ${styles.animateOnScroll}`}>
-            <div className={styles.stepImage}>🌱</div>
-            <div className={styles.stepContent}>
-              <div className={styles.stepNumber}>03</div>
-              <h3>{t('landing.step3Title')}</h3>
-              <p>{t('landing.step3Text')}</p>
-            </div>
-          </div>
+          {STEPS.map((step, index) => (
+            <Reveal
+              key={step.number}
+              className={styles.step}
+              direction={index % 2 === 0 ? 'right' : 'left'}
+              distance={60}
+              amount={0.3}
+            >
+              <div className={styles.stepImage}>{step.emoji}</div>
+              <div className={styles.stepContent}>
+                <div className={styles.stepNumber}>{step.number}</div>
+                <h3>{t(step.titleKey)}</h3>
+                <p>{t(step.textKey)}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
+      </section>
+
+      {/* Stats Band */}
+      <section className={styles.statsBand}>
+        <Stagger className={styles.statsGrid} stagger={0.1} amount={0.3}>
+          {STATS.map((stat) => (
+            <StaggerItem key={stat.labelKey} className={styles.statCard}>
+              <div className={styles.statValue}>
+                <CountUp to={stat.value} />
+                {stat.suffix}
+              </div>
+              <div className={styles.statLabel}>{t(stat.labelKey)}</div>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </section>
 
       {/* Features Section */}
       <section className={styles.features}>
-        <div className={`${styles.featureGrid} ${styles.animateOnScroll}`}>
-          <div className={styles.featureCard}>
-            <div className={styles.featureThumb}>
-              <img src="https://images.unsplash.com/photo-1596018653491-d65730d20e2b?w=500&q=80" alt="" loading="lazy" />
-            </div>
-            <div className={styles.iconWrapper}>🔔</div>
-            <h3>{t('landing.feature1Title')}</h3>
-            <p>{t('landing.feature1Text')}</p>
-          </div>
-          <div className={styles.featureCard}>
-            <div className={styles.featureThumb}>
-              <img src="https://images.unsplash.com/photo-1637226168180-0f275ed6ec57?w=500&q=80" alt="" loading="lazy" />
-            </div>
-            <div className={styles.iconWrapper}>🌧️</div>
-            <h3>{t('landing.feature2Title')}</h3>
-            <p>{t('landing.feature2Text')}</p>
-          </div>
-          <div className={styles.featureCard}>
-            <div className={styles.featureThumb}>
-              <img src="https://images.unsplash.com/photo-1631536121875-28e737e31f78?w=500&q=80" alt="" loading="lazy" />
-            </div>
-            <div className={styles.iconWrapper}>📔</div>
-            <h3>{t('landing.feature3Title')}</h3>
-            <p>{t('landing.feature3Text')}</p>
-          </div>
-        </div>
+        <Stagger className={styles.featureGrid} stagger={0.14}>
+          {FEATURES.map((feature) => (
+            <StaggerItem key={feature.titleKey} className={styles.featureCell}>
+              <TiltCard className={styles.featureCard}>
+                <div className={styles.featureThumb}>
+                  <img src={feature.image} alt="" loading="lazy" />
+                </div>
+                <div className={styles.iconWrapper}>{feature.icon}</div>
+                <h3>{t(feature.titleKey)}</h3>
+                <p>{t(feature.textKey)}</p>
+              </TiltCard>
+            </StaggerItem>
+          ))}
+        </Stagger>
       </section>
-      
+
       {/* Testimonials Section */}
       <section className={styles.testimonials}>
-        <h2 className={`${styles.sectionTitle} ${styles.animateOnScroll}`}>{t('landing.testimonialsTitle')}</h2>
-        <p className={`${styles.sectionSubtitle} ${styles.animateOnScroll}`}>
-          {t('landing.testimonialsSubtitle')}
-        </p>
-        
-        <div className={`${styles.testimonialMarquee} ${styles.animateOnScroll}`}>
-          <div className={styles.testimonialTrack}>
-            {[...TESTIMONIALS, ...TESTIMONIALS].map((item, i) => (
+        <Reveal blur>
+          <h2 className={styles.sectionTitle}>{t('landing.testimonialsTitle')}</h2>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <p className={styles.sectionSubtitle}>{t('landing.testimonialsSubtitle')}</p>
+        </Reveal>
+
+        <Reveal amount={0.1} distance={24}>
+          <VelocityMarquee baseVelocity={-2.2}>
+            {TESTIMONIALS.map((item, i) => (
               <div className={styles.testimonialCard} key={i}>
                 <div className={styles.quoteMark}>&quot;</div>
                 <p className={styles.testimonialText}>
@@ -358,19 +415,19 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
+          </VelocityMarquee>
+        </Reveal>
       </section>
 
       {/* Final CTA Section */}
       <section className={styles.finalCta}>
-        <div className={`${styles.finalCtaContent} ${styles.animateOnScroll}`}>
+        <Reveal className={styles.finalCtaContent} blur distance={50}>
           <h2>{t('landing.finalCtaTitle')}</h2>
           <p>{t('landing.finalCtaText')}</p>
           <Link href="/login" className={styles.finalCtaBtn}>
             {t('landing.finalCtaBtn')}
           </Link>
-        </div>
+        </Reveal>
       </section>
 
     </div>

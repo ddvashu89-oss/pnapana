@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     token VARCHAR(255) DEFAULT NULL,
+    gemini_api_key VARCHAR(255) DEFAULT NULL,
+    is_admin TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -93,8 +95,12 @@ CREATE TABLE IF NOT EXISTS post_likes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Insert dummy data for testing
-INSERT INTO users (id, name, email, password) VALUES (1, 'Arjun', 'arjun@example.com', 'password123') ON DUPLICATE KEY UPDATE name='Arjun';
+-- Demo seed user. NO usable password is set: the hash below is a deliberate
+-- non-verifying placeholder, so this account cannot be logged into.
+-- Create your real admin with:  php backend/migrations/create_admin.php
+-- (The old seed shipped a bcrypt hash of a password published in this file,
+--  which meant every deployment booted with a known-credential admin.)
+INSERT INTO users (id, name, email, password) VALUES (1, 'Demo Garden', 'demo@pnapana.invalid', '!disabled-no-login') ON DUPLICATE KEY UPDATE name='Demo Garden';
 
 INSERT INTO plants (id, user_id, name, species, image_url, status, status_color, native_region, light_requirement, water_requirement, humidity, pet_friendly) VALUES 
 (1, 1, 'Monstera Deliciosa', 'Monstera Deliciosa', '/monstera.png', 'Thriving', 'green', 'Tropical America', 'Bright Indirect', 'When top 2cm is dry', '50-70%', FALSE),
