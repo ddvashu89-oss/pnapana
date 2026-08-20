@@ -183,13 +183,6 @@
   box-shadow: 0 0 15px rgba(82, 191, 120, 0.15);
 }
 
-.otpInput {
-  text-align: center;
-  letter-spacing: 0.5rem;
-  font-size: 1.2rem !important;
-  font-weight: 600;
-}
-
 .submitBtn {
   background: var(--grad-premium);
   color: #000;

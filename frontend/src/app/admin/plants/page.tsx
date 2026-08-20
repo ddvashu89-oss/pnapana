@@ -29,7 +29,7 @@ export default function PlantsManagement() {
   function load() {
     setIsLoading(true);
     setError('');
-    adminFetchJson('http://127.0.0.1/pnapana/backend/api/admin_get_plants.php')
+    adminFetchJson('admin_get_plants.php')
       .then(data => setPlants(data.plants))
       .catch(err => setError(err.message || 'Failed to load plants.'))
       .finally(() => setIsLoading(false));
@@ -38,7 +38,7 @@ export default function PlantsManagement() {
   async function handleDelete(id: number) {
     if (!confirm('Remove this plant from the collection?')) return;
     try {
-      const res = await adminFetch('http://127.0.0.1/pnapana/backend/api/admin_delete_plant.php', {
+      const res = await adminFetch('admin_delete_plant.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })

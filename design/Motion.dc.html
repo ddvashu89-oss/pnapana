@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: #070908; color: #fff; font-family: 'Outfit', system-ui, sans-serif; }
+    a { color: #52bf78; } a:hover { color: #74e59c; }
+    h1, h2 { margin: 0; font-family: 'Playfair Display', Georgia, serif; font-weight: 600; }
+    p { margin: 0; }
+    code {
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      font-size: 0.82rem; color: #74e59c;
+      background: rgba(82,191,120,0.08); padding: 0.16em 0.45em; border-radius: 6px;
+    }
+    .row { display: grid; grid-template-columns: 1.1fr 1.5fr 1fr; gap: 1.6rem; padding: 1.5rem 0; border-top: 1px solid rgba(255,255,255,0.06); align-items: start; }
+    .eyebrow { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: #6b7a71; }
+
+    /* Live demonstrations of each easing, so the sheet shows rather than tells. */
+    @keyframes demoSlide { from { transform: translateX(0); } to { transform: translateX(calc(100% - 26px)); } }
+    .demo-dot {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, #52bf78, #ff9d66);
+      animation: demoSlide 2.6s infinite alternate;
+    }
+    .ease-standard { animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+    .ease-linear   { animation-timing-function: linear; }
+    .ease-entrance { animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+    @media (prefers-reduced-motion: reduce) { .demo-dot { animation: none; } }
+  </style>
+</helmet>
+
+<div style="padding: 4rem; max-width: 1000px; margin: 0 auto;">
+
+  <div class="eyebrow" style="margin-bottom: 1rem;">Pnapana · motion system</div>
+  <h1 style="font-size: 2.8rem; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 0.9rem;">Scroll behaviour spec</h1>
+  <p style="color: #9db2a5; font-size: 1.05rem; line-height: 1.7; max-width: 62ch; margin-bottom: 3rem;">
+    Every effect on the homepage is CSS scroll-driven animation — no scroll listeners, no IntersectionObserver, no animation library. The work happens off the main thread, so the page stays smooth while it moves.
+  </p>
+
+  <div style="background: rgba(255,157,102,0.06); border: 1px solid rgba(255,157,102,0.2); border-radius: 20px; padding: 1.5rem 1.8rem; margin-bottom: 3rem;">
+    <div class="eyebrow" style="color: #ff9d66; margin-bottom: 0.7rem;">The rule that keeps it safe</div>
+    <p style="color: #9db2a5; font-size: 0.98rem; line-height: 1.7;">
+      Author every element in its <strong style="color:#fff;">final, visible</strong> state, then layer motion inside <code>@supports (animation-timeline: view())</code>. A browser without scroll timelines shows a finished page instead of a blank one — the usual failure mode of scroll animation is content stuck at <code>opacity: 0</code>.
+    </p>
+  </div>
+
+  <h2 style="font-size: 1.5rem; margin-bottom: 0.4rem;">Timelines in use</h2>
+  <p style="color: #6b7a71; font-size: 0.92rem; margin-bottom: 1rem;">Where each effect is anchored and over what range it plays.</p>
+
+  <div class="row" style="border-top: none; color: #6b7a71; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; padding-bottom: 0.4rem;">
+    <div>Effect</div><div>Timeline &amp; range</div><div>Applied to</div>
+  </div>
+
+  <sc-for list="{{timelines}}" as="t" hint-placeholder-count="6">
+    <div class="row">
+      <div>
+        <div style="font-weight: 600; margin-bottom: 0.25rem;">{{t.name}}</div>
+        <div style="color: #6b7a71; font-size: 0.88rem; line-height: 1.5;">{{t.what}}</div>
+      </div>
+      <div>
+        <code>{{t.timeline}}</code>
+        <div style="margin-top: 0.5rem;"><code>{{t.range}}</code></div>
+      </div>
+      <div style="color: #9db2a5; font-size: 0.9rem; line-height: 1.6;">{{t.applied}}</div>
+    </div>
+  </sc-for>
+
+  <h2 style="font-size: 1.5rem; margin: 3.5rem 0 0.4rem;">Easing</h2>
+  <p style="color: #6b7a71; font-size: 0.92rem; margin-bottom: 1.6rem;">
+    The standard curve is the one already used across the app&#39;s CSS — reuse it so new motion feels native.
+  </p>
+
+  <div style="display: flex; flex-direction: column; gap: 1.4rem;">
+    <div style="background: rgba(15,19,17,0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 1.4rem 1.6rem;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.9rem;">
+        <span style="font-weight: 600;">Standard — hover, CTA, cards</span>
+        <code>cubic-bezier(0.16, 1, 0.3, 1)</code>
+      </div>
+      <div class="demo-dot ease-standard"></div>
+    </div>
+
+    <div style="background: rgba(15,19,17,0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 1.4rem 1.6rem;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.9rem;">
+        <span style="font-weight: 600;">Scroll-linked — every timeline above</span>
+        <code>linear</code>
+      </div>
+      <div class="demo-dot ease-linear"></div>
+      <p style="color: #6b7a71; font-size: 0.86rem; line-height: 1.6; margin-top: 0.9rem;">
+        Scroll-driven animation must be <code>linear</code>. The scroll position is the clock, so any other curve makes the element lag or race the user&#39;s finger.
+      </p>
+    </div>
+
+    <div style="background: rgba(15,19,17,0.5); border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 1.4rem 1.6rem;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.9rem;">
+        <span style="font-weight: 600;">Entrance — modals, toasts</span>
+        <code>cubic-bezier(0.22, 1, 0.36, 1)</code>
+      </div>
+      <div class="demo-dot ease-entrance"></div>
+    </div>
+  </div>
+
+  <h2 style="font-size: 1.5rem; margin: 3.5rem 0 0.4rem;">Accessibility</h2>
+  <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.4rem;">
+    <sc-for list="{{a11y}}" as="rule" hint-placeholder-count="3">
+      <div style="display: flex; gap: 0.9rem; align-items: flex-start; padding: 0.6rem 0; color: #9db2a5; font-size: 0.98rem; line-height: 1.65;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#52bf78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 4px;"><path d="M20 6 9 17l-5-5"></path></svg>
+        <span>{{rule}}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="margin-top: 3rem; padding-top: 1.6rem; border-top: 1px solid rgba(255,255,255,0.06); color: #6b7a71; font-size: 0.86rem; line-height: 1.7;">
+    Scroll-driven animation ships in Chrome and Edge 115+. Safari and Firefox fall back to the static page described above — no polyfill needed, and none recommended.
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      timelines: [
+        { name: 'Reading progress', what: 'Bar across the top fills as the page is read.',
+          timeline: 'animation-timeline: scroll()', range: 'full document',
+          applied: 'Fixed 3px bar, green to orange gradient.' },
+        { name: 'Section reveal', what: 'Content rises and fades as it enters.',
+          timeline: 'animation-timeline: view()', range: 'entry 5% cover 26%',
+          applied: 'Step rows, feature cards, stat blocks, pricing.' },
+        { name: 'Headline wipe', what: 'Section headings uncover left to right.',
+          timeline: 'animation-timeline: view()', range: 'entry 10% cover 34%',
+          applied: 'Every h2 via clip-path inset.' },
+        { name: 'Hero handoff', what: 'Hero sinks and dims as you leave it.',
+          timeline: 'animation-timeline: view()', range: 'exit 0% exit 90%',
+          applied: 'Hero content block.' },
+        { name: 'Depth parallax', what: 'Background glows drift slower than content.',
+          timeline: 'animation-timeline: view()', range: 'cover',
+          applied: 'Hero and closing-section gradient layers.' },
+        { name: 'Progress rail', what: 'Vertical line fills alongside the four steps.',
+          timeline: 'animation-timeline: view()', range: 'cover 8% cover 72%',
+          applied: 'How-it-works rail, scaleY from top.' },
+        { name: 'Leaf draw', what: 'Hero mark draws itself stroke by stroke.',
+          timeline: 'animation-timeline: view()', range: 'entry 20% cover 55%',
+          applied: 'SVG stroke-dashoffset, 620 to 0.' }
+      ],
+      a11y: [
+        'Everything is disabled under prefers-reduced-motion: reduce — the page renders complete and static.',
+        'No effect hides content from assistive tech: reveals change opacity and transform only, never display or visibility.',
+        'Nothing is gated behind scroll. Every element is readable if the animation never runs at all.'
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

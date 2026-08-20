@@ -2,17 +2,28 @@
 require_once '../db.php';
 require_once '../config.php';
 require_once '../jwt_helper.php';
+require_once '../rate_limiter.php';
+
+// Rate limit: max 10 attempts per minute
+check_rate_limit('login', 10, 60);
 
 $data = json_decode(file_get_contents("php://input"));
-$email = isset($data->email) ? trim($data->email) : '';
-$password = isset($data->password) ? trim($data->password) : '';
+$email = isset($data->email) ? strtolower(trim($data->email)) : '';
+$password = isset($data->password) ? (string)$data->password : '';
 
 if (empty($email) || empty($password)) {
+    http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Email and password are required."]);
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, name, email, password, is_admin FROM users WHERE email = :email");
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Please enter a valid email address."]);
+    exit;
+}
+
+$stmt = $conn->prepare("SELECT id, name, email, password, is_admin, gemini_api_key FROM users WHERE email = :email");
 $stmt->bindParam(':email', $email);
 $stmt->execute();
 
@@ -26,6 +37,7 @@ if ($user && password_verify($password, $user['password'])) {
         $settingsStmt = $conn->query("SELECT maintenance_mode FROM app_settings WHERE id = 1");
         $settings = $settingsStmt->fetch(PDO::FETCH_ASSOC);
         if ($settings && (bool)$settings['maintenance_mode']) {
+            http_response_code(503);
             echo json_encode(["status" => "error", "message" => "Pnapana is currently down for maintenance. Please check back soon."]);
             exit;
         }
@@ -52,6 +64,7 @@ if ($user && password_verify($password, $user['password'])) {
 
     echo json_encode(["status" => "success", "user" => $user]);
 } else {
+    http_response_code(401);
     echo json_encode(["status" => "error", "message" => "Invalid email or password."]);
 }
 ?>

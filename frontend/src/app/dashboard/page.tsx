@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Droplets, Scissors, FlaskConical } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import { authFetch, getApiUrl } from '@/lib/api';
 import styles from './Home.module.css';
 
 const AFFIRMATIONS_EN = [
@@ -96,9 +97,7 @@ export default function Home() {
 
     const checkWateringNeeds = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1/pnapana/backend/api/get_notifications.php?user_id=${parsedUser.id}`, {
-          headers: { 'Authorization': `Bearer ${parsedUser.token}` }
-        });
+        const res = await authFetch(`get_notifications.php?user_id=${parsedUser.id}`);
         const data = await res.json();
         if (data.status === 'success') {
           const tPlants = data.notifications;
@@ -132,19 +131,14 @@ export default function Home() {
   }, [language]);
 
   function fetchPlants(userId: number, token?: string) {
-    const activeToken = token || (user?.token);
-    fetch(`http://127.0.0.1/pnapana/backend/api/get_plants.php?user_id=${userId}`, {
-      headers: { 'Authorization': `Bearer ${activeToken}` }
-    })
+    authFetch(`get_plants.php?user_id=${userId}`)
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setPlants(data.plants); });
+      .then(data => { if(data.status === "success") setPlants(data.plants); })
+      .catch(() => {});
   }
 
   function fetchGamification(token?: string) {
-    const activeToken = token || user?.token;
-    fetch('http://127.0.0.1/pnapana/backend/api/get_gamification.php', {
-      headers: { 'Authorization': `Bearer ${activeToken}` }
-    })
+    authFetch('get_gamification.php')
       .then(res => res.json())
       .then(data => {
         if (data.status === 'success') {
@@ -210,12 +204,8 @@ export default function Home() {
     setIsAdding(true);
     
     try {
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/add_plant.php', {
+      const res = await authFetch('add_plant.php', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`
-        },
         body: JSON.stringify({ ...newPlant, user_id: user.id })
       });
       const data = await res.json();
@@ -289,12 +279,8 @@ export default function Home() {
     setIsIdentifying(true);
     setAiError(null);
     try {
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/identify_plant.php', {
+      const res = await authFetch('identify_plant.php', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
-        },
         body: JSON.stringify({ image_base64: imageUrl })
       });
       const data = await res.json();
@@ -316,12 +302,8 @@ export default function Home() {
     setPlantInfo(null);
     setAiError(null);
     try {
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/identify_plant.php', {
+      const res = await authFetch('identify_plant.php', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
-        },
         body: JSON.stringify({ image_base64: imageUrl })
       });
       const data = await res.json();
@@ -379,12 +361,8 @@ export default function Home() {
   };
 
   const removePlant = (id: number) => {
-    fetch('http://127.0.0.1/pnapana/backend/api/remove_plant.php', {
+    authFetch('remove_plant.php', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${user?.token}`
-      },
       body: JSON.stringify({ id })
     }).then(res => res.json()).then(data => {
       if (data.status === 'success') {
@@ -395,12 +373,8 @@ export default function Home() {
 
   const handleWaterPlant = async (id: number) => {
     try {
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/water_plant.php', {
+      const res = await authFetch('water_plant.php', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
-        },
         body: JSON.stringify({ id })
       });
       const data = await res.json();
@@ -783,7 +757,7 @@ export default function Home() {
                     key={plant.id}
                     className={`${styles.plantCardWrapper}`}
                   >
-                    <Link href={`/plant/${plant.id}`} className={`${styles.plantCard} ${isThirsty ? styles.thirstyCard : ''}`}>
+                    <Link href={`/plant?id=${plant.id}`} className={`${styles.plantCard} ${isThirsty ? styles.thirstyCard : ''}`}>
                       <button
                         className={styles.removeBtn}
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); removePlant(plant.id); }}

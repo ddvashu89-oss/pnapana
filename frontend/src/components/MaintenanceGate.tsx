@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { getApiUrl } from '@/lib/api';
 import styles from './MaintenanceGate.module.css';
 
 // Routes that must stay reachable during maintenance no matter what: an admin
@@ -12,7 +13,7 @@ export default function MaintenanceGate({ children }: { children: React.ReactNod
   const [status, setStatus] = useState<{ active: boolean; siteName: string; supportEmail: string } | null>(null);
 
   useEffect(() => {
-    fetch('http://127.0.0.1/pnapana/backend/api/get_site_status.php')
+    fetch(getApiUrl('get_site_status.php'))
       .then(res => res.json())
       .then(data => {
         if (data.status !== 'success') return;

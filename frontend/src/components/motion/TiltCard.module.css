@@ -1,0 +1,24 @@
+.tilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+  position: relative;
+}
+
+/* Soft specular highlight that tracks the cursor across the card face. */
+.glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    340px circle at var(--glare-x, 50%) var(--glare-y, 50%),
+    rgba(255, 255, 255, 0.1),
+    transparent 65%
+  );
+}
+
+.tilt:hover .glare {
+  opacity: 1;
+}

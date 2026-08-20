@@ -1,13 +1,7 @@
 <?php
-header('Access-Control-Allow-Origin: *');
+require_once __DIR__ . '/../cors.php';
+pnapana_cors('POST, OPTIONS');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
 
 require_once '../db.php';
 require_once 'auth.php';
@@ -72,6 +66,9 @@ try {
         "likes_count" => $likes_count
     ]);
 } catch (PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+    // Log the detail for the operator; never expose schema internals to the client.
+    error_log("like_post error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Something went wrong. Please try again."]);
 }
 ?>

@@ -28,7 +28,7 @@ export default function MessagesInbox() {
   function load() {
     setIsLoading(true);
     setError('');
-    adminFetchJson('http://127.0.0.1/pnapana/backend/api/admin_get_messages.php')
+    adminFetchJson('admin_get_messages.php')
       .then(data => setMessages(data.messages))
       .catch(err => setError(err.message || 'Failed to load messages.'))
       .finally(() => setIsLoading(false));
@@ -37,7 +37,7 @@ export default function MessagesInbox() {
   async function handleDelete(id: number) {
     if (!confirm('Delete this message?')) return;
     try {
-      const res = await adminFetch('http://127.0.0.1/pnapana/backend/api/admin_delete_message.php', {
+      const res = await adminFetch('admin_delete_message.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })

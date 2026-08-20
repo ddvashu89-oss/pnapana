@@ -1,7 +1,6 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+require_once __DIR__ . '/../cors.php';
+pnapana_cors('POST, OPTIONS');
 header("Content-Type: application/json");
 
 require_once '../db.php';
@@ -37,12 +36,12 @@ if (!$ownerId || (int)$ownerId !== (int)$user['id']) {
     exit;
 }
 
-$GEMINI_API_KEY = GEMINI_API_KEY;
+$activeApiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '');
 
 $ai_status = 'healthy';
 $ai_analysis = '';
 
-if (!empty($GEMINI_API_KEY)) {
+if (!empty($activeApiKey)) {
     // Strip data:image/jpeg;base64, prefix to get raw base64
     $base64_data = preg_replace('/^data:image\/\w+;base64,/', '', $image_url);
     
@@ -64,7 +63,8 @@ if (!empty($GEMINI_API_KEY)) {
         ]
     ];
 
-    $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/' . GEMINI_MODEL . ':generateContent?key=' . $GEMINI_API_KEY);
+    $model = defined('GEMINI_MODEL') ? GEMINI_MODEL : 'gemini-flash-lite-latest';
+    $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . $activeApiKey);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
@@ -138,6 +138,9 @@ try {
         ]
     ]);
 } catch (PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+    // Log the detail for the operator; never expose schema internals to the client.
+    error_log("analyze_plant error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Something went wrong. Please try again."]);
 }
 ?>

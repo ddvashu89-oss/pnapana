@@ -1,15 +1,10 @@
 <?php
-header('Access-Control-Allow-Origin: *');
+require_once __DIR__ . '/../cors.php';
+pnapana_cors('POST, OPTIONS');
 header('Content-Type: application/json');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
 
 require_once '../db.php';
+require_once '../account_helper.php';
 require_once 'auth.php';
 
 // Authenticate user using token
@@ -22,6 +17,25 @@ $data = json_decode(file_get_contents('php://input'), true);
 if (!isset($data['name']) || !isset($data['species'])) {
     echo json_encode(["status" => "error", "message" => "Missing required fields"]);
     exit();
+}
+
+// Enforce the plant allowance of the user's current plan. max_plants NULL
+// means unlimited, which is what the paid tier grants.
+$plan = get_active_plan($pdo, $user_id);
+if ($plan && $plan['max_plants'] !== null) {
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM plants WHERE user_id = ?");
+    $countStmt->execute([$user_id]);
+    if ((int)$countStmt->fetchColumn() >= $plan['max_plants']) {
+        http_response_code(402);
+        echo json_encode([
+            "status" => "error",
+            "code" => "PLAN_LIMIT_REACHED",
+            "message" => "Your " . $plan['name'] . " plan covers " . $plan['max_plants']
+                . " plants. Upgrade to Premium to add more.",
+            "limit" => (int)$plan['max_plants']
+        ]);
+        exit();
+    }
 }
 
 $name = $data['name'];
@@ -57,6 +71,9 @@ try {
         "plant_id" => $plant_id
     ]);
 } catch(PDOException $e) {
-    echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+    // Log the detail for the operator; never expose schema internals to the client.
+    error_log("add_plant error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Something went wrong. Please try again."]);
 }
 ?>

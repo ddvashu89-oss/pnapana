@@ -6,6 +6,7 @@ import { Heart } from 'lucide-react';
 import { staggerContainer, fadeInUp } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import { authFetch } from '@/lib/api';
 import styles from './Community.module.css';
 
 type Post = {
@@ -30,16 +31,37 @@ export default function Community() {
   const [user, setUser] = useState<{ id: number, name: string, token?: string } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [myPlants, setMyPlants] = useState<Plant[]>([]);
-  const [coins, setCoins] = useState(0);
+  const [coins, setCoins] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isComposerOpen, setIsComposerOpen] = useState(false);
-  const [selectedPlantId, setSelectedPlantId] = useState('');
+  const [selectedPlantId, setSelectedPlantId] = useState<string>('');
   const [caption, setCaption] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isPosting, setIsPosting] = useState(false);
-  const [likingIds, setLikingIds] = useState<Set<number>>(new Set());
   const [justEarned, setJustEarned] = useState<number | null>(null);
+  const [likingIds, setLikingIds] = useState<Set<number>>(new Set());
+
+  function fetchPosts() {
+    authFetch('get_community_posts.php')
+      .then(res => res.json())
+      .then(data => { if (data.status === 'success') setPosts(data.posts); })
+      .finally(() => setIsLoading(false));
+  }
+
+  function fetchMyPlants() {
+    authFetch('get_plants.php')
+      .then(res => res.json())
+      .then(data => { if (data.status === 'success') setMyPlants(data.plants); })
+      .catch(() => {});
+  }
+
+  function fetchCoins() {
+    authFetch('get_gamification.php')
+      .then(res => res.json())
+      .then(data => { if (data.status === 'success') setCoins(data.coins); })
+      .catch(() => {});
+  }
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -49,35 +71,10 @@ export default function Community() {
     }
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
-    fetchPosts(parsedUser.token);
-    fetchMyPlants(parsedUser.token);
-    fetchCoins(parsedUser.token);
+    fetchPosts();
+    fetchMyPlants();
+    fetchCoins();
   }, [router]);
-
-  function fetchPosts(token?: string) {
-    fetch('http://127.0.0.1/pnapana/backend/api/get_community_posts.php', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => { if (data.status === 'success') setPosts(data.posts); })
-      .finally(() => setIsLoading(false));
-  }
-
-  function fetchMyPlants(token?: string) {
-    fetch('http://127.0.0.1/pnapana/backend/api/get_plants.php', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => { if (data.status === 'success') setMyPlants(data.plants); });
-  }
-
-  function fetchCoins(token?: string) {
-    fetch('http://127.0.0.1/pnapana/backend/api/get_gamification.php', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => res.json())
-      .then(data => { if (data.status === 'success') setCoins(data.coins); });
-  }
 
   function openComposer() {
     setSelectedPlantId('');
@@ -98,9 +95,8 @@ export default function Community() {
     setIsPosting(true);
     try {
       const selectedPlant = myPlants.find(p => String(p.id) === selectedPlantId);
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/create_post.php', {
+      const res = await authFetch('create_post.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({
           plant_id: selectedPlantId || null,
           plant_name: selectedPlant?.name || null,
@@ -145,9 +141,8 @@ export default function Community() {
       : p));
 
     try {
-      const res = await fetch('http://127.0.0.1/pnapana/backend/api/like_post.php', {
+      const res = await authFetch('like_post.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user.token}` },
         body: JSON.stringify({ post_id: post.id })
       });
       const data = await res.json();
@@ -166,7 +161,11 @@ export default function Community() {
         ? { ...p, liked_by_me: wasLiked, likes_count: post.likes_count }
         : p));
     } finally {
-      setLikingIds(prev => { const next = new Set(prev); next.delete(post.id); return next; });
+      setLikingIds(prev => {
+        const next = new Set(prev);
+        next.delete(post.id);
+        return next;
+      });
     }
   }
 

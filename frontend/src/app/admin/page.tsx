@@ -26,7 +26,7 @@ export default function AdminOverview() {
   function load() {
     setIsLoading(true);
     setError('');
-    adminFetchJson('http://127.0.0.1/pnapana/backend/api/admin_get_stats.php')
+    adminFetchJson('admin_get_stats.php')
       .then(data => {
         setStats(data.stats);
         setActivity(data.activity);

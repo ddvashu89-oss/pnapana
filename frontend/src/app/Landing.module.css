@@ -39,8 +39,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 5%;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -468,17 +470,6 @@
   line-height: 1.6;
 }
 
-.animateOnScroll {
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.animateOnScroll.animate {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 /* Features Section */
 .features {
   padding: 8rem 5%;
@@ -492,6 +483,17 @@
   gap: 3rem;
   max-width: 1200px;
   margin: 0 auto;
+  /* Gives the per-card 3D tilt real depth instead of a flat skew. */
+  perspective: 1400px;
+}
+
+/* Grid cell wrapper introduced by the stagger reveal; the card fills it. */
+.featureCell {
+  height: 100%;
+}
+
+.featureCell > * {
+  height: 100%;
 }
 
 .featureCard {
@@ -596,12 +598,16 @@
   gap: 6rem;
   max-width: 1050px;
   margin: 0 auto;
+  position: relative;
 }
 
 .step {
   display: flex;
   align-items: center;
   gap: 5rem;
+  /* Lift the steps above the scroll rail that runs down the centre. */
+  position: relative;
+  z-index: 1;
 }
 
 .step:nth-child(even) {
@@ -682,29 +688,6 @@
 .testimonials {
   padding: 8rem 5%;
   position: relative;
-}
-
-.testimonialMarquee {
-  overflow: hidden;
-  width: 100%;
-  mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
-  -webkit-mask-image: linear-gradient(90deg, transparent, black 6%, black 94%, transparent);
-}
-
-.testimonialTrack {
-  display: flex;
-  gap: 2.5rem;
-  width: max-content;
-  animation: testimonialScroll 45s linear infinite;
-}
-
-.testimonialTrack:hover {
-  animation-play-state: paused;
-}
-
-@keyframes testimonialScroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
 }
 
 .testimonialCard {
@@ -892,6 +875,120 @@
   font-size: 0.9rem;
 }
 
+/* --- Hero: scroll-linked layer --- */
+/* Owns the scroll parallax so the inner .heroContent keeps its entrance cascade. */
+.heroParallax {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 950px;
+  will-change: transform, opacity;
+}
+
+/* --- Scroll cue --- */
+.scrollCue {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.scrollCueMouse {
+  width: 26px;
+  height: 42px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-full);
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  transition: border-color 0.3s ease;
+}
+
+.scrollCue:hover .scrollCueMouse {
+  border-color: var(--accent-green);
+}
+
+.scrollCueDot {
+  width: 4px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--accent-green);
+}
+
+/* --- How It Works: scroll-linked rail --- */
+.railTrack {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.railFill {
+  width: 100%;
+  height: 100%;
+  background: var(--grad-green);
+  transform-origin: top center;
+  border-radius: 2px;
+  box-shadow: 0 0 18px var(--accent-green-glow);
+}
+
+/* --- Stats band --- */
+.statsBand {
+  padding: 5rem 5% 6rem;
+  position: relative;
+  z-index: 2;
+}
+
+.statsGrid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.statCard {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--glass-shadow);
+}
+
+.statValue {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  line-height: 1;
+  background: var(--grad-green);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.6rem;
+  /* Digit glyphs differ in width; tabular figures stop the card twitching
+     while the number counts up. */
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .title { font-size: 4.5rem; }
@@ -902,6 +999,13 @@
 @media (max-width: 768px) {
   .title { font-size: 3.5rem; }
   .subtitle { font-size: 1.15rem; }
+  /* Centre rail would cut straight through the stacked layout. */
+  .railTrack { display: none; }
+  /* Hero is short here and the cue would collide with the CTAs. */
+  .scrollCue { display: none; }
+  .statsGrid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .statCard { padding: 2rem 1rem; }
+  .statValue { font-size: 2.4rem; }
   .step { flex-direction: column !important; gap: 3rem; text-align: center; }
   .stepNumber { transform: translateX(0); margin-bottom: 0.5rem; }
   .stepImage { padding: 3rem; font-size: 4rem; }
@@ -913,6 +1017,8 @@
 @media (max-width: 480px) {
   .nav { padding: 1rem 5%; }
   .logo span { font-size: 1.6rem; }
+  .statValue { font-size: 2rem; }
+  .statLabel { font-size: 0.85rem; }
   .title { font-size: 2.8rem; }
   .hero { padding: 6rem 5% 4rem; min-height: 70vh; }
   .ctaGroup { flex-direction: column; width: 100%; }

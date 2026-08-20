@@ -12,6 +12,8 @@ export default function AdminSettings() {
   const [aiScanningEnabled, setAiScanningEnabled] = useState(true);
   const [communityEnabled, setCommunityEnabled] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [upiId, setUpiId] = useState('');
+  const [upiPayeeName, setUpiPayeeName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -24,7 +26,7 @@ export default function AdminSettings() {
   function load() {
     setIsLoading(true);
     setError('');
-    adminFetchJson('http://127.0.0.1/pnapana/backend/api/admin_get_settings.php')
+    adminFetchJson('admin_get_settings.php')
       .then(data => {
         const s = data.settings;
         setSiteName(s.site_name);
@@ -33,6 +35,8 @@ export default function AdminSettings() {
         setAiScanningEnabled(s.ai_scanning_enabled);
         setCommunityEnabled(s.community_enabled);
         setMaintenanceMode(s.maintenance_mode);
+        setUpiId(s.upi_id ?? '');
+        setUpiPayeeName(s.upi_payee_name ?? '');
       })
       .catch(err => setError(err.message || 'Failed to load settings.'))
       .finally(() => setIsLoading(false));
@@ -42,7 +46,7 @@ export default function AdminSettings() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await adminFetch('http://127.0.0.1/pnapana/backend/api/admin_update_settings.php', {
+      const res = await adminFetch('admin_update_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -51,7 +55,9 @@ export default function AdminSettings() {
           allow_signups: allowSignups,
           ai_scanning_enabled: aiScanningEnabled,
           community_enabled: communityEnabled,
-          maintenance_mode: maintenanceMode
+          maintenance_mode: maintenanceMode,
+          upi_id: upiId,
+          upi_payee_name: upiPayeeName
         })
       });
       const data = await res.json();
@@ -114,6 +120,21 @@ export default function AdminSettings() {
           <div className={styles.formGroup}>
             <label>Support Email</label>
             <input type="email" value={supportEmail} onChange={e => setSupportEmail(e.target.value)} />
+          </div>
+        </motion.div>
+
+        <motion.div className={styles.settingsCard} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }}>
+          <h3 className={styles.settingsCardTitle}>Payments</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '-0.4rem', marginBottom: '1.2rem', lineHeight: 1.6 }}>
+            Shown to customers on the subscription page. Until a UPI ID is set here, they cannot submit a payment.
+          </p>
+          <div className={styles.formGroup}>
+            <label>UPI ID</label>
+            <input type="text" value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@bank" autoComplete="off" spellCheck="false" />
+          </div>
+          <div className={styles.formGroup}>
+            <label>Payee Name</label>
+            <input type="text" value={upiPayeeName} onChange={e => setUpiPayeeName(e.target.value)} placeholder="Pnapana" />
           </div>
         </motion.div>
 
