@@ -22,17 +22,20 @@ if (!isset($data['name']) || !isset($data['species'])) {
 // Enforce the plant allowance of the user's current plan. max_plants NULL
 // means unlimited, which is what the paid tier grants.
 $plan = get_active_plan($pdo, $user_id);
-if ($plan && $plan['max_plants'] !== null) {
+$maxPlants = ($plan && array_key_exists('max_plants', $plan)) ? $plan['max_plants'] : 5;
+if ($maxPlants !== null) {
     $countStmt = $pdo->prepare("SELECT COUNT(*) FROM plants WHERE user_id = ?");
     $countStmt->execute([$user_id]);
-    if ((int)$countStmt->fetchColumn() >= $plan['max_plants']) {
+    $currentCount = (int)$countStmt->fetchColumn();
+    if ($currentCount >= (int)$maxPlants) {
         http_response_code(402);
         echo json_encode([
             "status" => "error",
             "code" => "PLAN_LIMIT_REACHED",
-            "message" => "Your " . $plan['name'] . " plan covers " . $plan['max_plants']
+            "message" => "Your " . ($plan['name'] ?? 'Free') . " plan covers " . $maxPlants
                 . " plants. Upgrade to Premium to add more.",
-            "limit" => (int)$plan['max_plants']
+            "limit" => (int)$maxPlants,
+            "current_count" => $currentCount
         ]);
         exit();
     }

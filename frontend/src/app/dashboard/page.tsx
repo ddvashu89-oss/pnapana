@@ -220,7 +220,15 @@ export default function Home() {
         fetchPlants(user.id);
         fetchGamification();
       } else {
-        alert(data.message);
+        if (data.code === 'PLAN_LIMIT_REACHED') {
+          if (confirm(`${data.message}\n\nWould you like to upgrade your plan now?`)) {
+            setIsAddPlantModalOpen(false);
+            router.push('/subscription');
+            return;
+          }
+        } else {
+          alert(data.message);
+        }
       }
     } catch (err) {
       console.error(err);
