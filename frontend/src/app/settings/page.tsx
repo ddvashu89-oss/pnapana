@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { useTheme } from '@/lib/theme/ThemeContext';
 import Loader from '@/components/Loader';
 import { authFetch, getApiUrl } from '@/lib/api';
 import styles from './Settings.module.css';
@@ -20,7 +19,6 @@ interface UserData {
 export default function Settings() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { isDark, toggleTheme } = useTheme();
   const [user, setUser] = useState<UserData | null>(null);
 
   // App Preferences State
@@ -335,27 +333,6 @@ export default function Settings() {
             </div>
             <label className={styles.switch}>
               <input type="checkbox" checked={pushNotifications} onChange={(e) => setPushNotifications(e.target.checked)} />
-              <span className={styles.slider}></span>
-            </label>
-          </div>
-
-          <div className={styles.settingRow}>
-            <div className={styles.settingInfo}>
-              <div className={styles.settingIcon} style={{ background: 'rgba(155, 89, 182, 0.1)', color: '#9b59b6' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-              </div>
-              <div>
-                <h4>{t('settings.darkMode')}</h4>
-                <p>{t('settings.darkModeText')}</p>
-              </div>
-            </div>
-            <label className={styles.switch}>
-              <input
-                type="checkbox"
-                checked={isDark}
-                onChange={toggleTheme}
-                aria-label="Toggle dark mode"
-              />
               <span className={styles.slider}></span>
             </label>
           </div>
