@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/panapnai/public_html/
+    - /bin/cp -a frontend/out/. $DEPLOYPATH
+    - /bin/cp -R backend $DEPLOYPATH
+    - /bin/cp .htaccess $DEPLOYPATH 2>/dev/null || true
