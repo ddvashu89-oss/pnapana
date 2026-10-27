@@ -50,61 +50,13 @@ interface Plant {
   temp_range?: string;
 }
 
-const DEMO_PLANTS: Plant[] = [
-  {
-    id: 101,
-    name: 'Pink Gerbera',
-    species: 'Gerbera jamesonii',
-    image_url: 'https://images.unsplash.com/photo-1572454591674-2739f30d8c40?w=600&q=80',
-    status: 'Healthy',
-    status_color: 'green',
-    watering_frequency_days: 10
-  },
-  {
-    id: 102,
-    name: 'Nest Fern',
-    species: 'Asplenium nidus',
-    image_url: 'https://images.unsplash.com/photo-1512428813834-c702c7702b78?w=600&q=80',
-    status: 'Healthy',
-    status_color: 'green',
-    watering_frequency_days: 26
-  },
-  {
-    id: 103,
-    name: 'Young Banana',
-    species: 'Musa acuminata',
-    image_url: 'https://images.unsplash.com/photo-1567689265664-1c48de61db0b?w=600&q=80',
-    status: 'Needs Water',
-    status_color: 'orange',
-    watering_frequency_days: 7
-  },
-  {
-    id: 104,
-    name: 'Dahlia',
-    species: 'Dahlia pinnata',
-    image_url: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=600&q=80',
-    status: 'Healthy',
-    status_color: 'green',
-    watering_frequency_days: 8
-  },
-  {
-    id: 105,
-    name: 'Artificial Jade',
-    species: 'Crassula ovata',
-    image_url: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=600&q=80',
-    status: 'Healthy',
-    status_color: 'green',
-    watering_frequency_days: 14
-  }
-];
-
 export default function Home() {
   const router = useRouter();
   const { t } = useLanguage();
   const [user, setUser] = useState<{ id: number; name: string; email?: string; token?: string } | null>(null);
-  const [plants, setPlants] = useState<Plant[]>(DEMO_PLANTS);
-  const [thirstyPlants, setThirstyPlants] = useState<number[]>([103]);
-  const [favorites, setFavorites] = useState<number[]>([101, 104]);
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [thirstyPlants, setThirstyPlants] = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<number[]>([]);
   const notifiedIds = useRef<Set<number>>(new Set());
 
   const toggleFavorite = (id: number) => {
@@ -185,6 +137,12 @@ export default function Home() {
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
 
+    if (localStorage.getItem('is_new_signup')) {
+      localStorage.removeItem('is_new_signup');
+      setCompanionMessage(`Welcome to Pnapana, ${parsedUser.name || 'Friend'}! 🎉 So thrilled to meet you! Let's start growing your green sanctuary together! 🌱✨`);
+      setCompanionMood('ecstatic');
+    }
+
     fetchPlants(parsedUser.id, parsedUser.token);
     fetchWeather();
     fetchGamification(parsedUser.token);
@@ -208,16 +166,25 @@ export default function Home() {
     authFetch(`get_plants.php?user_id=${userId}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.status === 'success' && Array.isArray(data.plants) && data.plants.length > 0) {
+        if (data.status === 'success' && Array.isArray(data.plants)) {
           setPlants(data.plants);
+          const thirsty = data.plants
+            .filter((p: any) => {
+              if (!p.last_watered) return true;
+              const diffDays = (Date.now() - new Date(p.last_watered).getTime()) / (1000 * 60 * 60 * 24);
+              const freq = p.water_freq || p.watering_frequency_days || 7;
+              return diffDays >= freq;
+            })
+            .map((p: any) => p.id);
+          setThirstyPlants(thirsty);
         } else {
-          setPlants(DEMO_PLANTS);
-          setThirstyPlants([103]);
+          setPlants([]);
+          setThirstyPlants([]);
         }
       })
       .catch(() => {
-        setPlants(DEMO_PLANTS);
-        setThirstyPlants([103]);
+        setPlants([]);
+        setThirstyPlants([]);
       });
   }
 
@@ -573,9 +540,13 @@ export default function Home() {
         <div className={styles.topBarMain}>
           <div className={styles.greetingBlock}>
             <h1>
-              {greetingText}, {user?.name || 'Dheeraj'} 👋
+              {plants.length === 0 ? 'Welcome to Pnapana' : greetingText}, {user?.name || 'Friend'} 👋
             </h1>
-            <p className={styles.greetingSub}>Your plants are happy, keep going!</p>
+            <p className={styles.greetingSub}>
+              {plants.length === 0
+                ? "Let's add your first plant and begin your green journey! 🌱"
+                : 'Your plants are happy, keep going!'}
+            </p>
           </div>
 
           <div className={styles.topProfileActions}>
@@ -586,9 +557,9 @@ export default function Home() {
 
             <Link href="/settings" className={styles.userPill}>
               <div className={styles.userAvatar}>
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'D'}
+                {user?.name ? user.name.charAt(0).toUpperCase() : '🌿'}
               </div>
-              <span className={styles.userName}>{user?.name || 'Dheeraj'}</span>
+              <span className={styles.userName}>{user?.name || 'Profile'}</span>
               <ChevronDown size={14} color="#637c6d" />
             </Link>
           </div>
@@ -840,7 +811,7 @@ export default function Home() {
               <div className={styles.metricBody}>
                 <span className={styles.metricLabel}>Total Plants</span>
                 <span className={styles.metricValue}>{plants.length}</span>
-                <span className={styles.metricSub}>+1 new this week</span>
+                <span className={styles.metricSub}>{plants.length === 0 ? 'No plants yet' : `${plants.length} in collection`}</span>
               </div>
             </div>
 
@@ -852,7 +823,7 @@ export default function Home() {
               <div className={styles.metricBody}>
                 <span className={styles.metricLabel}>Healthy</span>
                 <span className={styles.metricValue}>{healthyCount}</span>
-                <span className={styles.metricSub}>{healthPercent}% of your plants</span>
+                <span className={styles.metricSub}>{plants.length === 0 ? '100% optimal' : `${healthPercent}% of your plants`}</span>
               </div>
             </div>
 
@@ -864,7 +835,7 @@ export default function Home() {
               <div className={styles.metricBody}>
                 <span className={styles.metricLabel}>Needs Attention</span>
                 <span className={styles.metricValue}>{thirstyPlants.length}</span>
-                <span className={styles.metricSub}>Water / Low Light</span>
+                <span className={styles.metricSub}>{thirstyPlants.length > 0 ? `${thirstyPlants.length} need water` : 'All plants hydrated'}</span>
               </div>
             </div>
 
@@ -939,45 +910,60 @@ export default function Home() {
             </div>
 
             <div className={styles.activityList}>
-              <div className={styles.activityItem}>
-                <div className={styles.activityIcon}>
-                  <Camera size={16} />
-                </div>
-                <div className={styles.activityText}>
-                  <span className={styles.activityTitle}>Plant photo analyzed</span>
-                  <span className={styles.activitySub}>Peace Lily • 2 hours ago</span>
-                </div>
-              </div>
-
-              <div className={styles.activityItem}>
-                <div className={styles.activityIcon} style={{ background: '#eff6ff', color: '#3b82f6' }}>
-                  <Droplets size={16} />
-                </div>
-                <div className={styles.activityText}>
-                  <span className={styles.activityTitle}>Water reminder sent</span>
-                  <span className={styles.activitySub}>Aloe Vera • 6 hours ago</span>
-                </div>
-              </div>
-
-              <div className={styles.activityItem}>
-                <div className={styles.activityIcon}>
-                  <Sprout size={16} />
-                </div>
-                <div className={styles.activityText}>
-                  <span className={styles.activityTitle}>New plant added</span>
-                  <span className={styles.activitySub}>Tulsi • 1 day ago</span>
-                </div>
-              </div>
-
-              <div className={styles.activityItem}>
-                <div className={styles.activityIcon} style={{ background: '#fef3e2', color: '#d97706' }}>
-                  <Shield size={16} />
-                </div>
-                <div className={styles.activityText}>
-                  <span className={styles.activityTitle}>Environment check</span>
-                  <span className={styles.activitySub}>All plants • 1 day ago</span>
-                </div>
-              </div>
+              {plants.length === 0 ? (
+                <>
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityIcon} style={{ background: '#eaf7ee', color: '#16a34a' }}>
+                      <Sprout size={16} />
+                    </div>
+                    <div className={styles.activityText}>
+                      <span className={styles.activityTitle}>Account created</span>
+                      <span className={styles.activitySub}>Welcome to Pnapana • Just now</span>
+                    </div>
+                  </div>
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityIcon} style={{ background: '#fef3e2', color: '#d97706' }}>
+                      <Camera size={16} />
+                    </div>
+                    <div className={styles.activityText}>
+                      <span className={styles.activityTitle}>Ready for your first scan</span>
+                      <span className={styles.activitySub}>Tap &lsquo;Scan Your Plant&rsquo; above</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityIcon}>
+                      <Camera size={16} />
+                    </div>
+                    <div className={styles.activityText}>
+                      <span className={styles.activityTitle}>Plant care monitored</span>
+                      <span className={styles.activitySub}>{plants[0]?.name} • Active today</span>
+                    </div>
+                  </div>
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityIcon} style={{ background: '#eff6ff', color: '#3b82f6' }}>
+                      <Droplets size={16} />
+                    </div>
+                    <div className={styles.activityText}>
+                      <span className={styles.activityTitle}>Water rhythm configured</span>
+                      <span className={styles.activitySub}>{plants[0]?.name} • {plants[0]?.watering_frequency_days || 7} day cycle</span>
+                    </div>
+                  </div>
+                  {plants.length > 1 && (
+                    <div className={styles.activityItem}>
+                      <div className={styles.activityIcon} style={{ background: '#eaf7ee', color: '#16a34a' }}>
+                        <Sprout size={16} />
+                      </div>
+                      <div className={styles.activityText}>
+                        <span className={styles.activityTitle}>Collection growing</span>
+                        <span className={styles.activitySub}>{plants[1]?.name} • Added</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
@@ -992,52 +978,59 @@ export default function Home() {
             </div>
 
             <div className={styles.remindersList}>
-              <div className={styles.reminderItem}>
-                <div className={styles.reminderInfo}>
-                  <button
-                    className={styles.checkCircleBtn}
-                    onClick={() => {
-                      if (plants[0]) handleWaterPlant(plants[0].id);
-                    }}
-                  >
-                    <CheckCircle2 size={18} />
-                  </button>
-                  <div className={styles.reminderText}>
-                    <span className={styles.reminderTitle}>
-                      Water {plants[0]?.name || 'Peace Lily'}
+              {plants.length === 0 ? (
+                <div className={styles.reminderItem}>
+                  <div className={styles.reminderInfo}>
+                    <span className={styles.uncheckCircle}>
+                      <Sprout size={18} />
                     </span>
-                    <span className={styles.reminderTime}>Today • 10:00 AM</span>
+                    <div className={styles.reminderText}>
+                      <span className={styles.reminderTitle}>Add your first plant</span>
+                      <span className={styles.reminderTime}>To unlock smart watering reminders</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className={styles.reminderItem}>
-                <div className={styles.reminderInfo}>
-                  <span className={styles.uncheckCircle}>
-                    <Circle size={18} />
-                  </span>
-                  <div className={styles.reminderText}>
-                    <span className={styles.reminderTitle}>
-                      Check soil moisture - {plants[1]?.name || 'Aloe Vera'}
-                    </span>
-                    <span className={styles.reminderTime}>Tomorrow • 09:00 AM</span>
+              ) : thirstyPlants.length > 0 ? (
+                thirstyPlants.slice(0, 3).map((plantId) => {
+                  const p = plants.find((x) => x.id === plantId);
+                  if (!p) return null;
+                  return (
+                    <div key={p.id} className={styles.reminderItem}>
+                      <div className={styles.reminderInfo}>
+                        <button
+                          className={styles.checkCircleBtn}
+                          onClick={() => handleWaterPlant(p.id)}
+                          title="Water now"
+                        >
+                          <CheckCircle2 size={18} />
+                        </button>
+                        <div className={styles.reminderText}>
+                          <span className={styles.reminderTitle}>Water {p.name}</span>
+                          <span className={styles.reminderTime}>Needs water • Today</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                plants.slice(0, 3).map((p, idx) => (
+                  <div key={p.id} className={styles.reminderItem}>
+                    <div className={styles.reminderInfo}>
+                      <span className={styles.uncheckCircle}>
+                        <Circle size={18} />
+                      </span>
+                      <div className={styles.reminderText}>
+                        <span className={styles.reminderTitle}>
+                          {idx === 0 ? `Check soil moisture - ${p.name}` : `Upcoming care for ${p.name}`}
+                        </span>
+                        <span className={styles.reminderTime}>
+                          In {p.watering_frequency_days || 7} days • 09:00 AM
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              <div className={styles.reminderItem}>
-                <div className={styles.reminderInfo}>
-                  <span className={styles.uncheckCircle}>
-                    <Circle size={18} />
-                  </span>
-                  <div className={styles.reminderText}>
-                    <span className={styles.reminderTitle}>
-                      Fertilize {plants[2]?.name || 'Money Plant'}
-                    </span>
-                    <span className={styles.reminderTime}>Jun 1 • 10:00 AM</span>
-                  </div>
-                </div>
-              </div>
+                ))
+              )}
             </div>
           </div>
         </div>

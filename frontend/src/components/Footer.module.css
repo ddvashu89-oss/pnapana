@@ -1,7 +1,7 @@
 .footer {
   background: var(--bg-secondary);
   border-top: 1px solid #e1ece5;
-  padding: 4rem 2rem 2rem;
+  padding: 2.5rem 2rem 1.5rem;
   color: var(--text-secondary);
 }
 
@@ -11,7 +11,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 3rem;
+  gap: 2rem;
 }
 
 .footerBrand {
@@ -56,8 +56,8 @@
 
 .footerBottom {
   max-width: 1200px;
-  margin: 3rem auto 0;
-  padding-top: 1.5rem;
+  margin: 1.8rem auto 0;
+  padding-top: 1.2rem;
   border-top: 1px solid #e1ece5;
   text-align: center;
   font-size: 0.85rem;

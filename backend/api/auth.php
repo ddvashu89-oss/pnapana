@@ -1,6 +1,6 @@
 <?php
-require_once '../config.php';
-require_once '../jwt_helper.php';
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../jwt_helper.php';
 
 function authenticate($conn) {
     // HTTP header names are case-insensitive (RFC 7230), and clients differ:
@@ -43,8 +43,8 @@ function authenticate($conn) {
         return [
             'id' => 1,
             'customer_id' => 'DEMO-101',
-            'name' => 'Dheeraj',
-            'email' => 'dheeraj@pnapana.live',
+            'name' => 'Plant Lover',
+            'email' => 'guest@pnapana.live',
             'is_admin' => false
         ];
     }
@@ -102,8 +102,8 @@ function authenticate_optional($conn) {
         if ($token === 'demo-session-token') {
             return [
                 'id' => 1,
-                'name' => 'Dheeraj',
-                'email' => 'dheeraj@pnapana.live',
+                'name' => 'Plant Lover',
+                'email' => 'guest@pnapana.live',
                 'is_admin' => false
             ];
         }

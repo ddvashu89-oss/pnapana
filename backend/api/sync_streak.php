@@ -77,7 +77,12 @@ try {
     $lastActiveDate = $userData['last_active_date'];
     $coins = (int)($userData['coins'] ?? 0);
 
-    // 2. Count thirsty plants for this user
+    // 2. Count total plants for this user
+    $plantCountStmt = $pdo->prepare("SELECT COUNT(*) FROM plants WHERE user_id = ?");
+    $plantCountStmt->execute([$userId]);
+    $totalPlants = (int)$plantCountStmt->fetchColumn();
+
+    // 3. Count thirsty plants for this user
     $thirstyStmt = $pdo->prepare("
         SELECT COUNT(*) FROM plants 
         WHERE user_id = ? 
@@ -93,14 +98,16 @@ try {
     $visitStatus = 'same_day';
     $mood = 'happy';
 
-    if (empty($lastActiveDate)) {
-        // First ever visit
+    $isFirstVisit = empty($lastActiveDate);
+
+    if ($isFirstVisit) {
+        // First ever visit / new user signup
         $currentStreak = 1;
         $maxStreak = max(1, $maxStreak);
-        $coinsAwarded = 5;
-        $coins += 5;
+        $coinsAwarded = 10;
+        $coins += 10;
         $visitStatus = 'first_visit';
-        $mood = ($thirstyCount > 0) ? 'thirsty' : 'happy';
+        $mood = 'ecstatic';
     } else {
         $lastDate = new DateTime($lastActiveDate);
         $diff = $lastDate->diff($today);
@@ -139,7 +146,27 @@ try {
     $messageEn = '';
     $messageHi = '';
 
-    if ($mood === 'sad') {
+    if ($visitStatus === 'first_visit' || $totalPlants === 0) {
+        // First ever visit or user has not added any plants yet: NEVER say "Welcome back"
+        $messagesFirstTime = [
+            [
+                "en" => "Welcome to Pnapana, {$name}! 🎉 So thrilled to meet you! Let's start growing your green family together! 🌱✨",
+                "hi" => "Pnapana में आपका स्वागत है, {$name}! 🎉 आपसे मिलकर बहुत खुशी हुई! चलिए मिलकर अपने पौधों का सुंदर संसार बनाते हैं! 🌱✨"
+            ],
+            [
+                "en" => "Welcome aboard, {$name}! 🌿 I'm Pana, your plant care companion. Ready to add your first green friend? ✨",
+                "hi" => "स्वागत है, {$name}! 🌿 मैं पाना हूँ, आपका प्लांट केयर साथी। चलिए आपका पहला पौधा जोड़ते हैं! ✨"
+            ],
+            [
+                "en" => "Hello {$name}! Welcome to your new plant sanctuary! Tap 'Add Plant' to add your very first species! 🌱💚",
+                "hi" => "नमस्ते {$name}! आपके नए प्लांट अभयारण्य में स्वागत है! अपना पहला पौधा जोड़ने के लिए 'Add Plant' दबाएं! 🌱💚"
+            ]
+        ];
+        $picked = $messagesFirstTime[array_rand($messagesFirstTime)];
+        $messageEn = $picked['en'];
+        $messageHi = $picked['hi'];
+        $mood = 'ecstatic';
+    } elseif ($mood === 'sad') {
         $messagesSad = [
             [
                 "en" => "Where were you? I missed you so much! My leaves were drooping without you... 🥺🥀",
@@ -179,7 +206,7 @@ try {
         $messageEn = $picked['en'];
         $messageHi = $picked['hi'];
     } else {
-        // Happy / welcoming
+        // Returning user with plants
         $messagesHappy = [
             [
                 "en" => "Welcome back, {$name}! So happy to see you today! Let's care for our green family! 🌱",
@@ -204,6 +231,8 @@ try {
         "streak_days" => $currentStreak,
         "max_streak" => $maxStreak,
         "visit_status" => $visitStatus,
+        "is_first_visit" => ($visitStatus === 'first_visit' || $totalPlants === 0),
+        "total_plants" => $totalPlants,
         "days_absent" => $daysAbsent,
         "coins" => $coins,
         "coins_awarded" => $coinsAwarded,

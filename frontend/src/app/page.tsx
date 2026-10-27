@@ -60,6 +60,15 @@ const TESTIMONIALS = [
   }
 ];
 
+const FEATURED_SPECIES = [
+  { id: 62427, common_name: 'Swiss Cheese Plant', scientific_name: 'Monstera deliciosa', family: 'Araceae', image_url: 'https://bs.plantnet.org/image/o/a3a043c163463e4cf1941e473a134700ed327d84' },
+  { id: 76921, common_name: 'Valley oak', scientific_name: 'Quercus lobata', family: 'Fagaceae', image_url: 'https://bs.plantnet.org/image/o/15e847c3894982fd3b10431a64c80dc365b47679' },
+  { id: 104231, common_name: 'Fiddle-Leaf Fig', scientific_name: 'Ficus lyrata', family: 'Moraceae', image_url: 'https://images.unsplash.com/photo-1545241047-6083a3684587?w=200&q=80' },
+  { id: 109842, common_name: 'Snake Plant', scientific_name: 'Sansevieria trifasciata', family: 'Asparagaceae', image_url: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=200&q=80' }
+];
+
+const SEARCH_QUICK_TAGS = ['Monstera', 'Quercus', 'Ficus', 'Snake Plant', 'Succulent', 'Rose'];
+
 const HERO_PHRASES_EN = ['Home Plants', 'Indoor Jungle', 'Green Sanctuary', 'Living Garden'];
 const HERO_PHRASES_HI = ['घरेलू पौधे', 'इनडोर जंगल', 'हरा अभयारण्य', 'जीवंत बगीचा'];
 const TYPE_SPEED = 70;
@@ -170,7 +179,7 @@ export default function LandingPage() {
       }} />
 
       {/* Hero Section */}
-      <header className={styles.hero} ref={heroRef} style={{ paddingBottom: '3rem' }}>
+      <header className={styles.hero} ref={heroRef}>
         <motion.div
           className={styles.heroParallax}
           style={reduce ? undefined : { y: contentY, opacity: contentOpacity }}
@@ -629,32 +638,57 @@ export default function LandingPage() {
       {/* =========================================================================
           LIVE BOTANICAL REGISTRY INTERACTIVE SEARCH ON HOMEPAGE
           ========================================================================= */}
-      <section style={{ padding: '4rem 5%', background: '#ffffff', borderTop: '1px solid #e1ece5', borderBottom: '1px solid #e1ece5' }}>
+      <section style={{ padding: 'clamp(2.5rem, 4vh, 3.5rem) 5%', background: '#ffffff', borderTop: '1px solid #e1ece5', borderBottom: '1px solid #e1ece5' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-          <div className={styles.bentoTag} style={{ margin: '0 auto 1rem' }}>
+          <div className={styles.bentoTag} style={{ margin: '0 auto 0.75rem' }}>
             <Sparkles size={14} /> Real-Time Botanical API
           </div>
-          <h2 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#12281b', marginBottom: '0.8rem' }}>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.3rem)', fontWeight: 800, color: '#12281b', marginBottom: '0.6rem' }}>
             Search 400,000+ Plant Species Live
           </h2>
-          <p style={{ color: '#557061', fontSize: '1.05rem', marginBottom: '2rem' }}>
+          <p style={{ color: '#557061', fontSize: '1rem', marginBottom: '1.2rem', maxWidth: '620px', marginInline: 'auto' }}>
             Powered by Pnapana Botanical Intelligence. Type any plant genus, common name, or scientific specimen.
           </p>
+
+          {/* Quick search tags */}
+          <div style={{ display: 'flex', gap: '0.45rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <span style={{ fontSize: '0.78rem', color: '#637c6d', alignSelf: 'center', fontWeight: 600 }}>Try:</span>
+            {SEARCH_QUICK_TAGS.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => handleLiveSearch(tag)}
+                style={{
+                  background: searchQuery === tag ? '#15803d' : '#f4f8f5',
+                  color: searchQuery === tag ? '#ffffff' : '#15803d',
+                  border: '1px solid #dce8e0',
+                  borderRadius: '999px',
+                  padding: '0.25rem 0.75rem',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
 
           <div style={{ position: 'relative', maxWidth: '640px', margin: '0 auto 1.5rem' }}>
             <input
               type="text"
-              placeholder="Try searching 'Quercus', 'Monstera', 'Rose', 'Ficus', 'Tulsi'..."
+              placeholder="Search 'Monstera', 'Quercus', 'Ficus', 'Rose'..."
               value={searchQuery}
               onChange={(e) => handleLiveSearch(e.target.value)}
               style={{
                 width: '100%',
-                padding: '1rem 1.4rem',
+                padding: '0.85rem 1.3rem',
                 borderRadius: '999px',
                 border: '2px solid #dce8e0',
-                fontSize: '1rem',
+                fontSize: '0.95rem',
                 outline: 'none',
-                boxShadow: '0 8px 30px rgba(18, 40, 27, 0.06)',
+                boxShadow: '0 6px 20px rgba(18, 40, 27, 0.05)',
                 color: '#12281b'
               }}
             />
@@ -665,14 +699,13 @@ export default function LandingPage() {
             )}
           </div>
 
-          {/* Instant Live Search Results */}
-          {searchResults.length > 0 && (
+          {/* Plant Grid: Show search results when present, or featured species when query is empty */}
+          {searchResults.length > 0 ? (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: '1rem',
-              textAlign: 'left',
-              marginTop: '1.5rem'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '0.9rem',
+              textAlign: 'left'
             }}>
               {searchResults.map((item) => (
                 <div
@@ -680,11 +713,11 @@ export default function LandingPage() {
                   style={{
                     background: '#f9fbf9',
                     border: '1px solid #e1ece5',
-                    borderRadius: '20px',
-                    padding: '1rem',
+                    borderRadius: '18px',
+                    padding: '0.85rem',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.8rem'
+                    gap: '0.75rem'
                   }}
                 >
                   {item.image_url ? (
@@ -692,26 +725,75 @@ export default function LandingPage() {
                       src={item.image_url}
                       alt={item.scientific_name}
                       onError={handlePlantImageError}
-                      style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'cover' }}
+                      style={{ width: '46px', height: '46px', borderRadius: '12px', objectFit: 'cover' }}
                     />
                   ) : (
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#eaf7ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                    <div style={{ width: '46px', height: '46px', borderRadius: '12px', background: '#eaf7ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
                       🌱
                     </div>
                   )}
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#12281b' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#12281b' }}>
                       {item.common_name || item.scientific_name}
                     </div>
-                    <div style={{ fontSize: '0.76rem', color: '#557061', fontStyle: 'italic' }}>
+                    <div style={{ fontSize: '0.74rem', color: '#557061', fontStyle: 'italic' }}>
                       {item.scientific_name}
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: '#15803d', fontWeight: 600 }}>
+                    <div style={{ fontSize: '0.68rem', color: '#15803d', fontWeight: 600 }}>
                       Family: {item.family || 'Botanical'}
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+          ) : searchQuery.trim().length >= 2 && !isSearching ? (
+            <div style={{ padding: '1rem', color: '#637c6d', fontSize: '0.9rem' }}>
+              No species found matching &ldquo;{searchQuery}&rdquo;. Try another genus or common name.
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#637c6d', textAlign: 'left', marginBottom: '0.75rem' }}>
+                🌿 Featured Species from 400,000+ Registry:
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '0.9rem',
+                textAlign: 'left'
+              }}>
+                {FEATURED_SPECIES.map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: '#f9fbf9',
+                      border: '1px solid #e1ece5',
+                      borderRadius: '18px',
+                      padding: '0.85rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem'
+                    }}
+                  >
+                    <img
+                      src={item.image_url}
+                      alt={item.scientific_name}
+                      onError={handlePlantImageError}
+                      style={{ width: '46px', height: '46px', borderRadius: '12px', objectFit: 'cover' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#12281b' }}>
+                        {item.common_name}
+                      </div>
+                      <div style={{ fontSize: '0.74rem', color: '#557061', fontStyle: 'italic' }}>
+                        {item.scientific_name}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: '#15803d', fontWeight: 600 }}>
+                        Family: {item.family}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -754,34 +836,34 @@ export default function LandingPage() {
       {/* =========================================================================
           VIBRANT FINAL LIME-EMERALD CTA BANNER
           ========================================================================= */}
-      <section style={{ padding: '0 5% 5rem' }}>
+      <section style={{ padding: '0 5% clamp(2.5rem, 4vh, 3.5rem)' }}>
         <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
           background: 'var(--grad-lime-banner)',
-          borderRadius: '40px',
-          padding: '5rem 3rem',
+          borderRadius: '32px',
+          padding: 'clamp(2.4rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 2.5rem)',
           textAlign: 'center',
           color: '#ffffff',
           boxShadow: '0 25px 60px -15px rgba(46, 179, 79, 0.45)',
           position: 'relative',
           overflow: 'hidden'
         }}>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 4vw, 3rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '1rem', color: '#ffffff' }}>
+          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.8rem', color: '#ffffff' }}>
             Ready to Build Your Dream Garden?
           </h2>
-          <p style={{ fontSize: 'clamp(0.95rem, 2vw, 1.2rem)', maxWidth: '600px', margin: '0 auto 2.5rem', opacity: 0.95 }}>
+          <p style={{ fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)', maxWidth: '580px', margin: '0 auto 1.6rem', opacity: 0.95 }}>
             Join over 12,000+ plant parents. Get started with 5 free plants, smart reminders, and instant botanical scans.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.9rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link
               href="/login"
               style={{
                 background: '#ffffff',
                 color: '#15803d',
                 fontWeight: 800,
-                fontSize: '1.1rem',
-                padding: '1.1rem 2.8rem',
+                fontSize: '1rem',
+                padding: '0.95rem 2.2rem',
                 borderRadius: '999px',
                 textDecoration: 'none',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
@@ -796,8 +878,8 @@ export default function LandingPage() {
                 backdropFilter: 'blur(12px)',
                 color: '#ffffff',
                 fontWeight: 700,
-                fontSize: '1.1rem',
-                padding: '1.1rem 2.5rem',
+                fontSize: '1rem',
+                padding: '0.95rem 2.2rem',
                 borderRadius: '999px',
                 textDecoration: 'none',
                 border: '1px solid rgba(255, 255, 255, 0.4)'

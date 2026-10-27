@@ -37,6 +37,9 @@ export default function Login() {
       
       if (data.status === 'success') {
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (!isLogin) {
+          localStorage.setItem('is_new_signup', 'true');
+        }
         if (data.user.is_admin) {
           if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
             router.push('/admin');

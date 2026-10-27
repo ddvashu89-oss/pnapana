@@ -37,7 +37,7 @@ export default function PlantCompanion({
   const [isFloatingOpen, setIsFloatingOpen] = useState(false);
 
   // Active dialogue resolver (Always English)
-  const defaultMsg = initialMessage || 'Welcome back! Happy to see you today! 🌱✨';
+  const defaultMsg = initialMessage || 'Welcome to Pnapana! Happy to see you today! 🌱✨';
 
   const currentMessage = tipIndex !== null 
     ? FUN_TIPS_EN[tipIndex % FUN_TIPS_EN.length]
