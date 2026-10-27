@@ -20,7 +20,7 @@ export default function About() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className={styles.title} style={{ fontSize: '4.5rem' }}>Our <span className={styles.highlight}>Story</span></h1>
+          <h1 className={styles.title}>Our <span className={styles.highlight}>Story</span></h1>
           <p className={styles.subtitle}>
             We believe that anyone can be a plant parent with the right tools.
           </p>

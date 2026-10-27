@@ -20,7 +20,7 @@ export default function PrivacyPolicy() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className={styles.title} style={{ fontSize: '3.5rem' }}>Privacy <span className={styles.highlight}>Policy</span></h1>
+          <h1 className={styles.title}>Privacy <span className={styles.highlight}>Policy</span></h1>
           <p className={styles.subtitle} style={{ marginBottom: '1rem' }}>
             Last updated: August 14, 2026
           </p>

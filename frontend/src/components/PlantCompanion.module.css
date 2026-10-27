@@ -1,0 +1,286 @@
+/* frontend/src/components/PlantCompanion.module.css */
+
+.heroCompanionContainer {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 249, 243, 0.95));
+  border: 1.5px solid #c9ebd4;
+  border-radius: 24px;
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 10px 25px rgba(21, 128, 61, 0.08);
+  position: relative;
+  overflow: visible;
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 600px) {
+  .heroCompanionContainer {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 1.1rem;
+    gap: 0.8rem;
+  }
+}
+
+.plantAvatarWrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.plantAvatarWrapper:hover {
+  transform: scale(1.08);
+}
+
+.plantAvatarWrapper:active {
+  transform: scale(0.95);
+}
+
+.mascotSvg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 6px 12px rgba(18, 40, 27, 0.12));
+}
+
+/* Animations */
+@keyframes swayHappy {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-3deg); }
+}
+
+@keyframes bounceEcstatic {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.04); }
+}
+
+@keyframes droopSad {
+  0%, 100% { transform: translateY(2px) scale(0.98); }
+  50% { transform: translateY(4px) scale(0.96); }
+}
+
+@keyframes pulseThirsty {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.moodHappy .leafGroup {
+  animation: swayHappy 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+.moodEcstatic {
+  animation: bounceEcstatic 1.8s ease-in-out infinite;
+}
+
+.moodSad {
+  animation: droopSad 4s ease-in-out infinite;
+  filter: grayscale(15%);
+}
+
+.moodThirsty {
+  animation: pulseThirsty 2.5s ease-in-out infinite;
+}
+
+/* Speech Bubble */
+.speechBubble {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #d0e8d8;
+  border-radius: 18px;
+  padding: 0.9rem 1.2rem;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+.speechBubble::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-left: 1px solid #d0e8d8;
+  border-bottom: 1px solid #d0e8d8;
+}
+
+@media (max-width: 600px) {
+  .speechBubble::before {
+    left: 36px;
+    top: -7px;
+    transform: rotate(45deg);
+    border-left: 1px solid #d0e8d8;
+    border-top: 1px solid #d0e8d8;
+    border-bottom: none;
+  }
+}
+
+.speechHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.mascotBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #15803d;
+  background: #eaf7ee;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid #c9ebd4;
+}
+
+.mascotBadgeSad {
+  color: #b45309;
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.mascotBadgeEcstatic {
+  color: #7c2d12;
+  background: #ffedd5;
+  border-color: #fed7aa;
+}
+
+.streakBadgeSmall {
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #ea580c;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #fff7ed;
+  border: 1px solid #ffedd5;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.speechText {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #12281b;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.speechHint {
+  font-size: 0.72rem;
+  color: #718d7c;
+  margin-top: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.speechHint:hover {
+  color: #15803d;
+}
+
+/* Floating Companion (Bottom right corner) */
+.floatingBuddyContainer {
+  position: fixed;
+  bottom: 84px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .floatingBuddyContainer {
+    bottom: 78px;
+    right: 14px;
+  }
+}
+
+.floatingBubble {
+  pointer-events: auto;
+  background: #ffffff;
+  border: 1.5px solid #22c55e;
+  border-radius: 18px;
+  padding: 0.75rem 1rem;
+  max-width: 260px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  margin-bottom: 8px;
+  position: relative;
+  animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.floatingBubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  right: 24px;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-right: 1.5px solid #22c55e;
+  border-bottom: 1.5px solid #22c55e;
+  transform: rotate(45deg);
+}
+
+.floatingBuddyBtn {
+  pointer-events: auto;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2.5px solid #22c55e;
+  box-shadow: 0 6px 20px rgba(21, 128, 61, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.floatingBuddyBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(21, 128, 61, 0.4);
+}
+
+.floatingBuddyBtn:active {
+  transform: scale(0.92);
+}
+
+.floatingStreakBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.8) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}

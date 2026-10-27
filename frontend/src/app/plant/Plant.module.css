@@ -1,376 +1,305 @@
+/* Plant Details Page (Reference Mockup Style) */
 .container {
   min-height: 100vh;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  padding-bottom: 90px;
+  padding: 1.8rem 2.2rem 4rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .container {
+    padding: 1.2rem 1rem calc(7rem + env(safe-area-inset-bottom, 20px));
+  }
+}
+
+@media (min-width: 2000px) {
+  .container {
+    max-width: 1400px;
+    padding: 3rem 4rem 6rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .plantHeroCard {
+    padding: 1.2rem;
+    border-radius: 24px;
+    margin-bottom: 1.2rem;
+  }
+  .imageContainer {
+    height: 220px;
+    margin-bottom: 0.8rem;
+  }
+  .plantCutoutImg {
+    max-width: 200px;
+    max-height: 210px;
+  }
+  .bentoRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.4rem;
+  }
+  .bentoItem {
+    padding: 0.95rem;
+    border-radius: 18px;
+  }
 }
 
 .topNav {
   display: flex;
   justify-content: space-between;
-  padding: 1.5rem;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+  align-items: center;
+  margin-bottom: 1.8rem;
 }
 
-.iconBtn {
+.goBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  color: #12281b;
+  border: 1px solid #dfeae2;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(18, 40, 27, 0.04);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.goBackBtn:hover {
+  background: #f4f8f5;
+  border-color: #22c55e;
+}
+
+.navActions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.circleActionBtn {
   width: 40px;
   height: 40px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #dfeae2;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary);
+  color: #12281b;
+  box-shadow: 0 2px 8px rgba(18, 40, 27, 0.04);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.circleActionBtn:hover {
+  background: #f4f8f5;
+}
+
+.circleSuccessBtn {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.2);
-  backdrop-filter: blur(5px);
+  background: var(--grad-lime-banner);
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(46, 179, 79, 0.35);
   cursor: pointer;
 }
 
-.imageSection {
-  width: 100%;
-  height: 45vh;
-  position: relative;
+/* Plant Card Showcase */
+.plantHeroCard {
+  background: #ffffff;
+  border-radius: 32px;
+  border: 1px solid #e1ece5;
+  box-shadow: 0 10px 30px rgba(18, 40, 27, 0.04);
   overflow: hidden;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  text-align: center;
+}
+
+.imageContainer {
+  width: 100%;
+  height: 340px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle, rgba(42,105,60,0.2) 0%, rgba(18,20,19,1) 70%);
-}
-
-.plantImage {
-  width: 80%;
-  height: 100%;
-  object-fit: contain;
-  z-index: 2;
-  animation: kenBurns 15s ease-out forwards;
-}
-
-.circleBg {
-  position: absolute;
-  width: 250px;
-  height: 250px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.1);
-  z-index: 1;
-}
-
-.content {
-  padding: 1.5rem;
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
-  background-color: var(--bg-primary);
-  margin-top: -30px;
   position: relative;
-  z-index: 5;
-}
-
-.headerRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   margin-bottom: 1.5rem;
 }
 
-.titleBox h1 {
-  font-family: var(--font-serif);
-  font-size: 2rem;
-  font-weight: 500;
-  margin-bottom: 0.2rem;
+.plantCutoutImg {
+  max-width: 280px;
+  max-height: 320px;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 30px rgba(18, 40, 27, 0.12));
+  animation: floatSlow 8s ease-in-out infinite;
 }
 
-.titleBox p {
-  color: var(--accent-orange);
-  font-size: 1rem;
-}
-
-.statusTag {
+.interactivePinBadge {
+  position: absolute;
+  top: 40%;
+  right: 25%;
+  background: rgba(18, 40, 27, 0.78);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255,255,255,0.05);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  border: 1px solid rgba(255,255,255,0.1);
 }
 
-.statusDot {
-  width: 8px;
-  height: 8px;
+.pinDot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
+  background: #22c55e;
 }
 
-.statusDot.green { background-color: var(--accent-green); }
-
-.tabs {
+.scanYourPlantPillBtn {
+  width: 100%;
+  background: #eafaf0;
+  color: #15803d;
+  border: 1px solid #c8edd5;
+  border-radius: 999px;
+  padding: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 800;
   display: flex;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 1rem;
+}
+
+.scanYourPlantPillBtn:hover {
+  background: var(--grad-lime-banner);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 6px 20px rgba(46, 179, 79, 0.35);
+}
+
+/* 4 Bento Care Metric Cards */
+.bentoRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .bentoRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.bentoItem {
+  background: #ffffff;
+  border: 1px solid #e1ece5;
+  border-radius: 24px;
+  padding: 1.2rem;
+  box-shadow: 0 4px 16px rgba(18, 40, 27, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.bentoIconSquircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.bentoMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.bentoLabel {
+  font-size: 0.8rem;
+  color: #637c6d;
+  font-weight: 500;
+}
+
+.bentoValue {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #12281b;
+  margin-top: 2px;
+}
+
+/* Details Tabs */
+.tabsContainer {
+  display: flex;
+  gap: 1rem;
+  border-bottom: 1px solid #e1ece5;
+  padding-bottom: 0.6rem;
   margin-bottom: 1.5rem;
 }
 
-.tab {
-  padding: 0.8rem 0;
-  color: var(--text-secondary);
+.tabBtnActive {
   font-size: 0.95rem;
-  position: relative;
+  font-weight: 800;
+  color: #15803d;
+  padding: 0.4rem 0.8rem;
+  border-bottom: 2px solid #22c55e;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+}
+
+.tabBtn {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #8da295;
+  padding: 0.4rem 0.8rem;
   background: none;
   border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-.tab.active {
-  color: var(--text-primary);
-  font-weight: 500;
+.tabBtn:hover {
+  color: #12281b;
 }
 
-.tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--accent-orange);
-}
-
-.tabContent p {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
+.tabCard {
+  background: #ffffff;
+  border: 1px solid #e1ece5;
+  border-radius: 24px;
+  padding: 1.8rem;
+  box-shadow: 0 4px 16px rgba(18, 40, 27, 0.03);
   margin-bottom: 1.5rem;
 }
 
-.attributeList {
-  display: flex;
-  flex-direction: column;
+.tabCard h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #12281b;
+  margin-bottom: 0.8rem;
 }
 
-.attributeItem {
-  display: flex;
-  justify-content: space-between;
-  padding: 1rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+.tabCard p {
+  color: #557061;
+  font-size: 0.94rem;
+  line-height: 1.6;
 }
-
-.attrLabel {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-
-.attrValue {
-  font-size: 0.95rem;
-  color: var(--text-primary);
-}
-
-.attrIcon {
-  color: var(--accent-orange);
-}
-
-.carePlanList {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.careItem {
-  padding: 1rem;
-  background: rgba(255,255,255,0.03);
-  border-radius: 12px;
-}
-
-.careItem .attrLabel {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-weight: 600;
-}
-
-.careItem p {
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin: 0.2rem 0;
-}
-
-.bottomBar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1.5rem;
-  background: linear-gradient(to top, var(--bg-primary) 60%, transparent);
-  z-index: 10;
-}
-
-.logCareBtn {
-  width: 100%;
-  background-color: var(--accent-orange);
-  color: var(--text-primary);
-  padding: 1rem;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 500;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  transition: opacity 0.2s ease;
-}
-
-.logCareBtn:hover {
-  opacity: 0.9;
-}
-
-/* AI Scanner Styles */
-.aiScannerArea {
-  display: flex;
-  flex-direction: column;
-}
-
-.aiScanBtn {
-  background: linear-gradient(135deg, var(--accent-orange), #ff8f66);
-  color: var(--text-primary);
-  padding: 1rem;
-  border-radius: 12px;
-  border: none;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 5px 15px rgba(228, 117, 72, 0.3);
-  margin-bottom: 2rem;
-  transition: transform 0.3s ease;
-}
-
-.aiScanBtn:hover {
-  transform: translateY(-2px);
-}
-
-.cameraBox {
-  background: rgba(0,0,0,0.2);
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 2rem;
-}
-
-.cameraView {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  background: black;
-}
-
-.cameraActions {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  background: rgba(0,0,0,0.3);
-}
-
-.snapBtn, .cancelCamBtn, .submitScanBtn {
-  flex: 1;
-  padding: 0.8rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-}
-
-.snapBtn, .submitScanBtn {
-  background: var(--accent-orange);
-  color: var(--text-primary);
-}
-
-.cancelCamBtn {
-  background: rgba(255,255,255,0.1);
-  color: var(--text-primary);
-}
-
-.previewBox {
-  margin-bottom: 2rem;
-  border-radius: 12px;
-  overflow: hidden;
-  background: rgba(0,0,0,0.2);
-}
-
-.imagePreview {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-}
-
-.scanningAnim {
-  position: relative;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent-orange);
-  font-weight: 500;
-  overflow: hidden;
-  background: rgba(0,0,0,0.3);
-}
-
-.scanLine {
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-  background: var(--accent-orange);
-  box-shadow: 0 0 10px var(--accent-orange);
-  animation: scan 1.5s infinite linear;
-}
-
-@keyframes scan {
-  0% { top: 0; }
-  50% { top: 100%; }
-  100% { top: 0; }
-}
-
-.scanHistory h4 {
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-}
-
-.noScans {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-}
-
-.scanCard {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  padding: 1rem;
-  border-radius: 12px;
-  margin-bottom: 1rem;
-}
-
-.scanCard.healthy {
-  border-left: 4px solid var(--accent-green);
-}
-
-.scanCard.issue {
-  border-left: 4px solid var(--accent-orange);
-}
-
-.scanCardTop {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.scanBadge {
-  font-weight: 600;
-}
-
-.scanCard p {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.statusDot.orange { background-color: var(--accent-orange); }

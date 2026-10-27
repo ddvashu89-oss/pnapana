@@ -11,7 +11,7 @@ export default function You() {
   const router = useRouter();
   const [user, setUser] = useState<{ id: number, name: string, email: string } | null>(null);
   const [plantsCount, setPlantsCount] = useState<number>(0);
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -89,22 +89,7 @@ export default function You() {
             <div className={styles.menuItem} style={{ cursor: 'default' }}>
               <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
               <span>{t('you.language')}</span>
-              <div className={styles.langToggle}>
-                <button
-                  type="button"
-                  className={`${styles.langOption} ${language === 'en' ? styles.langOptionActive : ''}`}
-                  onClick={() => setLanguage('en')}
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.langOption} ${language === 'hi' ? styles.langOptionActive : ''}`}
-                  onClick={() => setLanguage('hi')}
-                >
-                  हिन्दी
-                </button>
-              </div>
+              <span className={styles.langBadge}>English</span>
             </div>
           </div>
 

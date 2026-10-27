@@ -38,7 +38,8 @@ export default function MarketingNav({ labels }: { labels?: Labels }) {
   return (
     <nav className={styles.nav}>
       <Link href="/" className={styles.logo}>
-        <span>🌿</span> pnapana
+        <div className={styles.logoBadge}>🌱</div>
+        <span>pnapana</span>
       </Link>
 
       <button

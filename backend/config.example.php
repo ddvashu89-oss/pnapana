@@ -26,11 +26,10 @@ define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : 'CHANGE_ME')
 // --- Which sites may call this API ------------------------------------------
 // Comma-separated list of exact origins (scheme + host + optional port).
 // Anything not listed is refused by the browser. No wildcards.
-define('ALLOWED_ORIGINS', getenv('ALLOWED_ORIGINS') ?: 'https://your-domain.com,https://www.your-domain.com');
+define('ALLOWED_ORIGINS', getenv('ALLOWED_ORIGINS') ?: 'https://pnapana.live,https://www.pnapana.live,https://dashboard.pnapana.live');
 
-// --- Gemini AI --------------------------------------------------------------
-define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: 'YOUR_KEY_HERE');
-define('GEMINI_MODEL', getenv('GEMINI_MODEL') ?: 'gemini-flash-lite-latest');
+// --- Trefle Botanical API (https://docs.trefle.io) -----------------------
+define('TREFLE_API_KEY', getenv('TREFLE_API_KEY') ?: 'YOUR_TREFLE_TOKEN_HERE');
 
 // --- Auth -------------------------------------------------------------------
 // Generate your own with: php -r "echo bin2hex(random_bytes(32));"

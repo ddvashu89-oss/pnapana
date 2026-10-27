@@ -1,6 +1,6 @@
 .footer {
   background: var(--bg-secondary);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid #e1ece5;
   padding: 4rem 2rem 2rem;
   color: var(--text-secondary);
 }
@@ -51,14 +51,14 @@
 }
 
 .linkColumn a:hover {
-  color: var(--accent-orange);
+  color: var(--accent-green);
 }
 
 .footerBottom {
   max-width: 1200px;
   margin: 3rem auto 0;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid #e1ece5;
   text-align: center;
   font-size: 0.85rem;
   color: var(--text-muted);

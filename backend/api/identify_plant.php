@@ -3,11 +3,12 @@ require_once __DIR__ . '/../cors.php';
 pnapana_cors('POST, OPTIONS');
 header("Content-Type: application/json; charset=UTF-8");
 
+define('ALLOW_DB_FALLBACK', true);
 require_once __DIR__ . '/../db.php';
 if (file_exists(__DIR__ . '/../config.php')) {
     require_once __DIR__ . '/../config.php';
 }
-require_once __DIR__ . '/../gemini_helper.php';
+require_once __DIR__ . '/../trefle_helper.php';
 require_once __DIR__ . '/../botanical_catalog.php';
 require_once __DIR__ . '/auth.php';
 
@@ -41,60 +42,35 @@ if (empty($imageBase64)) {
     exit;
 }
 
-$hint = trim($data['hint'] ?? $data['name'] ?? '');
+$hint = trim($data['hint'] ?? $data['name'] ?? $data['species'] ?? '');
 $lang = strtolower(trim($data['lang'] ?? 'en'));
 $metrics = $data['metrics'] ?? null;
 
-$prompt = "You are an expert botanist. Identify the plant in this photo and provide a complete care plan. "
-    . (!empty($hint) ? "The user suggests this plant may be: '$hint'. Verify and prioritize if accurate. " : "")
-    . "Respond with ONLY a JSON object matching exactly this shape (no markdown, no commentary): "
-    . '{"is_plant": boolean, "species": string, "common_name": string, "confidence": "high"|"medium"|"low", '
-    . '"description": string, "care_plan": {"native_region": string, '
-    . '"light": {"level": "High"|"Medium"|"Low", "detail": string}, '
-    . '"water": {"frequency_days": number, "instructions": string}, '
-    . '"humidity": {"level": "High"|"Medium"|"Low", "detail": string}, '
-    . '"soil": string, "temperature": string, "fertilizing": string, "pruning": string, '
-    . '"toxicity": {"pet_friendly": boolean, "detail": string}, '
-    . '"common_issues": [{"issue": string, "solution": string}]}}. '
-    . "If the image does not clearly show a plant, set is_plant to false and leave other fields as best-effort or empty strings.";
-
-$userApiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : null;
-$systemApiKey = defined('GEMINI_API_KEY') ? GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: '');
-$activeKey = $userApiKey ?: $systemApiKey;
-
-$result = null;
-
-if (!empty($activeKey)) {
-    $result = gemini_vision_json_call($imageBase64, $prompt, $activeKey);
-}
-
-// If AI determined it is explicitly not a plant and no hint was provided
-if ($result !== null && isset($result['is_plant']) && $result['is_plant'] === false && empty($hint)) {
-    http_response_code(422);
-    echo json_encode(["status" => "error", "message" => "That doesn't look like a plant. Try a clearer photo."]);
-    exit;
-}
-
-// If AI vision failed, was unconfigured, or returned an incomplete shape, seamlessly use the botanical classifier
-if ($result === null || empty($result['species']) || !isset($result['care_plan'])) {
-    $result = identify_plant_fallback($imageBase64, $hint, $lang, $metrics);
-}
+// Identify plant using Trefle Botanical API with system master key
+$result = trefle_identify_plant($imageBase64, $hint, $lang, null, $metrics);
 
 // Log care event for user streak and activity tracking
-try {
-    $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, NULL, 'ai_scan')");
-    $eventStmt->execute([$user['id']]);
-} catch (Exception $e) {
-    // Continue even if logging fails
+if ($pdo) {
+    try {
+        $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, NULL, 'ai_scan')");
+        $eventStmt->execute([$user['id']]);
+    } catch (Exception $e) {
+        // Continue even if logging fails
+    }
 }
 
 echo json_encode([
     "status" => "success",
+    "source" => $result['source'] ?? "Pnapana Botanical AI",
     "identification" => [
-        "species" => $result['species'] ?? '',
-        "common_name" => $result['common_name'] ?? ($result['species'] ?? ''),
-        "confidence" => $result['confidence'] ?? 'high',
-        "description" => $result['description'] ?? ''
+        "species" => $result['identification']['species'] ?? '',
+        "common_name" => $result['identification']['common_name'] ?? ($result['identification']['species'] ?? ''),
+        "scientific_name" => $result['identification']['scientific_name'] ?? ($result['identification']['species'] ?? ''),
+        "family" => $result['identification']['family'] ?? '',
+        "genus" => $result['identification']['genus'] ?? '',
+        "confidence" => $result['identification']['confidence'] ?? 'high',
+        "description" => $result['identification']['description'] ?? '',
+        "image_url" => $result['identification']['image_url'] ?? null
     ],
     "care_plan" => $result['care_plan'] ?? [],
     "alternatives" => $result['alternatives'] ?? [],

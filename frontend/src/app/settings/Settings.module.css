@@ -1,212 +1,125 @@
-/* --- Core Variables for Enhanced Light Mode --- */
-
-
-
+/* Settings & Notifications */
 .container {
-  padding: 1.5rem;
-  max-width: 800px;
-  margin: 0 auto;
-  position: relative;
   min-height: 100vh;
+  background-color: var(--bg-primary);
+  padding: 1.8rem 2.2rem 4rem;
+  color: var(--text-primary);
+  max-width: 820px;
+  margin: 0 auto;
 }
 
-/* --- Animated Premium Mesh Background --- */
-.meshBg {
-  position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  background-color: #f7f9f6;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
+@media (max-width: 900px) {
+  .container {
+    padding: 1.2rem 1rem calc(7.5rem + env(safe-area-inset-bottom, 20px));
+  }
 }
 
-.meshOrb1, .meshOrb2, .meshOrb3 {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.5;
-  animation: float 20s infinite alternate ease-in-out;
+@media (min-width: 2000px) {
+  .container {
+    max-width: 1200px;
+    padding: 3rem 4rem 6rem;
+  }
 }
 
-.meshOrb1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, var(--accent-orange-dim), transparent 70%); }
-.meshOrb2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(48, 124, 70, 0.15), transparent 70%); animation-delay: -5s; }
-.meshOrb3 { top: 40%; left: 40%; width: 40vw; height: 40vw; background: radial-gradient(circle, rgba(52, 152, 219, 0.1), transparent 70%); animation-delay: -10s; }
-
-@keyframes float {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(50px, 50px) scale(1.1); }
-}
-
-/* --- Header --- */
 .header {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
-  padding-top: 1rem;
-}
-
-.backBtn {
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.8);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  text-decoration: none;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-  transition: all 0.3s ease;
-}
-.backBtn:hover {
-  background: var(--bg-secondary); transform: translateX(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  gap: 1.2rem;
+  margin-bottom: 2rem;
 }
 
 .header h1 {
-  font-size: 2.2rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  font-family: var(--font-serif);
-  letter-spacing: -0.5px;
-  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #12281b;
 }
 
+.backBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #dfeae2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #12281b;
+  box-shadow: 0 2px 8px rgba(18, 40, 27, 0.04);
+  transition: all 0.2s ease;
+}
 
-/* --- Settings Cards --- */
+.backBtn:hover {
+  background: #f7faf8;
+  transform: translateY(-1px);
+}
+
 .settingsContent {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding-bottom: 4rem;
-}
-
-.settingsCard {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  border: var(--glass-border);
-  border-radius: 32px;
-  padding: 2rem;
-  box-shadow: var(--glass-shadow);
-}
-
-.cardTitle {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: var(--glass-border);
-}
-
-/* --- Profile Section --- */
-.profileHeader {
-  display: flex;
-  align-items: center;
   gap: 1.5rem;
 }
 
-.profilePicLarge {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 4px solid white;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  flex-shrink: 0;
-}
-.profilePicLarge img { width: 100%; height: 100%; object-fit: cover; }
-
-.profileInfo { flex: 1; }
-.profileInfo h2 { font-size: 1.5rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; }
-.profileInfo p { font-size: 0.95rem; color: var(--primary-green); font-weight: 500; }
-
-.editBtn {
-  background: rgba(48, 124, 70, 0.1);
-  color: var(--primary-green);
-  border: none;
-  padding: 0.6rem 1.2rem;
+/* Settings Card */
+.settingsCard {
+  background: #ffffff;
+  border: 1px solid #e1ece5;
   border-radius: 20px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
+  padding: 1.8rem;
+  box-shadow: 0 4px 18px rgba(18, 40, 27, 0.03);
 }
-.editBtn:hover { background: var(--primary-green); color: var(--text-primary); }
 
-/* --- Setting Rows --- */
-.settingRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+.cardTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #12281b;
+  margin-bottom: 1.2rem;
 }
-.settingRow:last-child { margin-bottom: 0; }
 
-.settingInfo {
+/* Profile Header */
+.profileHeader {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1.4rem;
 }
 
-.settingIcon {
-  width: 44px; height: 44px;
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
+.profilePicLarge img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid #22c55e;
 }
 
-.settingInfo h4 { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; }
-.settingInfo p { font-size: 0.85rem; color: var(--text-muted); }
-
-/* --- Custom UI Elements --- */
-/* Switch */
-.switch { position: relative; display: inline-block; width: 54px; height: 30px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider {
-  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #ccc; transition: .4s; border-radius: 34px;
+.profileInfo h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #12281b;
+  margin-bottom: 0.2rem;
 }
-.slider:before {
-  position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px;
-  background-color: var(--bg-secondary); transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-input:checked + .slider { background-color: var(--primary-green); }
-input:checked + .slider:before { transform: translateX(24px); }
 
-/* Time Picker */
-.timePicker {
-  background: var(--glass-bg);
-  border: 1px solid rgba(0,0,0,0.1);
-  padding: 0.5rem 1rem;
-  border-radius: 12px;
-  font-family: inherit;
-  font-size: 1rem;
-  color: var(--text-primary);
-  font-weight: 500;
-  outline: none;
+.profileInfo p {
+  font-size: 0.88rem;
+  color: #637c6d;
 }
-.timePicker:focus { border-color: var(--primary-green); }
 
-/* --- Security & Password Card --- */
+/* Security Badge */
 .securityBadge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  background: #eaf7ee;
+  color: #16a34a;
   padding: 0.4rem 0.9rem;
-  border-radius: 20px;
-  background: rgba(48, 124, 70, 0.12);
-  color: var(--primary-green);
-  font-size: 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 1.5rem;
 }
 
+/* Security Form */
 .securityForm {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
-  margin-top: 1rem;
+  gap: 1rem;
 }
 
 .inputGroup {
@@ -216,9 +129,9 @@ input:checked + .slider:before { transform: translateX(24px); }
 }
 
 .inputGroup label {
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #2b4535;
 }
 
 .passwordField {
@@ -229,123 +142,249 @@ input:checked + .slider:before { transform: translateX(24px); }
 
 .passwordInput {
   width: 100%;
-  padding: 0.8rem 2.8rem 0.8rem 1rem;
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: var(--glass-bg);
+  background: #f7faf8;
+  border: 1px solid #dce8e0;
+  border-radius: 12px;
+  padding: 0.75rem 2.8rem 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #12281b;
   font-family: inherit;
-  font-size: 0.95rem;
-  color: var(--text-primary);
   outline: none;
   transition: all 0.2s ease;
 }
 
 .passwordInput:focus {
-  border-color: var(--primary-green);
-  box-shadow: 0 0 0 3px rgba(48, 124, 70, 0.15);
+  border-color: #22c55e;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
 }
 
 .togglePasswordBtn {
   position: absolute;
-  right: 0.8rem;
-  background: transparent;
+  right: 12px;
+  color: #8da295;
+  background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3rem;
-  border-radius: 8px;
-  transition: color 0.2s;
 }
 
 .togglePasswordBtn:hover {
-  color: var(--text-primary);
+  color: #12281b;
 }
 
-/* Strength Meter */
 .strengthContainer {
+  margin-top: 0.4rem;
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  margin-top: 0.2rem;
 }
 
 .strengthBar {
   flex: 1;
-  height: 6px;
-  background: rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
+  height: 4px;
+  background: #e5eee8;
+  border-radius: 999px;
   overflow: hidden;
-  position: relative;
 }
 
 .strengthFill {
   height: 100%;
-  border-radius: 6px;
-  transition: width 0.3s ease, background-color 0.3s ease;
+  transition: width 0.3s ease;
 }
 
 .strengthLabel {
   font-size: 0.75rem;
   font-weight: 600;
-  min-width: 50px;
-  text-align: right;
-  text-transform: capitalize;
 }
 
 .updatePasswordBtn {
-  background: var(--primary-green);
-  color: white;
-  border: none;
-  padding: 0.85rem 1.5rem;
-  border-radius: 14px;
-  font-size: 0.95rem;
+  background: #1fa652;
+  color: #ffffff;
+  font-size: 0.9rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 0.75rem 1.4rem;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
   align-self: flex-start;
+  box-shadow: 0 4px 12px rgba(31, 166, 82, 0.3);
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.updatePasswordBtn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(48, 124, 70, 0.3);
+.updatePasswordBtn:hover {
+  background: #178e45;
+  transform: translateY(-1px);
 }
 
-.updatePasswordBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
+/* Alert Boxes */
 .alertBox {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.1rem;
   border-radius: 12px;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 500;
 }
 
 .alertSuccess {
-  background: rgba(46, 204, 113, 0.15);
-  color: #27ae60;
-  border: 1px solid rgba(46, 204, 113, 0.3);
+  background: #eaf7ee;
+  color: #15803d;
+  border: 1px solid #c9ebd4;
 }
 
 .alertError {
-  background: rgba(231, 76, 60, 0.12);
-  color: #c0392b;
-  border: 1px solid rgba(231, 76, 60, 0.25);
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
-/* --- Deletion Modal --- */
-.modalBackdrop {
+/* App Preferences / Rows */
+.settingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f0f6f2;
+}
+
+.settingRow:last-child {
+  border-bottom: none;
+}
+
+.settingInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.settingIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settingInfo h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #12281b;
+}
+
+.settingInfo p {
+  font-size: 0.8rem;
+  color: #637c6d;
+}
+
+.timePicker {
+  background: #f7faf8;
+  border: 1px solid #dce8e0;
+  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #12281b;
+}
+
+/* Switch (iOS style toggle) */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #d1ded6;
+  transition: 0.3s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+input:checked + .slider {
+  background-color: #22c55e;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* Action Buttons (Log out, Delete) */
+.actionGrid {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.logoutBtn {
+  background: #f7faf8;
+  border: 1px solid #dce8e0;
+  color: #12281b;
+  padding: 0.75rem 1.4rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.logoutBtn:hover {
+  background: #eef5f0;
+  border-color: #cbdcd0;
+}
+
+.deleteBtn {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.75rem 1.4rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.deleteBtn:hover {
+  background: #fee2e2;
+}
+
+/* Modal */
+.modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(11, 41, 26, 0.5);
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
@@ -355,73 +394,46 @@ input:checked + .slider:before { transform: translateX(24px); }
 }
 
 .modalCard {
-  background: white;
-  border-radius: 28px;
-  max-width: 480px;
-  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e1ece5;
+  border-radius: 20px;
   padding: 2rem;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(11, 41, 26, 0.2);
 }
 
-@keyframes popIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.modalCard h3 {
-  font-size: 1.35rem;
+.modalTitle {
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #c0392b;
-  margin: 0;
+  color: #12281b;
+  margin-bottom: 0.6rem;
 }
 
-.modalCard p {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
+.modalText {
+  font-size: 0.88rem;
+  color: #556e5f;
   line-height: 1.5;
-  margin: 0;
+  margin-bottom: 1.2rem;
 }
 
 .modalActions {
   display: flex;
-  gap: 1rem;
   justify-content: flex-end;
-  margin-top: 0.5rem;
+  gap: 0.8rem;
+  margin-top: 1.5rem;
 }
 
-.modalCancelBtn {
-  background: var(--bg-secondary);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: var(--text-primary);
-  padding: 0.75rem 1.4rem;
-  border-radius: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.modalCancelBtn:hover {
-  background: #e4e7e4;
-}
-
-.modalConfirmBtn {
-  background: #e74c3c;
+.modalDangerBtn, .modalConfirmBtn {
+  background: #dc2626;
+  color: #ffffff;
+  padding: 0.65rem 1.3rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
   border: none;
-  color: white;
-  padding: 0.75rem 1.4rem;
-  border-radius: 14px;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
-}
-
-.modalConfirmBtn:hover:not(:disabled) {
-  background: #c0392b;
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+  transition: all 0.2s ease;
 }
 
 .modalConfirmBtn:disabled {
@@ -429,53 +441,77 @@ input:checked + .slider:before { transform: translateX(24px); }
   cursor: not-allowed;
 }
 
-/* --- Account Actions --- */
-.actionGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+.modalConfirmBtn:hover:not(:disabled) {
+  background: #b91c1c;
 }
 
-.logoutBtn, .deleteBtn {
+.modalCancelBtn {
+  background: #f7faf8;
+  border: 1px solid #dce8e0;
+  color: #12281b;
+  padding: 0.65rem 1.3rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 25, 17, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  z-index: 10000;
   padding: 1rem;
-  border-radius: 16px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  border: none;
 }
-
-.logoutBtn {
-  background: var(--glass-bg);
-  color: var(--text-primary);
-  border: 1px solid rgba(0,0,0,0.1);
-}
-.logoutBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
-
-.deleteBtn {
-  background: rgba(231, 76, 60, 0.1);
-  color: #c0392b;
-}
-.deleteBtn:hover { background: #e74c3c; color: var(--text-primary); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(231, 76, 60, 0.2); }
 
 .appVersion {
   text-align: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-top: 1rem;
-  font-weight: 500;
+  font-size: 0.78rem;
+  color: #8da295;
+  margin-top: 1.5rem;
 }
 
-/* --- Responsive --- */
-@media (max-width: 600px) {
-  .profileHeader { flex-direction: column; text-align: center; }
-  .settingRow { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .actionGrid { grid-template-columns: 1fr; }
-  .modalActions { flex-direction: column; }
-  .modalCancelBtn, .modalConfirmBtn { width: 100%; text-align: center; }
+/* Mesh Background Orbs */
+.meshBg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.meshOrb1, .meshOrb2, .meshOrb3 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+}
+
+.meshOrb1 {
+  top: -10%;
+  right: -5%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, #86efac 0%, transparent 70%);
+}
+
+.meshOrb2 {
+  bottom: 10%;
+  left: -5%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #bbf7d0 0%, transparent 70%);
+}
+
+.meshOrb3 {
+  top: 40%;
+  right: 25%;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, #fed7aa 0%, transparent 70%);
 }

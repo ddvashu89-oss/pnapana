@@ -154,8 +154,8 @@ export default function AdminSettings() {
 
           <div className={styles.settingRow}>
             <div>
-              <h4>AI Plant Scanning</h4>
-              <p>Enable Gemini-powered identification and health checks.</p>
+              <h4>Botanical Identification &amp; Scans</h4>
+              <p>Enable AI-powered plant identification and health checks.</p>
             </div>
             <label className={styles.switch}>
               <input type="checkbox" checked={aiScanningEnabled} onChange={e => setAiScanningEnabled(e.target.checked)} />

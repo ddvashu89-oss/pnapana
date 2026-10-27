@@ -19,23 +19,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en');
 
   useEffect(() => {
-    const stored = localStorage.getItem('language');
-    if (stored === 'en' || stored === 'hi') {
-      setLanguageState(stored);
-    }
+    // Enforce English language across all sessions
+    localStorage.setItem('language', 'en');
+    setLanguageState('en');
   }, []);
 
-  const setLanguage = useCallback((lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem('language', lang);
+  const setLanguage = useCallback((_lang: Language) => {
+    setLanguageState('en');
+    localStorage.setItem('language', 'en');
   }, []);
 
   const t = useCallback((key: string, vars?: Record<string, string | number>) => {
-    const dict = translations[language];
-    const fallbackDict = translations.en;
-    const str = dict[key] ?? fallbackDict[key] ?? key;
+    const dict = translations.en;
+    const str = dict[key] ?? key;
     return interpolate(str, vars);
-  }, [language]);
+  }, []);
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
