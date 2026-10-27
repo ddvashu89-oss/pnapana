@@ -440,7 +440,7 @@ export default function LandingPage() {
               <div style={{ fontSize: '0.68rem', color: '#637c6d' }}>Valley Oak • Family: Fagaceae</div>
             </div>
             <Link
-              href="/explore"
+              href={isLoggedIn ? "/explore" : "/login"}
               style={{
                 fontSize: '0.76rem',
                 fontWeight: 700,
@@ -583,14 +583,34 @@ export default function LandingPage() {
 
           {/* Card 4: Plants Market & Accessories (Span 8) */}
           <div className={styles.bentoCardSpan8}>
-            <div>
-              <div className={styles.bentoTag}>
-                <ShoppingBag size={14} /> Curated Market
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <div className={styles.bentoTag}>
+                  <ShoppingBag size={14} /> Curated Market
+                </div>
+                <h3 className={styles.bentoTitle}>Plants Market &amp; Designer Accessories</h3>
+                <p className={styles.bentoDesc}>
+                  Explore trending houseplants alongside minimalist Scandinavian ceramic pots and hanging planters. All prices in Indian Rupee (₹).
+                </p>
               </div>
-              <h3 className={styles.bentoTitle}>Plants Market &amp; Designer Accessories</h3>
-              <p className={styles.bentoDesc}>
-                Explore trending houseplants like Yellow Rose, Echeveria, and Nest Ferns alongside minimalist Scandinavian ceramic pots and hanging planters.
-              </p>
+              <Link
+                href={isLoggedIn ? "/explore" : "/login"}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: '#15803d',
+                  textDecoration: 'none',
+                  background: '#eaf7ee',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '999px',
+                  border: '1px solid #ccebd4'
+                }}
+              >
+                Explore Market ↗
+              </Link>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
@@ -601,7 +621,7 @@ export default function LandingPage() {
                   style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 0.4rem' }}
                 />
                 <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Yellow Rose</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>$6.00 – $14.23</div>
+                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹499 – ₹1,199</div>
               </div>
 
               <div style={{ background: '#f9fbf9', border: '1px solid #e1ece5', borderRadius: '20px', padding: '0.8rem', textAlign: 'center' }}>
@@ -611,7 +631,7 @@ export default function LandingPage() {
                   style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 0.4rem' }}
                 />
                 <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Echeveria</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>$23.00 – $50.23</div>
+                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹1,899 – ₹4,199</div>
               </div>
 
               <div style={{ background: '#f9fbf9', border: '1px solid #e1ece5', borderRadius: '20px', padding: '0.8rem', textAlign: 'center' }}>
@@ -619,7 +639,7 @@ export default function LandingPage() {
                   🪴
                 </div>
                 <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Vibes Fold Pot</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>$9.59 – $14.23</div>
+                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹799 – ₹1,199</div>
               </div>
 
               <div style={{ background: '#f9fbf9', border: '1px solid #e1ece5', borderRadius: '20px', padding: '0.8rem', textAlign: 'center' }}>
@@ -627,7 +647,7 @@ export default function LandingPage() {
                   🏺
                 </div>
                 <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Brussels Planter</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>$2.69 – $8.00</div>
+                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹249 – ₹699</div>
               </div>
             </div>
           </div>
@@ -857,7 +877,7 @@ export default function LandingPage() {
           </p>
           <div style={{ display: 'flex', gap: '0.9rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link
-              href="/login"
+              href={isLoggedIn ? "/dashboard" : "/login"}
               style={{
                 background: '#ffffff',
                 color: '#15803d',
@@ -869,10 +889,10 @@ export default function LandingPage() {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
               }}
             >
-              Get Started Free →
+              {isLoggedIn ? 'Go To Dashboard →' : 'Get Started Free →'}
             </Link>
             <Link
-              href="/explore"
+              href={isLoggedIn ? "/explore" : "/login"}
               style={{
                 background: 'rgba(255, 255, 255, 0.2)',
                 backdropFilter: 'blur(12px)',

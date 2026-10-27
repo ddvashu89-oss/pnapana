@@ -19,26 +19,24 @@ import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (localStorage.getItem('user')) {
-        setIsLoggedIn(true);
-      }
-      
-      // Manage body class for layout spacing
-      if (isAppShellRoute(pathname)) {
-        document.body.classList.add('has-sidebar');
-      } else {
-        document.body.classList.remove('has-sidebar');
-      }
+    setIsMounted(true);
+    const hasUser = typeof window !== 'undefined' && !!localStorage.getItem('user');
+    setIsLoggedIn(hasUser);
+    
+    // Manage body class for layout spacing: only add when authenticated on app-shell route
+    if (isAppShellRoute(pathname) && hasUser) {
+      document.body.classList.add('has-sidebar');
+    } else {
+      document.body.classList.remove('has-sidebar');
     }
   }, [pathname]);
 
-  // Only show the app sidebar on logged-in app-shell routes
-  if (!isAppShellRoute(pathname)) return null;
+  // Only show the app sidebar on logged-in app-shell routes when user is authenticated
+  if (!isMounted || !isLoggedIn || !isAppShellRoute(pathname)) return null;
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: true },
