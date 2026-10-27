@@ -6,6 +6,18 @@ DirectoryIndex index.html index.php
     Options -Indexes
 </IfModule>
 
+# Cache-Control headers: ensure HTML is never cached so deployments reflect instantly
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+    <FilesMatch "\.(js|css|webp|png|jpg|jpeg|gif|svg|ico|woff|woff2)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
 # Never serve dotfiles (.env, .git, .htaccess)
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>
