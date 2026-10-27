@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useTheme } from '@/lib/theme/ThemeContext';
 import Loader from '@/components/Loader';
 import { authFetch, getApiUrl } from '@/lib/api';
 import styles from './Settings.module.css';
@@ -19,11 +20,11 @@ interface UserData {
 export default function Settings() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { isDark, toggleTheme } = useTheme();
   const [user, setUser] = useState<UserData | null>(null);
 
   // App Preferences State
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [reminderTime, setReminderTime] = useState('09:00');
 
   // Change Password State
@@ -349,7 +350,12 @@ export default function Settings() {
               </div>
             </div>
             <label className={styles.switch}>
-              <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={isDark}
+                onChange={toggleTheme}
+                aria-label="Toggle dark mode"
+              />
               <span className={styles.slider}></span>
             </label>
           </div>

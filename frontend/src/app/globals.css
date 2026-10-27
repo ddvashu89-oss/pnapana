@@ -89,6 +89,222 @@
   --radius-full: 999px;
 }
 
+/* =========================================================================
+   DARK THEME SYSTEM
+   ========================================================================= */
+:root[data-theme="dark"],
+html[data-theme="dark"],
+body.dark-theme {
+  /* Rich Botanical Dark Slate */
+  --bg-primary: #0a150f;            /* Deep obsidian green/slate */
+  --bg-secondary: #102218;          /* Elevated dark botanical surface */
+  --bg-tertiary: #162d20;           /* Subtle dark tint */
+  
+  --text-primary: #f0f7f3;          /* Bright clean off-white */
+  --text-secondary: #9dbca8;        /* Soothing mint-sage */
+  --text-muted: #6f8c7b;            /* Soft muted olive-gray */
+  
+  /* Sidebar */
+  --sidebar-bg: #07150e;
+  --sidebar-bg-dark: #040d09;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: #8db59c;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: #143b24;
+  --sidebar-active-text: #ffffff;
+  
+  /* Cards */
+  --card-bg: #102218;
+  --card-border: 1px solid rgba(255, 255, 255, 0.08);
+  --card-border-hover: 1px solid rgba(52, 211, 153, 0.3);
+  --card-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.5);
+  --card-shadow-hover: 0 10px 32px -4px rgba(0, 0, 0, 0.7);
+  
+  /* Glassmorphism */
+  --glass-bg: rgba(16, 34, 24, 0.88);
+  --glass-bg-hover: rgba(22, 45, 32, 0.96);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+  /* Accents in dark mode */
+  --accent-green-dim: rgba(34, 197, 94, 0.16);
+  --accent-orange-dim: rgba(245, 158, 11, 0.16);
+  --accent-red-dim: rgba(239, 68, 68, 0.16);
+  --accent-blue-dim: rgba(59, 130, 246, 0.16);
+
+  /* Gradients */
+  --grad-hero: linear-gradient(135deg, #07170f 0%, #0e291a 100%);
+  --grad-weather: linear-gradient(135deg, #0e2417 0%, #153825 100%);
+
+  /* Mockup Bento Tints & Pills */
+  --pill-temp-bg: rgba(163, 230, 53, 0.14);
+  --pill-temp-text: #bef264;
+  --pill-light-bg: rgba(34, 197, 94, 0.14);
+  --pill-light-text: #86efac;
+  --pill-humidity-bg: rgba(245, 158, 11, 0.14);
+  --pill-humidity-text: #fde047;
+  --pill-dock-active: rgba(34, 197, 94, 0.22);
+}
+
+/* Global Dark Mode Overrides for hardcoded elements */
+[data-theme="dark"] body,
+body.dark-theme {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+body.dark-theme input,
+body.dark-theme textarea,
+body.dark-theme select {
+  background-color: #142a1e !important;
+  color: #f0f7f3 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder,
+body.dark-theme input::placeholder,
+body.dark-theme textarea::placeholder {
+  color: #6f8c7b !important;
+}
+
+/* Card & container dark overrides */
+[data-theme="dark"] [class*="dashboardWrapper"],
+body.dark-theme [class*="dashboardWrapper"] {
+  background-color: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] [class*="settingsCard"],
+[data-theme="dark"] [class*="card"],
+body.dark-theme [class*="settingsCard"],
+body.dark-theme [class*="card"] {
+  background-color: var(--card-bg) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Specific component dark overrides */
+[data-theme="dark"] [class*="searchBar"],
+body.dark-theme [class*="searchBar"] {
+  background-color: #142a1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] [class*="topBar"],
+[data-theme="dark"] [class*="userPill"],
+body.dark-theme [class*="topBar"],
+body.dark-theme [class*="userPill"] {
+  background-color: #142a1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f0f7f3 !important;
+}
+
+[data-theme="dark"] [class*="notifBtn"],
+body.dark-theme [class*="notifBtn"] {
+  background-color: #142a1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #9dbca8 !important;
+}
+
+[data-theme="dark"] [class*="plantCard"],
+body.dark-theme [class*="plantCard"] {
+  background-color: #102218 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] [class*="plantTitle"],
+[data-theme="dark"] [class*="productTitle"],
+[data-theme="dark"] [class*="settingInfo"] h4,
+[data-theme="dark"] [class*="cardTitle"],
+body.dark-theme [class*="plantTitle"],
+body.dark-theme [class*="productTitle"],
+body.dark-theme [class*="settingInfo"] h4,
+body.dark-theme [class*="cardTitle"] {
+  color: #f0f7f3 !important;
+}
+
+[data-theme="dark"] [class*="greetingBlock"] h1,
+body.dark-theme [class*="greetingBlock"] h1 {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] [class*="greetingSub"],
+body.dark-theme [class*="greetingSub"] {
+  color: #9dbca8 !important;
+}
+
+[data-theme="dark"] [class*="remindersCard"],
+[data-theme="dark"] [class*="activityCard"],
+[data-theme="dark"] [class*="statusCard"],
+body.dark-theme [class*="remindersCard"],
+body.dark-theme [class*="activityCard"],
+body.dark-theme [class*="statusCard"] {
+  background-color: #102218 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="dark"] [class*="reminderItem"],
+[data-theme="dark"] [class*="activityItem"],
+body.dark-theme [class*="reminderItem"],
+body.dark-theme [class*="activityItem"] {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] [class*="reminderTitle"],
+[data-theme="dark"] [class*="activityTitle"],
+body.dark-theme [class*="reminderTitle"],
+body.dark-theme [class*="activityTitle"] {
+  color: #f0f7f3 !important;
+}
+
+[data-theme="dark"] [class*="reminderTime"],
+[data-theme="dark"] [class*="activitySub"],
+body.dark-theme [class*="reminderTime"],
+body.dark-theme [class*="activitySub"] {
+  color: #8daea0 !important;
+}
+
+[data-theme="dark"] [class*="modalContent"],
+body.dark-theme [class*="modalContent"] {
+  background-color: #0f2017 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f0f7f3 !important;
+}
+
+[data-theme="dark"] [class*="settingRow"],
+body.dark-theme [class*="settingRow"] {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-theme="dark"] [class*="settingInfo"] p,
+body.dark-theme [class*="settingInfo"] p {
+  color: #8daea0 !important;
+}
+
+[data-theme="dark"] [class*="timePicker"],
+body.dark-theme [class*="timePicker"] {
+  background-color: #142a1e !important;
+  color: #f0f7f3 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track,
+body.dark-theme ::-webkit-scrollbar-track {
+  background: #0a150f;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb,
+body.dark-theme ::-webkit-scrollbar-thumb {
+  background: #1b3827;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: #234d35;
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }

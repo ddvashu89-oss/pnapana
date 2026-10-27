@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Star,
   Sun,
+  Moon,
   Droplets,
   Shield,
   Clock,
@@ -30,6 +31,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { useTheme } from '@/lib/theme/ThemeContext';
 import { authFetch } from '@/lib/api';
 import { getPlantImageUrl, handlePlantImageError } from '@/lib/plantImages';
 import PlantCompanion, { CompanionMood } from '@/components/PlantCompanion';
@@ -53,6 +55,7 @@ interface Plant {
 export default function Home() {
   const router = useRouter();
   const { t } = useLanguage();
+  const { isDark, toggleTheme } = useTheme();
   const [user, setUser] = useState<{ id: number; name: string; email?: string; token?: string } | null>(null);
   const [plants, setPlants] = useState<Plant[]>([]);
   const [thirstyPlants, setThirstyPlants] = useState<number[]>([]);
@@ -550,6 +553,15 @@ export default function Home() {
           </div>
 
           <div className={styles.topProfileActions}>
+            <button
+              className={styles.notifBtn}
+              onClick={toggleTheme}
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              aria-label="Toggle theme"
+            >
+              {isDark ? <Sun size={18} color="#f59e0b" /> : <Moon size={18} />}
+            </button>
+
             <button className={styles.notifBtn} title="Notifications">
               <Bell size={18} />
               <span className={styles.notifBadge} />

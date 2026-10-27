@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/lib/theme/ThemeContext';
 import CareGuideLink from './CareGuideLink';
 import styles from '@/app/Landing.module.css';
 
@@ -26,6 +28,7 @@ const DEFAULT_LABELS: Required<Labels> = {
 
 export default function MarketingNav({ labels }: { labels?: Labels }) {
   const l = { ...DEFAULT_LABELS, ...labels };
+  const { isDark, toggleTheme } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -68,6 +71,27 @@ export default function MarketingNav({ labels }: { labels?: Labels }) {
             <Link href="/login" className={styles.signupBtn} onClick={close}>{l.getStarted}</Link>
           </>
         )}
+        <button
+          onClick={toggleTheme}
+          style={{
+            background: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.05)',
+            border: isDark ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(0, 0, 0, 0.08)',
+            borderRadius: '999px',
+            width: '36px',
+            height: '36px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            marginLeft: '0.4rem',
+            color: isDark ? '#f59e0b' : '#15803d',
+            transition: 'all 0.2s ease'
+          }}
+          title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          aria-label="Toggle theme"
+        >
+          {isDark ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
       </div>
     </nav>
   );

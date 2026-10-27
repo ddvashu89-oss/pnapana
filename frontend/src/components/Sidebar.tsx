@@ -12,13 +12,17 @@ import {
   CreditCard,
   Settings,
   Camera,
-  User
+  User,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { useTheme } from '@/lib/theme/ThemeContext';
 import { isAppShellRoute } from '@/lib/routePolicy';
 import styles from './Sidebar.module.css';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { isDark, toggleTheme } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -71,6 +75,14 @@ export default function Sidebar() {
               <span className={styles.brandTagline}>Your Plant · Our AI</span>
             </div>
           </Link>
+          <button
+            onClick={toggleTheme}
+            className={styles.themeToggleBtn}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun size={17} color="#f59e0b" /> : <Moon size={17} color="#95b8a3" />}
+          </button>
         </div>
 
         <nav className={styles.navGroup}>

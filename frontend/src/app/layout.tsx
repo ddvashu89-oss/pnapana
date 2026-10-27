@@ -10,6 +10,7 @@ import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import MaintenanceGate from "@/components/MaintenanceGate";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
+import { ThemeProvider } from "@/lib/theme/ThemeContext";
 
 export default function RootLayout({
   children,
@@ -17,19 +18,38 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var t = localStorage.getItem('theme');
+                  if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                    if (document.body) document.body.classList.add('dark-theme');
+                  }
+                } catch(e) {}
+              })();
+            `
+          }}
+        />
+      </head>
       <body>
-        <LanguageProvider>
-          <MaintenanceGate>
-            <div className="app-layout">
-              <Sidebar />
-              <main className="main-content">
-                {children}
-                <Footer />
-              </main>
-            </div>
-          </MaintenanceGate>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <MaintenanceGate>
+              <div className="app-layout">
+                <Sidebar />
+                <main className="main-content">
+                  {children}
+                  <Footer />
+                </main>
+              </div>
+            </MaintenanceGate>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
