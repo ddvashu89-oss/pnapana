@@ -15,9 +15,7 @@ export default function CareGuideLink({ className, children }: { className?: str
     if (!stored) return;
     try {
       const user = JSON.parse(stored);
-      if (user?.is_admin) {
-        setHref(typeof window !== 'undefined' && !window.location.hostname.includes('localhost') ? 'https://dashboard.pnapana.live' : '/admin/care-guide');
-      }
+      if (user?.is_admin) setHref('/admin/care-guide');
     } catch {
       // malformed localStorage value — fall back to the public page
     }

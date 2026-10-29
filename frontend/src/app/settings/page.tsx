@@ -36,6 +36,13 @@ export default function Settings() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  // Gemini API Key State
+  const [apiKey, setApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  const [apiKeySuccess, setApiKeySuccess] = useState<string | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
   // Account Deletion State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -51,6 +58,9 @@ export default function Settings() {
     try {
       const parsed = JSON.parse(storedUser);
       setUser(parsed);
+      if (parsed.gemini_api_key) {
+        setApiKey(parsed.gemini_api_key);
+      }
     } catch {
       router.push('/login');
     }
@@ -132,6 +142,36 @@ export default function Settings() {
     }
   };
 
+  const handleUpdateApiKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setApiKeyError(null);
+    setApiKeySuccess(null);
+    setApiKeyLoading(true);
+
+    try {
+      const res = await authFetch('update_gemini_key.php', {
+        method: 'POST',
+        body: JSON.stringify({ gemini_api_key: apiKey.trim() })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.status === 'success') {
+        setApiKeySuccess(t('settings.apiKeyUpdated'));
+        if (user) {
+          const updatedUser = { ...user, gemini_api_key: apiKey.trim() || null };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
+      } else {
+        setApiKeyError(data.message || 'Failed to update Gemini API key.');
+      }
+    } catch {
+      setApiKeyError('Network error. Please try again.');
+    } finally {
+      setApiKeyLoading(false);
+    }
+  };
+
   const handleConfirmDeleteAccount = async () => {
     if (!deletePassword) {
       setDeleteError('Please enter your password to confirm deletion.');
@@ -207,8 +247,72 @@ export default function Settings() {
             <span>{t('settings.securityActive')} • {t('settings.tokenSession')}</span>
           </div>
 
+          {/* Gemini API Key Section */}
+          <form onSubmit={handleUpdateApiKey} className={styles.securityForm} style={{ marginBottom: '2rem', paddingBottom: '1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t('settings.geminiApiKey')}</h4>
+              <a 
+                href="https://aistudio.google.com/app/apikey" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ fontSize: '0.8rem', color: 'var(--accent-green)', textDecoration: 'none', fontWeight: 600 }}
+              >
+                Get Free Key ↗
+              </a>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem', marginBottom: '0.8rem' }}>
+              {t('settings.geminiApiKeyHelp')}
+            </p>
+
+            {apiKeySuccess && (
+              <div className={`${styles.alertBox} ${styles.alertSuccess}`}>
+                ✓ {apiKeySuccess}
+              </div>
+            )}
+            {apiKeyError && (
+              <div className={`${styles.alertBox} ${styles.alertError}`}>
+                ⚠ {apiKeyError}
+              </div>
+            )}
+
+            <div className={styles.inputGroup}>
+              <div className={styles.passwordField}>
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  className={styles.passwordInput}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="AIzaSy... (leave blank to clear)"
+                  autoComplete="off"
+                  spellCheck="false"
+                />
+                <button
+                  type="button"
+                  className={styles.togglePasswordBtn}
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  aria-label="Toggle API Key visibility"
+                >
+                  {showApiKey ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className={styles.updatePasswordBtn} disabled={apiKeyLoading} style={{ marginTop: '0.4rem' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              {apiKeyLoading ? t('settings.updatingApiKey') : t('settings.updateApiKeyBtn')}
+            </button>
+          </form>
+
           {/* Change Password Section */}
-          <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.8rem', marginTop: '1.2rem' }}>{t('settings.changePassword')}</h4>
+          <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.8rem' }}>{t('settings.changePassword')}</h4>
           <form onSubmit={handleChangePassword} className={styles.securityForm}>
             {passwordSuccess && (
               <div className={`${styles.alertBox} ${styles.alertSuccess}`}>

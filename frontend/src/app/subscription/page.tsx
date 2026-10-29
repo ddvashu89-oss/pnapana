@@ -48,53 +48,6 @@ function planPerks(p: Plan) {
   ];
 }
 
-const FALLBACK_SUBSCRIPTION_DATA: Data = {
-  customer_id: 'PNP-2026-000001',
-  current_plan: {
-    id: 1,
-    code: 'FREE',
-    name: 'Free Starter',
-    price_inr: 0,
-    billing_days: 0,
-    max_plants: 5,
-    ai_diagnosis: false,
-    ai_chat: false,
-    weather_care: false,
-    expires_at: null
-  },
-  plans: [
-    {
-      id: 1,
-      code: 'FREE',
-      name: 'Free Starter',
-      price_inr: 0,
-      billing_days: 0,
-      max_plants: 5,
-      ai_diagnosis: false,
-      ai_chat: false,
-      weather_care: false
-    },
-    {
-      id: 2,
-      code: 'PREMIUM',
-      name: 'Green Thumb Premium',
-      price_inr: 1,
-      billing_days: 30,
-      max_plants: null,
-      ai_diagnosis: true,
-      ai_chat: true,
-      weather_care: true
-    }
-  ],
-  payments: [],
-  plant_count: 1,
-  plant_limit: 5,
-  upi: {
-    id: 'pnapana@upi',
-    payee_name: 'Pnapana Botanical'
-  }
-};
-
 export default function Subscription() {
   const router = useRouter();
   const [data, setData] = useState<Data | null>(null);
@@ -127,16 +80,10 @@ export default function Subscription() {
     authFetch('get_subscription.php')
       .then(res => res.json())
       .then(d => {
-        if (d.status === 'success') {
-          setData(d);
-        } else {
-          // Fall back gracefully so user never sees a raw database error
-          setData(FALLBACK_SUBSCRIPTION_DATA);
-        }
+        if (d.status === 'success') setData(d);
+        else setError(d.message || 'Could not load your subscription.');
       })
-      .catch(() => {
-        setData(FALLBACK_SUBSCRIPTION_DATA);
-      })
+      .catch(() => setError('Could not reach the server.'))
       .finally(() => setIsLoading(false));
   }
 

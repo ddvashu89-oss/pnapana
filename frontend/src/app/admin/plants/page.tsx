@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Loader from '@/components/Loader';
 import { adminFetch, adminFetchJson } from '@/lib/adminApi';
-import { getPlantImageUrl, handlePlantImageError } from '@/lib/plantImages';
 import styles from '../Admin.module.css';
 
 type Plant = {
@@ -106,17 +105,7 @@ export default function PlantsManagement() {
               </td></tr>
             ) : plants.map(plant => (
               <tr key={plant.id}>
-                <td style={{ fontWeight: 600 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                    <img
-                      src={getPlantImageUrl(plant.image_url, plant.name)}
-                      alt={plant.name}
-                      onError={handlePlantImageError}
-                      style={{ width: '34px', height: '34px', borderRadius: '8px', objectFit: 'cover' }}
-                    />
-                    <span>{plant.name}</span>
-                  </div>
-                </td>
+                <td style={{ fontWeight: 500 }}>🌿 {plant.name}</td>
                 <td style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>{plant.species}</td>
                 <td>{plant.owner_name}</td>
                 <td>

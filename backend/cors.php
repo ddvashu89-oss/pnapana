@@ -29,29 +29,15 @@ if (!function_exists('pnapana_cors')) {
         }
 
         if ($raw === null || $raw === '') {
-            // Local development and standard production domains fallback.
-            return [
-                'http://localhost:3000',
-                'http://127.0.0.1:3000',
-                'https://pnapana.live',
-                'https://www.pnapana.live',
-                'https://dashboard.pnapana.live',
-                'http://dashboard.pnapana.live'
-            ];
+            // Local development fallback. Production must set ALLOWED_ORIGINS.
+            return ['http://localhost:3000', 'http://127.0.0.1:3000'];
         }
 
         if (is_string($raw)) {
             $raw = explode(',', $raw);
         }
 
-        $origins = array_values(array_filter(array_map('trim', (array)$raw), 'strlen'));
-        if (!in_array('https://dashboard.pnapana.live', $origins, true)) {
-            $origins[] = 'https://dashboard.pnapana.live';
-        }
-        if (!in_array('http://dashboard.pnapana.live', $origins, true)) {
-            $origins[] = 'http://dashboard.pnapana.live';
-        }
-        return $origins;
+        return array_values(array_filter(array_map('trim', (array)$raw), 'strlen'));
     }
 
     /**

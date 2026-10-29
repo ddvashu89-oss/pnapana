@@ -61,8 +61,6 @@ if ($user && password_verify($password, $user['password'])) {
     ], JWT_SECRET);
 
     $user['token'] = $jwt;
-    unset($user['gemini_api_key']);
-    unset($user['trefle_api_key']);
 
     echo json_encode(["status" => "success", "user" => $user]);
 } else {

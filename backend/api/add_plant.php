@@ -51,7 +51,7 @@ $native_region = $data['native_region'] ?? null;
 $light_requirement = $data['light_requirement'] ?? null;
 $water_requirement = $data['water_requirement'] ?? null;
 $humidity = $data['humidity'] ?? null;
-$pet_friendly = !empty($data['pet_friendly']) ? 1 : 0;
+$pet_friendly = isset($data['pet_friendly']) ? (bool)$data['pet_friendly'] : false;
 $care_plan = isset($data['care_plan']) ? json_encode($data['care_plan']) : null;
 if ($care_plan === false) {
     $care_plan = null;
