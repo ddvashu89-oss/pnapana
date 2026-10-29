@@ -73,20 +73,6 @@ function get_active_plan(PDO $pdo, $userId) {
         $plan['ai_chat'] = (bool)$plan['ai_chat'];
         $plan['weather_care'] = (bool)$plan['weather_care'];
         $plan['price_inr'] = (float)$plan['price_inr'];
-    } else {
-        $plan = [
-            'id' => 1,
-            'code' => 'FREE',
-            'name' => 'Free',
-            'price_inr' => 0.0,
-            'billing_days' => 0,
-            'max_plants' => 5,
-            'ai_diagnosis' => false,
-            'ai_chat' => false,
-            'weather_care' => false,
-            'subscription_status' => 'ACTIVE',
-            'expires_at' => null
-        ];
     }
 
     return $plan;

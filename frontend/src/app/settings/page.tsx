@@ -23,6 +23,7 @@ export default function Settings() {
 
   // App Preferences State
   const [pushNotifications, setPushNotifications] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   const [reminderTime, setReminderTime] = useState('09:00');
 
   // Change Password State
@@ -437,6 +438,22 @@ export default function Settings() {
             </div>
             <label className={styles.switch}>
               <input type="checkbox" checked={pushNotifications} onChange={(e) => setPushNotifications(e.target.checked)} />
+              <span className={styles.slider}></span>
+            </label>
+          </div>
+
+          <div className={styles.settingRow}>
+            <div className={styles.settingInfo}>
+              <div className={styles.settingIcon} style={{ background: 'rgba(155, 89, 182, 0.1)', color: '#9b59b6' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+              </div>
+              <div>
+                <h4>{t('settings.darkMode')}</h4>
+                <p>{t('settings.darkModeText')}</p>
+              </div>
+            </div>
+            <label className={styles.switch}>
+              <input type="checkbox" checked={darkMode} onChange={(e) => setDarkMode(e.target.checked)} />
               <span className={styles.slider}></span>
             </label>
           </div>

@@ -213,9 +213,9 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Subscription plans. Change the price here, not in code.
 INSERT INTO subscription_plans (code, name, price_inr, billing_days, max_plants, ai_diagnosis, ai_chat, weather_care)
 VALUES
-    ('FREE',    'Free',    0.00,  0,  5,    0, 0, 0),
-    ('PREMIUM', 'Premium', 1.00, 30, NULL, 1, 1, 1)
-ON DUPLICATE KEY UPDATE name = VALUES(name), max_plants = VALUES(max_plants), price_inr = VALUES(price_inr);
+    ('FREE',    'Free',    0.00,  0,  2,    0, 0, 0),
+    ('PREMIUM', 'Premium', 29.00, 30, NULL, 1, 1, 1)
+ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- Default site settings. Set your UPI ID from Admin > Settings after logging in.
 INSERT INTO app_settings (id) VALUES (1)

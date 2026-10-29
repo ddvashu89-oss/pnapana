@@ -55,7 +55,7 @@ export default function MarketingNav({ labels }: { labels?: Labels }) {
       {isOpen && <div className={styles.navOverlay} onClick={close}></div>}
 
       <div className={`${styles.navLinks} ${isOpen ? styles.navLinksOpen : ''}`}>
-        <Link href={isLoggedIn ? "/explore" : "/login"} className={styles.navLink} onClick={close}>{l.explore}</Link>
+        <Link href="/explore" className={styles.navLink} onClick={close}>{l.explore}</Link>
         <Link href="/about" className={styles.navLink} onClick={close}>{l.about}</Link>
         <CareGuideLink className={styles.navLink}>{l.careGuide}</CareGuideLink>
         <Link href="/contact" className={styles.navLink} onClick={close}>{l.contact}</Link>

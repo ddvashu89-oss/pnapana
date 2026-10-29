@@ -99,7 +99,7 @@ export default function PaymentsManagement() {
   async function review(payment: Payment, decision: 'APPROVED' | 'REJECTED') {
     const verb = decision === 'APPROVED' ? 'Approve' : 'Reject';
     const note = prompt(
-      `${verb} ${payment.plan_name} payment of ₹${payment.amount} from ${payment.customer_id}?\n\nOptional note for the record:`
+      `${verb} ${payment.plan_name} payment of Rs${payment.amount} from ${payment.customer_id}?\n\nOptional note for the record:`
     );
     if (note === null) return;
 
