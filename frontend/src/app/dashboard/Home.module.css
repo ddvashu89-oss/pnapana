@@ -62,7 +62,7 @@
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 0.3rem;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   letter-spacing: -0.5px;
 }
 
@@ -478,7 +478,7 @@
 .collectionSection { margin-top: 3rem; }
 
 .sectionHeader { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.sectionHeader h3 { font-size: 1.6rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-serif); }
+.sectionHeader h3 { font-size: 1.6rem; font-weight: 600; color: var(--text-primary); font-family: var(--font-sans); }
 
 .searchBar {
   display: flex;
@@ -648,7 +648,7 @@
 }
 .closeBtn { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-tertiary); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background 0.2s; }
 .closeBtn:hover { background: var(--bg-tertiary); }
-.modalContent h2 { font-size: 1.8rem; margin-bottom: 1.5rem; font-family: var(--font-serif); color: var(--text-primary); }
+.modalContent h2 { font-size: 1.8rem; margin-bottom: 1.5rem; font-family: var(--font-sans); color: var(--text-primary); }
 
 .inputGroup { margin-bottom: 1.5rem; }
 .inputGroup label { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; }
@@ -737,7 +737,7 @@
 .shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin: 15px 0 26px; }
 .shortcuts > a, .shortcuts > button { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 20px 10px; border-radius: 24px; border: var(--glass-border); background: white; box-shadow: var(--glass-shadow); gap: 10px; transition: border-color .2s, transform .2s; }
 .shortcuts > a:hover, .shortcuts > button:hover { border-color: #bed5be; transform: translateY(-2px); }
-.shortcuts strong { font: 600 19px/1.15 var(--font-serif); }
+.shortcuts strong { font: 600 19px/1.15 var(--font-sans); }
 .shortcuts span { display: grid; place-items: center; width: 47px; height: 47px; border-radius: 15px; }
 .shortcutGreen { background: #e2f0e6; color: #3b7250; }
 .shortcutBlue { background: #e3eff5; color: #46839a; }
@@ -762,10 +762,10 @@
 .bentoTile:hover { transform: none; border-color: #dce5d7; box-shadow: var(--glass-shadow); }
 .tasksTile, .milestonesTile, .statsTile { grid-column: auto; }
 .milestonesTile { order: 3; grid-column: 1 / -1; background: white; scroll-margin-top: 100px; }
-.bentoHeader h3 { font-family: var(--font-serif); font-size: 20px; }
+.bentoHeader h3 { font-family: var(--font-sans); font-size: 20px; }
 .coinPill { color: #936c22 !important; }
 .statsTile { flex-direction: row; gap: 10px; }
-.streakInfo h4 { font: 600 22px var(--font-serif); color: var(--text-primary); }
+.streakInfo h4 { font: 600 22px var(--font-sans); color: var(--text-primary); }
 .streakInfo p, .statsLabel { font-size: 10px; text-transform: none; letter-spacing: 0; font-weight: 400; }
 .streakFlame { background: #fcf3dd; border-radius: 17px; width: 47px; height: 47px; display: grid; place-items: center; font-size: 24px; animation: none; filter: none; }
 .statCircle { width: 60px; height: 60px; }
@@ -800,13 +800,13 @@
 /* Match the reference's compact cards and single-column daily rhythm. */
 .photoStreakCard { display: flex; align-items: center; gap: 16px; padding: 20px; margin: 20px 0; background: white; border: var(--glass-border); border-radius: 22px; box-shadow: var(--glass-shadow); }
 .photoStreakIcon { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 17px; background: #fbf3de; color: #b38a3c; flex-shrink: 0; }
-.photoStreakCard h3 { font: 600 22px/1.3 var(--font-serif); }
+.photoStreakCard h3 { font: 600 22px/1.3 var(--font-sans); }
 .photoStreakCard p { color: var(--text-muted); font-size: 13px; line-height: 1.6; margin-top: 5px; }
 .photoStreakCard > a { margin-left: auto; color: var(--primary-green); padding: 10px; }
 @media (max-width: 768px) {
  .container { padding: 18px 16px 35px; }
  .header { margin-bottom: 15px; }
- .eyebrow { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 2.1px; font-weight: 400; margin-bottom: 8px; }
+ .eyebrow { font-family: var(--font-sans); font-size: 10px; letter-spacing: 2.1px; font-weight: 400; margin-bottom: 8px; }
  .greeting h1 { font-size: 33px; font-weight: 700; margin-bottom: 0; line-height: 1.15; letter-spacing: -.5px; }
  .shortcuts { gap: 10px; margin: 12px 0 23px; }
  .shortcuts > a, .shortcuts > button { border-radius: 21px; padding: 14px 8px; min-height: 109px; gap: 9px; justify-content: flex-start; }
@@ -829,4 +829,31 @@
  .photoStreakIcon { width: 54px; height: 54px; }
  .statsTile { order: initial; }
  .fabButton { display: none; }
+}
+
+.plantCareForecast { margin: 24px 0 28px; }
+.plantCareHeader, .dashboardCarePlanHeader { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
+.plantCareHeader { margin-bottom: 14px; }
+.plantCareHeader h2, .dashboardCarePlanHeader h2 { font: 600 23px/1.2 var(--font-sans); color: var(--text-primary); }
+.plantCareHeader p { margin-top: 5px; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.plantCarePicker { display: grid; gap: 5px; color: var(--text-muted); font-size: 11px; flex: 0 0 min(190px, 38%); }
+.plantCarePicker select { width: 100%; padding: 9px 32px 9px 12px; border: var(--glass-border); border-radius: 12px; background: white; color: var(--text-primary); font-size: 14px; }
+.dashboardCarePlan { margin-top: 24px; }
+.dashboardCarePlanHeader { margin-bottom: 13px; }
+.dashboardCarePlanHeader a { display: inline-flex; align-items: center; gap: 3px; color: var(--primary-green); font-size: 12px; white-space: nowrap; }
+.dashboardCareRows { overflow: hidden; border: var(--glass-border); border-radius: 22px; background: white; box-shadow: var(--glass-shadow); }
+.dashboardCareRow { display: flex; align-items: flex-start; gap: 17px; padding: 20px; border-bottom: 1px solid #eff0e9; }
+.dashboardCareRow:last-child { border-bottom: 0; }
+.dashboardCareIcon { display: grid; place-items: center; width: 43px; height: 43px; flex: 0 0 43px; border-radius: 13px; background: #f0f7f0; color: #437d53; }
+.dashboardCareRow > div { min-width: 0; }
+.dashboardCareLabel { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 7px; color: var(--text-muted); font-size: 14px; }
+.dashboardCareLabel em { padding: 4px 11px; border-radius: 99px; background: #f3f0e6; color: #596251; font-size: 12px; font-style: normal; font-weight: 500; }
+.dashboardCareRow p { color: var(--text-secondary); font-size: 15px; line-height: 1.7; }
+@media (max-width: 600px) {
+ .plantCareForecast { margin: 20px 0 25px; }
+ .plantCareHeader { align-items: flex-start; flex-direction: column; }
+ .plantCareHeader h2, .dashboardCarePlanHeader h2 { font-size: 21px; }
+ .plantCarePicker { width: 100%; flex-basis: auto; }
+ .dashboardCareRow { gap: 14px; padding: 20px 17px; }
+ .dashboardCareRow p { font-size: 14px; line-height: 1.65; }
 }

@@ -76,7 +76,7 @@ export default function CareGuide() {
               }}
             >
               <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{topic.icon}</div>
-              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.8rem' }}>{topic.title}</h3>
+              <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.8rem' }}>{topic.title}</h3>
               <p style={{ color: 'var(--text-secondary)', lineHeight: '1.7' }}>{topic.text}</p>
             </motion.div>
           ))}
@@ -89,7 +89,7 @@ export default function CareGuide() {
           transition={{ duration: 0.5 }}
           style={{ maxWidth: '700px', margin: '4rem auto 0', textAlign: 'center' }}
         >
-          <p style={{ color: 'var(--text-primary)', fontSize: '1.3rem', fontWeight: 600, fontStyle: 'italic', fontFamily: 'var(--font-serif)', marginBottom: '2rem' }}>
+          <p style={{ color: 'var(--text-primary)', fontSize: '1.3rem', fontWeight: 600, fontStyle: 'italic', fontFamily: 'var(--font-sans)', marginBottom: '2rem' }}>
             Want a care plan personalized to your exact plants, with reminders and AI diagnostics?
           </p>
           <Link href="/login" className={styles.primaryCta}>Get Started for Free</Link>

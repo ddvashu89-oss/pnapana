@@ -33,7 +33,7 @@ export default function AdminCareGuide() {
             transition={{ duration: 0.4, delay: i * 0.05 }}
           >
             <div style={{ fontSize: '2rem', marginBottom: '0.8rem' }}>{topic.icon}</div>
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '0.6rem' }}>{topic.title}</h3>
+            <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '0.6rem' }}>{topic.title}</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>{topic.text}</p>
           </motion.div>
         ))}

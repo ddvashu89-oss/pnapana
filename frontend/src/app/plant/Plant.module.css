@@ -76,7 +76,7 @@
 }
 
 .titleBox h1 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 2rem;
   font-weight: 500;
   margin-bottom: 0.2rem;
@@ -395,7 +395,7 @@
 .plantActions button { display: flex; gap: 10px; align-items: center; justify-content: center; padding: 15px; border-radius: 99px; border: 1px solid #d9dcd1; color: var(--text-primary); font-size: 16px; }
 .plantActions button:last-child { background: var(--primary-green); border-color: var(--primary-green); color: white; }
 .waterMessage { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--primary-green); margin-bottom: 20px; }
-.sectionTitle { font: 600 24px var(--font-serif); margin: 25px 0 17px; scroll-margin-top: 105px; }
+.sectionTitle { font: 600 24px var(--font-sans); margin: 25px 0 17px; scroll-margin-top: 105px; }
 .tabs { gap: 8px; background: #f0f2e9; border: 0; border-radius: 99px; padding: 5px; margin-bottom: 18px; }
 .tab { flex: 1; padding: 10px 5px; font-size: 13px; border-radius: 99px; }
 .tab.active { background: white; color: var(--primary-green); box-shadow: 0 1px 3px #233c2a0a; }

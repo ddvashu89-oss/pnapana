@@ -258,7 +258,7 @@ export default function PaymentsManagement() {
                 </td></tr>
               ) : payments.map(p => (
                 <tr key={p.id}>
-                  <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{p.customer_id}</td>
+                  <td style={{ fontFamily: 'var(--font-sans)', fontWeight: 600 }}>{p.customer_id}</td>
                   <td>
                     {p.user_name}
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{p.user_email}</div>

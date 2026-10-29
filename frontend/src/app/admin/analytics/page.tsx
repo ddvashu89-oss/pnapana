@@ -72,7 +72,7 @@ export default function AdminAnalytics() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', marginBottom: '1.5rem' }}>Top Plant Species</h3>
+            <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.4rem', marginBottom: '1.5rem' }}>Top Plant Species</h3>
             <SpeciesBarChart data={topSpecies} />
           </motion.div>
         </>

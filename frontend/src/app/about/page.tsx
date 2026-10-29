@@ -39,7 +39,7 @@ export default function About() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', lineHeight: '1.8', marginBottom: '2rem' }}>
             Today, we are building the ultimate premium platform for plant care. Our AI-driven diagnostic tools, hyper-local weather tracking, and community-driven explore feed are all designed to give you confidence in your indoor jungle.
           </p>
-          <p style={{ color: 'var(--text-primary)', fontSize: '1.4rem', fontWeight: 600, fontStyle: 'italic', fontFamily: 'var(--font-serif)', textAlign: 'center', marginTop: '3rem' }}>
+          <p style={{ color: 'var(--text-primary)', fontSize: '1.4rem', fontWeight: 600, fontStyle: 'italic', fontFamily: 'var(--font-sans)', textAlign: 'center', marginTop: '3rem' }}>
             Whether you have a single resilient Pothos or a sprawling greenhouse, Pnapana is here to help you grow.
           </p>
         </div>

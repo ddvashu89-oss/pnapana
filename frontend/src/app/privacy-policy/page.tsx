@@ -31,12 +31,12 @@ export default function PrivacyPolicy() {
       <main style={{ padding: '0 5% 8rem', position: 'relative', zIndex: 2 }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', background: 'var(--glass-bg)', padding: '4rem', borderRadius: '32px', border: 'var(--glass-border)', boxShadow: 'var(--glass-shadow)', backdropFilter: 'var(--glass-blur)' }}>
           
-          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '1rem' }}>1. Introduction</h2>
+          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '2rem', marginBottom: '1rem' }}>1. Introduction</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
             Welcome to Pnapana. We respect your privacy and are committed to protecting your personal data. This privacy policy will inform you as to how we look after your personal data when you visit our website and use our application.
           </p>
 
-          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '1rem' }}>2. Data We Collect</h2>
+          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '2rem', marginBottom: '1rem' }}>2. Data We Collect</h2>
           <div style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
             We may collect, use, store and transfer different kinds of personal data about you which we have grouped together as follows:
             <ul style={{ paddingLeft: '1.5rem', marginTop: '1rem' }}>
@@ -47,12 +47,12 @@ export default function PrivacyPolicy() {
             </ul>
           </div>
 
-          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '1rem' }}>3. How We Use Your Data</h2>
+          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '2rem', marginBottom: '1rem' }}>3. How We Use Your Data</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
             We will only use your personal data when the law allows us to. Most commonly, we will use your personal data to provide you with the services you requested, such as sending you plant watering notifications and maintaining your digital garden.
           </p>
 
-          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)', fontSize: '2rem', marginBottom: '1rem' }}>4. Data Security</h2>
+          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '2rem', marginBottom: '1rem' }}>4. Data Security</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
             We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorised way, altered or disclosed.
           </p>

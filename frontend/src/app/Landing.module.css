@@ -52,7 +52,7 @@
 }
 
 .logo {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 1.6rem;
   font-weight: 700;
   color: var(--text-primary);
@@ -295,7 +295,7 @@
 }
 
 .title {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 5.5rem;
   line-height: 1.05;
   color: var(--text-primary);
@@ -449,7 +449,7 @@
 
 /* Section Common */
 .sectionTitle {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 3.5rem;
   color: var(--text-primary);
   text-align: center;
@@ -573,7 +573,7 @@
   color: var(--text-primary);
   font-size: 1.7rem;
   margin-bottom: 1.2rem;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
 }
 
 .featureCard p {
@@ -656,7 +656,7 @@
 }
 
 .stepNumber {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 6rem;
   font-weight: 700;
   background: var(--grad-premium);
@@ -671,7 +671,7 @@
 
 .stepContent h3 {
   font-size: 2.5rem;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   margin-bottom: 1.2rem;
   color: var(--text-primary);
 }
@@ -709,7 +709,7 @@
   position: absolute;
   top: 2rem;
   right: 2.5rem;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 5rem;
   background: var(--grad-orange);
   -webkit-background-clip: text;
@@ -787,7 +787,7 @@
 }
 
 .finalCta h2 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 4rem;
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
@@ -968,7 +968,7 @@
 }
 
 .statValue {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 3rem;
   line-height: 1;
   background: var(--grad-green);
@@ -1182,7 +1182,7 @@
 /* Warm botanical theme across the public pages. */
 .container::before, .container::after, .blob1, .blob2 { display: none; }
 .nav { background: #faf8f1f5; padding-top: 18px; padding-bottom: 18px; }
-.logo { font-family: var(--font-serif); }
+.logo { font-family: var(--font-sans); }
 .logo span { filter: none; }
 .signupBtn, .signupBtn:hover { background: var(--primary-green); color: white; box-shadow: none; }
 .signupBtn::before { display: none; }

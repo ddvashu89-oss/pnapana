@@ -1,5 +1,5 @@
 .topbar { height: 82px; position: sticky; top: 0; z-index: 90; background: #faf8f1f5; border-bottom: var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; backdrop-filter: blur(16px); }
-.brand, .desktopBrand { display: inline-flex; align-items: center; gap: 12px; font: 700 25px var(--font-serif); letter-spacing: -.6px; }
+.brand, .desktopBrand { display: inline-flex; align-items: center; gap: 12px; font: 700 25px var(--font-sans); letter-spacing: -.6px; }
 .brandMark { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 43px; height: 43px; background: var(--primary-green); color: white; border-radius: 50%; }
 .headerActions { display: flex; align-items: center; gap: 10px; }
 .streak, .coins { display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 99px; padding: 8px 12px; font-size: 15px; font-weight: 500; min-width: 55px; }

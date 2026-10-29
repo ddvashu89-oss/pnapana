@@ -145,7 +145,7 @@ export default function Contact() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
-              <h3 style={{ color: 'var(--text-primary)', fontSize: '1.5rem', marginBottom: '1rem', fontFamily: 'var(--font-serif)' }}>Email Us</h3>
+              <h3 style={{ color: 'var(--text-primary)', fontSize: '1.5rem', marginBottom: '1rem', fontFamily: 'var(--font-sans)' }}>Email Us</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>support@pnapana.com</p>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>We typically respond within 24 hours.</p>
             </motion.div>
@@ -157,7 +157,7 @@ export default function Contact() {
               transition={{ duration: 0.6, delay: 0.3 }}
             >
               <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📱</div>
-              <h3 style={{ color: 'var(--text-primary)', fontSize: '1.5rem', marginBottom: '1rem', fontFamily: 'var(--font-serif)' }}>Social Media</h3>
+              <h3 style={{ color: 'var(--text-primary)', fontSize: '1.5rem', marginBottom: '1rem', fontFamily: 'var(--font-sans)' }}>Social Media</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>@pnapana_app</p>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '1rem' }}>Follow us on Instagram for daily plant tips.</p>
             </motion.div>

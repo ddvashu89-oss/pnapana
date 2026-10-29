@@ -2,8 +2,7 @@
 
 :root {
   color-scheme: light;
-  --font-sans: 'Karla', 'Trebuchet MS', sans-serif;
-  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Karla', sans-serif;
   --bg-primary: #faf8f1;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f5ef;
@@ -90,7 +89,7 @@ body {
 /* Keep display typography consistent across every route, including pages that
    do not define their own heading styles. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
 }
 
 a {
