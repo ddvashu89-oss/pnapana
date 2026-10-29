@@ -87,6 +87,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Keep display typography consistent across every route, including pages that
+   do not define their own heading styles. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
 a {
   color: inherit;
   text-decoration: none;
