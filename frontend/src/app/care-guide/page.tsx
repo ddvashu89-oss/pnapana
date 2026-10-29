@@ -52,7 +52,7 @@ export default function CareGuide() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className={styles.title}>Plant Care <span className={styles.highlight}>Guide</span></h1>
+          <h1 className={styles.title} style={{ fontSize: '4.5rem' }}>Plant Care <span className={styles.highlight}>Guide</span></h1>
           <p className={styles.subtitle}>
             The essentials every plant parent should know — no account required.
           </p>

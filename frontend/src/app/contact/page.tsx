@@ -65,7 +65,7 @@ export default function Contact() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className={styles.title}>Get in <span className={styles.highlight}>Touch</span></h1>
+          <h1 className={styles.title} style={{ fontSize: '4.5rem' }}>Get in <span className={styles.highlight}>Touch</span></h1>
           <p className={styles.subtitle}>
             Have questions about your plants or the app? We&apos;re here to help.
           </p>

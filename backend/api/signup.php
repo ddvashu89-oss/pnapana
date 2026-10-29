@@ -12,7 +12,10 @@ $data = json_decode(file_get_contents("php://input"));
 $name = isset($data->name) ? strip_tags(trim($data->name)) : '';
 $email = isset($data->email) ? strtolower(trim($data->email)) : '';
 $password = isset($data->password) ? (string)$data->password : '';
-$gemini_api_key = null;
+$gemini_api_key = isset($data->gemini_api_key) ? trim($data->gemini_api_key) : null;
+if (empty($gemini_api_key)) {
+    $gemini_api_key = null;
+}
 
 if (empty($name) || empty($email) || empty($password)) {
     http_response_code(400);
@@ -86,6 +89,7 @@ if ($stmt->execute()) {
             "customer_id" => $customer_id,
             "name" => $name,
             "email" => $email,
+            "gemini_api_key" => $gemini_api_key,
             "token" => $jwt,
             "is_admin" => false
         ]

@@ -7,7 +7,6 @@ import { staggerContainer, fadeInUp } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
-import { handlePlantImageError } from '@/lib/plantImages';
 import styles from './Community.module.css';
 
 type Post = {
@@ -226,13 +225,7 @@ export default function Community() {
 
                 {post.image_url && (
                   <div className={styles.postImageWrap}>
-                    <img
-                      src={post.image_url}
-                      alt={post.plant_name || 'Plant'}
-                      className={styles.postImage}
-                      onError={handlePlantImageError}
-                      loading="lazy"
-                    />
+                    <img src={post.image_url} alt={post.plant_name || 'Plant'} className={styles.postImage} />
                   </div>
                 )}
 

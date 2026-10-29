@@ -26,13 +26,12 @@ try {
     $totalPostsStmt->execute([$user_id]);
     $totalPosts = (int)$totalPostsStmt->fetchColumn();
 
-    $userStreakStmt = $pdo->prepare("SELECT coins, COALESCE(streak_days, 0) as streak_days FROM users WHERE id = ?");
-    $userStreakStmt->execute([$user_id]);
-    $userRow = $userStreakStmt->fetch(PDO::FETCH_ASSOC);
-    $coins = (int)($userRow['coins'] ?? 0);
-    $userStreak = (int)($userRow['streak_days'] ?? 0);
+    $coinsStmt = $pdo->prepare("SELECT coins FROM users WHERE id = ?");
+    $coinsStmt->execute([$user_id]);
+    $coins = (int)$coinsStmt->fetchColumn();
 
-    // Streak: consecutive calendar days with at least one watering event or active daily streak
+    // Streak: consecutive calendar days with at least one watering event.
+    // A streak still counts as "active" if yesterday had a watering even if today doesn't yet.
     $dateStmt = $pdo->prepare("SELECT DISTINCT DATE(created_at) as d FROM care_events WHERE user_id = ? AND event_type = 'water' ORDER BY d DESC");
     $dateStmt->execute([$user_id]);
     $wateredDates = array_flip($dateStmt->fetchAll(PDO::FETCH_COLUMN));
@@ -46,7 +45,6 @@ try {
         $streak++;
         $cursor->modify('-1 day');
     }
-    $streak = max($userStreak, $streak);
 
     $badges = [
         [

@@ -4,7 +4,6 @@ pnapana_cors('POST, OPTIONS');
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . '/../botanical_catalog.php';
-require_once __DIR__ . '/../trefle_helper.php';
 
 $rawInput = file_get_contents('php://input');
 if (empty($rawInput) && php_sapi_name() === 'cli') {
@@ -55,25 +54,6 @@ if ($exactMatch) {
         "status" => "success",
         "ok" => true,
         "verdict" => "known",
-        "message" => null,
-        "suggestion" => null
-    ]);
-    exit;
-}
-
-// 2. Query Trefle API (400,000+ species global database)
-$trefleMatches = trefle_search_species($name, 1);
-if (!empty($trefleMatches)) {
-    $tPlant = $trefleMatches[0];
-    echo json_encode([
-        "status" => "success",
-        "ok" => true,
-        "verdict" => "known",
-        "scientific_name" => $tPlant['scientific_name'],
-        "common_name" => $tPlant['common_name'] ?: $tPlant['scientific_name'],
-        "family" => $tPlant['family'],
-        "image_url" => $tPlant['image_url'],
-        "source" => "Pnapana Botanical AI",
         "message" => null,
         "suggestion" => null
     ]);

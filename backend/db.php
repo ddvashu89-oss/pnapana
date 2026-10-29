@@ -48,12 +48,8 @@ try {
     $conn = $pdo;
 } catch(PDOException $e) {
     error_log("Database Connection Error: " . $e->getMessage());
-    $pdo = null;
-    $conn = null;
-    if (!defined('ALLOW_DB_FALLBACK') || !ALLOW_DB_FALLBACK) {
-        http_response_code(500);
-        echo json_encode(["status" => "error", "message" => "Database connection unavailable. Please try again later."]);
-        exit;
-    }
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Database connection unavailable. Please try again later."]);
+    exit;
 }
 ?>

@@ -3,23 +3,10 @@ import { Suspense, useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import {
-  ArrowLeft,
-  Sun,
-  Droplets,
-  Thermometer,
-  Lightbulb,
-  Camera,
-  Check,
-  RefreshCw,
-  Sparkles,
-  Calendar,
-  AlertCircle
-} from 'lucide-react';
+import { fadeInUp, staggerContainer } from '@/lib/motion';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
-import { getPlantImageUrl, handlePlantImageError } from '@/lib/plantImages';
 import styles from './Plant.module.css';
 
 function PlantDetailsInner() {
@@ -30,26 +17,26 @@ function PlantDetailsInner() {
   const [hasUser, setHasUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [plant, setPlant] = useState<any>({
-    name: 'Artificial Jade',
-    species: 'Crassula ovata',
-    status: 'Healthy',
+    name: '',
+    species: '',
+    status: '',
     status_color: 'green',
-    image_url: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=800&q=80',
-    native_region: 'South Africa',
-    light_requirement: 'Bright indirect to direct sunlight',
-    water_requirement: 'Allow soil to dry between waterings',
-    humidity: 'Low to moderate (35-45%)',
+    image_url: '',
+    native_region: '',
+    light_requirement: '',
+    water_requirement: '',
+    humidity: '',
     pet_friendly: false
   });
 
-  const [activeTab, setActiveTab] = useState<'Overview' | 'Care Tips' | 'History'>('Overview');
-
-  // Scanner States
+  const [activeTab, setActiveTab] = useState('Passport');
+  
+  // AI Scanner States
   const [scans, setScans] = useState<any[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -61,32 +48,19 @@ function PlantDetailsInner() {
     }
     setHasUser(true);
 
-    if (plantId) {
-      authFetch(`get_plant_details.php?id=${plantId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status === 'success' && data.plant) {
-            setPlant(data.plant);
-          }
-        })
-        .finally(() => setIsLoading(false));
+    authFetch(`get_plant_details.php?id=${plantId}`)
+      .then(res => res.json())
+      .then(data => { if(data.status === "success") setPlant(data.plant); })
+      .finally(() => setIsLoading(false));
 
-      fetchScans();
-    } else {
-      setIsLoading(false);
-    }
-  }, [plantId, router]);
+    fetchScans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plantId]);
 
   function fetchScans() {
-    if (!plantId) return;
     authFetch(`get_plant_scans.php?plant_id=${plantId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'success' && Array.isArray(data.scans)) {
-          setScans(data.scans);
-        }
-      })
-      .catch(() => {});
+      .then(res => res.json())
+      .then(data => { if(data.status === "success") setScans(data.scans); });
   }
 
   const startCamera = async () => {
@@ -97,8 +71,9 @@ function PlantDetailsInner() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-    } catch {
-      alert('Could not access camera. Please check permissions.');
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert(t('plant.cameraPermissionError'));
       setIsCapturing(false);
     }
   };
@@ -106,31 +81,27 @@ function PlantDetailsInner() {
   const stopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
+      stream.getTracks().forEach(track => track.stop());
     }
     setIsCapturing(false);
   };
 
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      setCapturedImage(dataUrl);
+  const captureImage = () => {
+    if (videoRef.current && canvasRef.current) {
+      const context = canvasRef.current.getContext('2d');
+      canvasRef.current.width = videoRef.current.videoWidth;
+      canvasRef.current.height = videoRef.current.videoHeight;
+      context?.drawImage(videoRef.current, 0, 0);
+      const imageUrl = canvasRef.current.toDataURL('image/jpeg', 0.8);
+      setCapturedImage(imageUrl);
       stopCamera();
     }
   };
-
+  
   const submitScan = async () => {
-    if (!capturedImage || !plantId) return;
+    if (!capturedImage) return;
     setIsScanning(true);
-
+    
     try {
       const res = await authFetch('analyze_plant.php', {
         method: 'POST',
@@ -140,232 +111,227 @@ function PlantDetailsInner() {
       if (data.status === 'success') {
         fetchScans();
         setCapturedImage(null);
+        // refresh plant data to update status color
+        authFetch(`get_plant_details.php?id=${plantId}`)
+          .then(r => r.json())
+          .then(d => { if(d.status === "success") setPlant(d.plant); });
       }
     } catch (e) {
       console.error(e);
-      alert('Scan failed. Please try again.');
+      alert(t('plant.aiScanFailed'));
     } finally {
       setIsScanning(false);
     }
-  };
+  }
 
   if (!hasUser || isLoading) return <Loader fullScreen label={t('common.loading')} />;
 
-  let carePlan: any = null;
-  try {
-    carePlan = plant.care_plan ? (typeof plant.care_plan === 'string' ? JSON.parse(plant.care_plan) : plant.care_plan) : null;
-  } catch {
-    carePlan = null;
-  }
-
   return (
     <div className={styles.container}>
-      {/* Top Nav (Mockup Style) */}
       <nav className={styles.topNav}>
-        <Link href="/dashboard" className={styles.goBackBtn}>
-          <ArrowLeft size={16} />
-          <span>Go Back</span>
+        <Link href="/dashboard" className={styles.iconBtn}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
         </Link>
-        <div className={styles.navActions}>
-          <button className={styles.circleActionBtn} onClick={() => window.location.reload()} title="Refresh">
-            <RefreshCw size={17} />
-          </button>
-          <button className={styles.circleSuccessBtn} title="Mark Healthy">
-            <Check size={18} />
+        <div style={{display: 'flex', gap: '1rem'}}>
+          <button className={styles.iconBtn}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           </button>
         </div>
       </nav>
 
-      {/* Main Plant Centerpiece Card */}
-      <div className={styles.plantHeroCard}>
-        <div className={styles.imageContainer}>
-          <img
-            src={getPlantImageUrl(plant.image_url, plant.name)}
-            alt={plant.name}
-            className={styles.plantCutoutImg}
-            onError={handlePlantImageError}
-          />
-          <div className={styles.interactivePinBadge}>
-            <span className={styles.pinDot} />
-            <span>{plant.name}</span>
+      <section className={styles.imageSection}>
+        <div className={styles.circleBg}></div>
+        {plant.image_url && <img src={plant.image_url} alt={plant.name} className={styles.plantImage} />}
+      </section>
+
+      <main className={styles.content}>
+        <div className={styles.headerRow}>
+          <div className={styles.titleBox}>
+            <h1>{plant.name}</h1>
+            <p>{plant.species}</p>
+          </div>
+          <div className={styles.statusTag}>
+            <div className={`${styles.statusDot} ${styles[plant.status_color]}`}></div>
+            {plant.status}
           </div>
         </div>
 
-        <h1 style={{ fontSize: '1.95rem', fontWeight: 800, color: '#12281b', marginBottom: '0.2rem' }}>
-          {plant.name}
-        </h1>
-        <p style={{ color: '#637c6d', fontSize: '0.94rem', fontStyle: 'italic', marginBottom: '1.2rem' }}>
-          {plant.species} {plant.family ? `• Family: ${plant.family}` : ''}
-        </p>
+        <div className={styles.tabs}>
+          <button className={`${styles.tab} ${activeTab === 'Passport' ? styles.active : ''}`} onClick={() => setActiveTab('Passport')}>{t('plant.tabPassport')}</button>
+          <button className={`${styles.tab} ${activeTab === 'AI Scan' ? styles.active : ''}`} onClick={() => setActiveTab('AI Scan')}>{t('plant.tabAiScan')}</button>
+          <button className={`${styles.tab} ${activeTab === 'Care' ? styles.active : ''}`} onClick={() => setActiveTab('Care')}>{t('plant.tabCare')}</button>
+        </div>
 
-        <button
-          className={styles.scanYourPlantPillBtn}
-          onClick={() => (isCapturing ? stopCamera() : startCamera())}
+        <div className={styles.tabContent}>
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         >
-          <Camera size={19} />
-          <span>Scan your plant</span>
-        </button>
+          {activeTab === 'Passport' && (
+            <>
+              <p>{t('plant.passportSubtitle')}</p>
+              <div className={styles.attributeList}>
+                <div className={styles.attributeItem}>
+                  <span className={styles.attrLabel}>{t('plant.native')}</span>
+                  <span className={styles.attrValue}>{plant.native_region}</span>
+                </div>
+                <div className={styles.attributeItem}>
+                  <span className={styles.attrLabel}>{t('plant.light')}</span>
+                  <span className={styles.attrValue}>{plant.light_requirement}</span>
+                </div>
+                <div className={styles.attributeItem}>
+                  <span className={styles.attrLabel}>{t('plant.water')}</span>
+                  <span className={styles.attrValue}>{plant.water_requirement}</span>
+                </div>
+              </div>
+            </>
+          )}
 
-        {/* Live Camera Viewfinder Modal */}
-        {isCapturing && (
-          <div style={{ marginTop: '1.5rem', background: '#0b291a', padding: '1rem', borderRadius: '24px' }}>
-            <video ref={videoRef} autoPlay playsInline style={{ width: '100%', borderRadius: '16px' }} />
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
-              <button
-                onClick={capturePhoto}
-                style={{ background: '#22c55e', color: '#fff', padding: '0.7rem 1.8rem', borderRadius: '999px', fontWeight: 700 }}
-              >
-                Capture Photo
-              </button>
-              <button
-                onClick={stopCamera}
-                style={{ background: '#ef4444', color: '#fff', padding: '0.7rem 1.4rem', borderRadius: '999px', fontWeight: 700 }}
-              >
-                Cancel
-              </button>
-            </div>
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-          </div>
-        )}
+          {activeTab === 'AI Scan' && (
+            <div className={styles.aiScannerArea}>
+              <h3 style={{marginBottom: '1rem'}}>{t('plant.dailyHealthCheck')}</h3>
+              <p style={{marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
+                {t('plant.aiScanText')}
+              </p>
 
-        {/* Captured Preview */}
-        {capturedImage && (
-          <div style={{ marginTop: '1.5rem', background: '#f4f8f5', padding: '1rem', borderRadius: '24px', border: '1px solid #dce8e0' }}>
-            <img src={capturedImage} alt="Captured" style={{ width: '100%', maxHeight: '240px', objectFit: 'contain', borderRadius: '14px' }} />
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
-              <button
-                onClick={submitScan}
-                disabled={isScanning}
-                style={{ background: '#22c55e', color: '#fff', padding: '0.7rem 2rem', borderRadius: '999px', fontWeight: 700 }}
-              >
-                {isScanning ? 'Diagnosing...' : 'Analyze Photo'}
-              </button>
-              <button
-                onClick={() => setCapturedImage(null)}
-                style={{ background: '#dce8e0', color: '#12281b', padding: '0.7rem 1.4rem', borderRadius: '999px', fontWeight: 700 }}
-              >
-                Retake
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+              {!isCapturing && !capturedImage && (
+                <button className={styles.aiScanBtn} onClick={startCamera}>
+                  {t('plant.openCamera')}
+                </button>
+              )}
 
-      {/* 4 Bento Care Metrics (Matching Mockup) */}
-      <div className={styles.bentoRow}>
-        <div className={styles.bentoItem}>
-          <div className={styles.bentoIconSquircle} style={{ background: '#eafaf0', color: '#15803d' }}>
-            <Lightbulb size={20} />
-          </div>
-          <div className={styles.bentoMeta}>
-            <span className={styles.bentoLabel}>Room Light</span>
-            <span className={styles.bentoValue}>{plant.light_req || '76% (Optimal)'}</span>
-          </div>
-        </div>
-
-        <div className={styles.bentoItem}>
-          <div className={styles.bentoIconSquircle} style={{ background: '#f4fbe4', color: '#4d7c0f' }}>
-            <Thermometer size={20} />
-          </div>
-          <div className={styles.bentoMeta}>
-            <span className={styles.bentoLabel}>Room Temp</span>
-            <span className={styles.bentoValue}>24°C</span>
-          </div>
-        </div>
-
-        <div className={styles.bentoItem}>
-          <div className={styles.bentoIconSquircle} style={{ background: '#fef8e7', color: '#b45309' }}>
-            <Droplets size={20} />
-          </div>
-          <div className={styles.bentoMeta}>
-            <span className={styles.bentoLabel}>Room Humidity</span>
-            <span className={styles.bentoValue}>{plant.humidity || '20% (Dry)'}</span>
-          </div>
-        </div>
-
-        <div className={styles.bentoItem}>
-          <div className={styles.bentoIconSquircle} style={{ background: '#eff6ff', color: '#2563eb' }}>
-            <Calendar size={20} />
-          </div>
-          <div className={styles.bentoMeta}>
-            <span className={styles.bentoLabel}>Water Cycle</span>
-            <span className={styles.bentoValue}>{plant.watering_frequency_days || 7} Days</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Detail Tabs */}
-      <div className={styles.tabsContainer}>
-        {(['Overview', 'Care Tips', 'History'] as const).map((tab) => (
-          <button
-            key={tab}
-            className={activeTab === tab ? styles.tabBtnActive : styles.tabBtn}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Panels */}
-      {activeTab === 'Overview' && (
-        <div className={styles.tabCard}>
-          <h3>Botanical Overview</h3>
-          <p>
-            {plant.description ||
-              `${plant.name} is a resilient botanical specimen documented in the Pnapana Global Plant Registry. It thrives in well-ventilated rooms with bright filtered sunlight.`}
-          </p>
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.86rem' }}>
-            <div>
-              <strong>Native Origin:</strong> {plant.native_region || 'Tropical & Subtropical'}
-            </div>
-            <div>
-              <strong>Pet Friendly:</strong> {plant.pet_friendly ? '✓ Yes (Non-toxic)' : '⚠ Toxic to pets'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'Care Tips' && (
-        <div className={styles.tabCard}>
-          <h3>Care Instructions (Botanical Intelligence Verified)</h3>
-          <ul style={{ paddingLeft: '1.2rem', color: '#557061', lineHeight: '1.8', fontSize: '0.94rem' }}>
-            <li><strong>Light:</strong> {carePlan?.light?.detail || plant.light_requirement || 'Bright indirect daylight.'}</li>
-            <li><strong>Water:</strong> {carePlan?.water?.instructions || plant.water_requirement || 'Water when topsoil feels dry.'}</li>
-            <li><strong>Humidity:</strong> {carePlan?.humidity?.detail || plant.humidity || 'Average to high room humidity.'}</li>
-            <li><strong>Soil:</strong> {carePlan?.soil || 'Well-draining aerated potting mix.'}</li>
-          </ul>
-        </div>
-      )}
-
-      {activeTab === 'History' && (
-        <div className={styles.tabCard}>
-          <h3>Diagnostic Scans &amp; Activity Log</h3>
-          {scans.length === 0 ? (
-            <p style={{ color: '#8da295' }}>No scans recorded yet. Use &quot;Scan your plant&quot; above to log your first diagnostic check.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '0.8rem' }}>
-              {scans.map((s, idx) => (
-                <div key={idx} style={{ padding: '0.8rem', background: '#f9fbf9', borderRadius: '14px', border: '1px solid #e1ece5' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#12281b' }}>
-                    Status: {s.status === 'healthy' ? '✓ Healthy' : '⚠ Issue Detected'}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: '#557061', marginTop: '2px' }}>
-                    {s.ai_analysis}
+              {isCapturing && (
+                <div className={styles.cameraBox}>
+                  <video ref={videoRef} autoPlay playsInline className={styles.cameraView} />
+                  <canvas ref={canvasRef} style={{ display: 'none' }} />
+                  <div className={styles.cameraActions}>
+                    <button type="button" onClick={captureImage} className={styles.snapBtn}>{t('plant.snapPhoto')}</button>
+                    <button type="button" onClick={stopCamera} className={styles.cancelCamBtn}>{t('plant.cancel')}</button>
                   </div>
                 </div>
-              ))}
+              )}
+
+              {capturedImage && (
+                <div className={styles.previewBox}>
+                  <img src={capturedImage} alt="Preview" className={styles.imagePreview} />
+                  {isScanning ? (
+                    <div className={styles.scanningAnim}>
+                      <div className={styles.scanLine}></div>
+                      <p>{t('plant.aiAnalyzing')}</p>
+                    </div>
+                  ) : (
+                    <div className={styles.cameraActions}>
+                      <button type="button" onClick={submitScan} className={styles.submitScanBtn}>{t('plant.runAiScan')}</button>
+                      <button type="button" onClick={() => setCapturedImage(null)} className={styles.cancelCamBtn}>{t('plant.retake')}</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className={styles.scanHistory}>
+                <h4>{t('plant.scanHistory')}</h4>
+                {scans.length === 0 ? (
+                  <p className={styles.noScans}>{t('plant.noScansYet')}</p>
+                ) : (
+                  scans.map(scan => (
+                    <div key={scan.id} className={`${styles.scanCard} ${styles[scan.status]}`}>
+                      <div className={styles.scanCardTop}>
+                        <strong>{new Date(scan.created_at).toLocaleDateString()}</strong>
+                        <span className={styles.scanBadge}>{scan.status === 'healthy' ? t('plant.allGood') : t('plant.issueDetected')}</span>
+                      </div>
+                      <p>{scan.ai_analysis}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           )}
+          
+          {activeTab === 'Care' && (() => {
+            let cp: any = null;
+            try { cp = plant.care_plan ? JSON.parse(plant.care_plan) : null; } catch { cp = null; }
+            if (!cp) {
+              return <p>{t('plant.noCarePlan')}</p>;
+            }
+            return (
+              <motion.div
+                className={styles.carePlanList}
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+              >
+                {cp.water?.instructions && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>💧 {t('plant.careWatering')}</span>
+                    <p>{cp.water.instructions}</p>
+                  </motion.div>
+                )}
+                {cp.light?.detail && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>☀️ {t('plant.careLight')}</span>
+                    <p>{cp.light.detail}</p>
+                  </motion.div>
+                )}
+                {cp.humidity?.detail && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>💦 {t('plant.careHumidity')}</span>
+                    <p>{cp.humidity.detail}</p>
+                  </motion.div>
+                )}
+                {cp.soil && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🌱 {t('plant.careSoil')}</span>
+                    <p>{cp.soil}</p>
+                  </motion.div>
+                )}
+                {cp.temperature && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🌡️ {t('plant.careTemperature')}</span>
+                    <p>{cp.temperature}</p>
+                  </motion.div>
+                )}
+                {cp.fertilizing && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🧪 {t('plant.careFertilizing')}</span>
+                    <p>{cp.fertilizing}</p>
+                  </motion.div>
+                )}
+                {cp.pruning && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>✂️ {t('plant.carePruning')}</span>
+                    <p>{cp.pruning}</p>
+                  </motion.div>
+                )}
+                {cp.toxicity?.detail && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>⚠️ {t('plant.careToxicity')}</span>
+                    <p>{cp.toxicity.detail}</p>
+                  </motion.div>
+                )}
+                {cp.common_issues?.length > 0 && (
+                  <motion.div className={styles.careItem} variants={fadeInUp}>
+                    <span className={styles.attrLabel}>🩺 {t('plant.careCommonIssues')}</span>
+                    {cp.common_issues.map((ci: any, i: number) => (
+                      <p key={i}><strong>{ci.issue}:</strong> {ci.solution}</p>
+                    ))}
+                  </motion.div>
+                )}
+              </motion.div>
+            );
+          })()}
+
+        </motion.div>
         </div>
-      )}
+      </main>
     </div>
   );
 }
 
-export default function PlantPage() {
+export default function PlantDetails() {
   return (
-    <Suspense fallback={<Loader fullScreen label="Loading plant..." />}>
+    <Suspense fallback={<Loader fullScreen label="Loading..." />}>
       <PlantDetailsInner />
     </Suspense>
   );

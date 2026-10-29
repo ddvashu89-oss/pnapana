@@ -6,25 +6,9 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import MarketingNav from '@/components/MarketingNav';
 import ScrollProgress from '@/components/motion/ScrollProgress';
 import { Reveal, Stagger, StaggerItem } from '@/components/motion/Reveal';
+import TiltCard from '@/components/motion/TiltCard';
+import CountUp from '@/components/motion/CountUp';
 import VelocityMarquee from '@/components/motion/VelocityMarquee';
-import { 
-  Thermometer, 
-  Lightbulb, 
-  Droplets, 
-  Calendar as CalendarIcon, 
-  Sprout, 
-  Search, 
-  ArrowRight, 
-  Sparkles, 
-  CheckCircle2, 
-  Scan,
-  ShoppingBag,
-  Heart,
-  Sun,
-  MessageCircle
-} from 'lucide-react';
-import { getPlantImageUrl, handlePlantImageError } from '@/lib/plantImages';
-import { getApiUrl } from '@/lib/api';
 import styles from './Landing.module.css';
 
 const TESTIMONIALS = [
@@ -53,24 +37,96 @@ const TESTIMONIALS = [
     role: 'Frequent Traveler'
   },
   {
-    text: 'The Pnapana botanical database identified an obscure species in my balcony immediately. Truly incredible.',
+    text: 'The AI plant doctor caught a pest problem before I even noticed it. Saved my fiddle leaf fig!',
     avatar: '👩🏻',
     name: 'Elena V.',
-    role: 'Botanical Collector'
+    role: 'Fiddle Leaf Fan'
+  },
+  {
+    text: 'Finally an app that doesn’t feel like a chore. The whole experience feels calm and intentional.',
+    avatar: '🧑🏽',
+    name: 'Jordan P.',
+    role: 'Mindful Gardener'
+  },
+  {
+    text: 'Went from killing every plant I owned to having 30+ thriving ones. This app genuinely changed everything.',
+    avatar: '👩🏿',
+    name: 'Aisha K.',
+    role: 'Recovering Plant Killer'
+  },
+  {
+    text: 'The community explore feed gives me so much inspiration for my next plant purchase. Dangerously good.',
+    avatar: '👨🏼',
+    name: 'Tom W.',
+    role: 'Plant Collector'
+  },
+  {
+    text: 'Watching my streak grow every day is oddly addictive, in the best way. I have not missed a watering day in three weeks.',
+    avatar: '👵🏽',
+    name: 'Grace O.',
+    role: '47-Day Streak Holder'
+  },
+  {
+    text: 'I love scrolling the community feed on my coffee break. Seeing everyone’s plants thrive keeps me motivated to keep mine alive too.',
+    avatar: '🧑🏾',
+    name: 'Noah B.',
+    role: 'Community Regular'
+  },
+  {
+    text: 'Between work and two kids I never had time to research plant care. Now the app just tells me exactly what to do and when.',
+    avatar: '👩🏼‍🦰',
+    name: 'Mia S.',
+    role: 'Busy Plant Mom'
+  },
+  {
+    text: 'I was skeptical about an app for something as simple as watering plants. Six months in, every single plant I own is thriving.',
+    avatar: '👴🏻',
+    name: 'Robert H.',
+    role: 'Skeptic Turned Believer'
   }
 ];
 
-const FEATURED_SPECIES = [
-  { id: 62427, common_name: 'Swiss Cheese Plant', scientific_name: 'Monstera deliciosa', family: 'Araceae', image_url: 'https://bs.plantnet.org/image/o/a3a043c163463e4cf1941e473a134700ed327d84' },
-  { id: 76921, common_name: 'Valley oak', scientific_name: 'Quercus lobata', family: 'Fagaceae', image_url: 'https://bs.plantnet.org/image/o/15e847c3894982fd3b10431a64c80dc365b47679' },
-  { id: 104231, common_name: 'Fiddle-Leaf Fig', scientific_name: 'Ficus lyrata', family: 'Moraceae', image_url: 'https://images.unsplash.com/photo-1545241047-6083a3684587?w=200&q=80' },
-  { id: 109842, common_name: 'Snake Plant', scientific_name: 'Sansevieria trifasciata', family: 'Asparagaceae', image_url: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=200&q=80' }
+const STEPS = [
+  { emoji: '📸', number: '01', titleKey: 'landing.step1Title', textKey: 'landing.step1Text' },
+  { emoji: '🌤️', number: '02', titleKey: 'landing.step2Title', textKey: 'landing.step2Text' },
+  { emoji: '🌱', number: '03', titleKey: 'landing.step3Title', textKey: 'landing.step3Text' }
 ];
 
-const SEARCH_QUICK_TAGS = ['Monstera', 'Quercus', 'Ficus', 'Snake Plant', 'Succulent', 'Rose'];
+const FEATURES = [
+  {
+    image: 'https://images.unsplash.com/photo-1596018653491-d65730d20e2b?w=500&q=80',
+    icon: '🔔',
+    titleKey: 'landing.feature1Title',
+    textKey: 'landing.feature1Text'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1637226168180-0f275ed6ec57?w=500&q=80',
+    icon: '🌧️',
+    titleKey: 'landing.feature2Title',
+    textKey: 'landing.feature2Text'
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1631536121875-28e737e31f78?w=500&q=80',
+    icon: '📔',
+    titleKey: 'landing.feature3Title',
+    textKey: 'landing.feature3Text'
+  }
+];
 
-const HERO_PHRASES_EN = ['Home Plants', 'Indoor Jungle', 'Green Sanctuary', 'Living Garden'];
-const HERO_PHRASES_HI = ['घरेलू पौधे', 'इनडोर जंगल', 'हरा अभयारण्य', 'जीवंत बगीचा'];
+/**
+ * PLACEHOLDER marketing figures — these are invented for the count-up animation and
+ * are NOT real product metrics. Replace them with real numbers (or delete the band)
+ * before this page is shown to actual visitors.
+ */
+const STATS = [
+  { value: 48000, suffix: '+', labelKey: 'landing.statPlants' },
+  { value: 12500, suffix: '+', labelKey: 'landing.statParents' },
+  { value: 320000, suffix: '+', labelKey: 'landing.statReminders' },
+  { value: 47, suffix: '', labelKey: 'landing.statStreak' }
+];
+
+const HERO_PHRASES_EN = ['Plant Companion', 'Garden Guide', 'Growth Partner', 'Green Ally'];
+const HERO_PHRASES_HI = ['साथी पौधा', 'बगीचे का गाइड', 'ग्रोथ पार्टनर', 'हरा सहयोगी'];
 const TYPE_SPEED = 70;
 const DELETE_SPEED = 40;
 const PAUSE_AFTER_TYPE = 1800;
@@ -113,25 +169,31 @@ function useTypewriter(phrases: string[]) {
 
 export default function LandingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { t } = useLanguage();
-  const typedPhrase = useTypewriter(HERO_PHRASES_EN);
+  const { t, language } = useLanguage();
+  const typedPhrase = useTypewriter(language === 'hi' ? HERO_PHRASES_HI : HERO_PHRASES_EN);
   const reduce = useReducedMotion();
 
-  // Interactive Live Botanical Search State on Homepage
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState('Mar');
-  const [activeTab, setActiveTab] = useState<'new' | 'harvested'>('new');
-
   const heroRef = useRef<HTMLElement>(null);
+  const stepsRef = useRef<HTMLDivElement>(null);
 
+  // Hero parallax: tracked from the page sitting at the top until the hero has
+  // fully scrolled past the top of the viewport.
   const { scrollYProgress: heroProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start']
   });
-  const contentY = useTransform(heroProgress, [0, 1], [0, -60]);
-  const contentOpacity = useTransform(heroProgress, [0, 0.75], [1, 0.2]);
+  const photoY = useTransform(heroProgress, [0, 1], ['0%', '18%']);
+  const photoScale = useTransform(heroProgress, [0, 1], [1, 1.18]);
+  const contentY = useTransform(heroProgress, [0, 1], [0, -90]);
+  const contentOpacity = useTransform(heroProgress, [0, 0.65], [1, 0]);
+  const cueOpacity = useTransform(heroProgress, [0, 0.12], [1, 0]);
+
+  // Rail that fills as the three steps pass through the middle of the viewport.
+  const { scrollYProgress: stepsProgress } = useScroll({
+    target: stepsRef,
+    offset: ['start 0.85', 'end 0.55']
+  });
+  const railScaleY = useSpring(stepsProgress, { stiffness: 90, damping: 26, restDelta: 0.001 });
 
   useEffect(() => {
     if (localStorage.getItem('user')) {
@@ -139,47 +201,32 @@ export default function LandingPage() {
     }
   }, []);
 
-  const handleLiveSearch = async (q: string) => {
-    setSearchQuery(q);
-    if (!q || q.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    try {
-      const res = await fetch(getApiUrl(`search_trefle.php?q=${encodeURIComponent(q.trim())}&limit=4`));
-      const data = await res.json();
-      if (data.status === 'success' && Array.isArray(data.data)) {
-        setSearchResults(data.data);
-      }
-    } catch {
-      // Fallback sample results if offline
-      setSearchResults([
-        { id: 76921, common_name: 'Valley oak', scientific_name: 'Quercus lobata', family: 'Fagaceae', image_url: 'https://bs.plantnet.org/image/o/15e847c3894982fd3b10431a64c80dc365b47679' },
-        { id: 62427, common_name: 'Swiss Cheese Plant', scientific_name: 'Monstera deliciosa', family: 'Araceae', image_url: 'https://bs.plantnet.org/image/o/a3a043c163463e4cf1941e473a134700ed327d84' }
-      ]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
   return (
     <div className={styles.container}>
       <ScrollProgress />
 
-      {/* Floating Pill Navigation */}
+      {/* Navigation */}
       <MarketingNav labels={{
-        explore: 'Plants Market',
-        about: 'About',
-        careGuide: 'Care Calendar',
-        contact: 'Contact',
-        signIn: 'Sign In',
-        getStarted: 'Get Started',
-        dashboard: 'Dashboard',
+        explore: t('nav.explore'),
+        about: t('nav.about'),
+        careGuide: t('nav.careGuide'),
+        contact: t('nav.contact'),
+        signIn: t('nav.signIn'),
+        getStarted: t('nav.getStarted'),
+        dashboard: t('nav.dashboard'),
       }} />
 
       {/* Hero Section */}
       <header className={styles.hero} ref={heroRef}>
+        <motion.div
+          className={styles.heroPhoto}
+          style={reduce ? undefined : { y: photoY, scale: photoScale }}
+        >
+          <img src="https://images.unsplash.com/photo-1503149779833-1de50ebe5f8a?w=1600&q=80" alt="" />
+        </motion.div>
+
+        {/* Outer layer owns the scroll-linked drift; the inner one owns the entrance
+            cascade, so the two never fight over the same transform/opacity. */}
         <motion.div
           className={styles.heroParallax}
           style={reduce ? undefined : { y: contentY, opacity: contentOpacity }}
@@ -192,648 +239,167 @@ export default function LandingPage() {
               hidden: { opacity: 0 },
               visible: {
                 opacity: 1,
-                transition: { staggerChildren: 0.12, delayChildren: 0.1 }
+                transition: { staggerChildren: 0.15, delayChildren: 0.1 }
               }
             }}
           >
             <motion.div
-              className={styles.heroBadge}
+              className={`${styles.heroBadge}`}
               variants={{
                 hidden: { opacity: 0, y: -20, scale: 0.95 },
                 visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 100, damping: 20 } }
               }}
             >
-              <Sparkles size={16} /> Botanical Intelligence &amp; Care
+              {t('landing.badge')}
             </motion.div>
-
             <motion.h1
-              className={styles.title}
+              className={`${styles.title}`}
               variants={{
-                hidden: { opacity: 0, y: 30 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+                hidden: { opacity: 0, y: 40, filter: 'blur(10px)' },
+                visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
               }}
             >
-              Manage Your{' '}
+              {t('landing.titlePrefix')}{' '}
               <span className={styles.highlight}>
                 {typedPhrase}
                 <span className={styles.typeCursor} aria-hidden="true">|</span>
               </span>
             </motion.h1>
-
             <motion.p
-              className={styles.subtitle}
+              className={`${styles.subtitle}`}
               variants={{
                 hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+                visible: { opacity: 1, y: 0, transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
               }}
             >
-              Cultivate thriving green spaces with real-time room environment tracking, visual watering calendars, and 400,000+ botanical species verified via Pnapana Botanical Intelligence.
+              {t('landing.subtitle')}
             </motion.p>
-
             <motion.div
-              className={styles.ctaGroup}
+              className={`${styles.ctaGroup}`}
               variants={{
                 hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+                visible: { opacity: 1, y: 0, transition: { duration: 1, ease: [0.16, 1, 0.3, 1] } }
               }}
             >
               <Link href={isLoggedIn ? "/dashboard" : "/login"} className={styles.primaryCta}>
-                {isLoggedIn ? "Go To Dashboard" : "Start Growing Free"}
+                {isLoggedIn ? t('landing.ctaDashboard') : t('landing.ctaPrimary')}
               </Link>
-              <a href="#showcase" className={styles.secondaryCta}>
-                Explore Live Demo
+              <a href="#how-it-works" className={styles.secondaryCta}>
+                {t('landing.ctaSecondary')}
               </a>
             </motion.div>
           </motion.div>
         </motion.div>
 
-        {/* =========================================================================
-            MOCKUP-INSPIRED HERO DEVICE SHOWCASE WITH FLOATING BENTO CARDS
-            ========================================================================= */}
-        <section id="showcase" className={styles.heroShowcaseWrapper}>
-          
-          {/* Orbiting Bento Pill 1 (Left): Live Room Sensor Metrics */}
-          <div className={styles.orbitCardLeft}>
-            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              • Room Environment
-            </div>
-            <div className={styles.orbitMetricItem}>
-              <div className={styles.orbitIconWrap} style={{ background: '#f4fbe4', color: '#65a30d' }}>
-                <Thermometer size={18} />
-              </div>
-              <div className={styles.orbitMetricMeta}>
-                <span className={styles.orbitMetricLabel}>Room Temp</span>
-                <span className={styles.orbitMetricVal}>24°C</span>
-              </div>
-            </div>
+        {/* Scroll affordance — fades out as soon as the visitor starts scrolling. */}
+        <motion.a
+          href="#how-it-works"
+          className={styles.scrollCue}
+          style={reduce ? undefined : { opacity: cueOpacity }}
+          aria-label={t('landing.ctaSecondary')}
+        >
+          <span className={styles.scrollCueMouse}>
+            <motion.span
+              className={styles.scrollCueDot}
+              animate={reduce ? undefined : { y: [0, 12, 0], opacity: [1, 0.2, 1] }}
+              transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          </span>
+        </motion.a>
 
-            <div className={styles.orbitMetricItem}>
-              <div className={styles.orbitIconWrap} style={{ background: '#eafaf0', color: '#16a34a' }}>
-                <Lightbulb size={18} />
-              </div>
-              <div className={styles.orbitMetricMeta}>
-                <span className={styles.orbitMetricLabel}>Room Light</span>
-                <span className={styles.orbitMetricVal}>76% (Optimal)</span>
-              </div>
-            </div>
-
-            <div className={styles.orbitMetricItem}>
-              <div className={styles.orbitIconWrap} style={{ background: '#fef8e7', color: '#d97706' }}>
-                <Droplets size={18} />
-              </div>
-              <div className={styles.orbitMetricMeta}>
-                <span className={styles.orbitMetricLabel}>Room Humidity</span>
-                <span className={styles.orbitMetricVal}>20% (Dry Alert)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Central Mobile Mockup Device (Matches Exact Reference Mockup) */}
-          <div className={styles.deviceMockupFrame}>
-            {/* Top Bar with Avatar, Theme & Message Buttons */}
-            <div className={styles.deviceTopBar}>
-              <div className={styles.deviceAvatarPill}>
-                <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&q=80"
-                  alt="User"
-                  className={styles.deviceAvatarImg}
-                />
-              </div>
-              <div className={styles.deviceTopActions}>
-                <div className={styles.deviceActionCircle}><MessageCircle size={15} /></div>
-                <div className={styles.deviceActionCircle}><Sun size={15} /></div>
-              </div>
-            </div>
-
-            {/* Heading */}
-            <div className={styles.deviceMainHeading}>
-              Manage Your
-              <span>Home Plants</span>
-            </div>
-
-            {/* Featured Vibrant Lime-Green Banner Card */}
-            <div className={styles.mockupLimeCard}>
-              <img
-                src="https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=350&q=80"
-                alt="Succulent"
-                className={styles.mockupLimeCardBgCutout}
-              />
-              <div className={styles.mockupLimeCardContent}>
-                <div className={styles.mockupGlassBadge}>
-                  <div className={styles.mockupGlassBadgeTitle}>Succulent</div>
-                  <div className={styles.mockupGlassBadgeSub}>12 days ago planted</div>
-                </div>
-
-                <div className={styles.mockupPillBadge}>
-                  <div className={styles.mockupPillIcon} style={{ background: '#f4fbe4', color: '#4d7c0f' }}>
-                    <Thermometer size={13} />
-                  </div>
-                  <div className={styles.mockupPillText}>
-                    <span>Room temp</span>
-                    24°C
-                  </div>
-                </div>
-
-                <div className={styles.mockupPillBadge}>
-                  <div className={styles.mockupPillIcon} style={{ background: '#eafaf0', color: '#15803d' }}>
-                    <Lightbulb size={13} />
-                  </div>
-                  <div className={styles.mockupPillText}>
-                    <span>Room Light</span>
-                    76%
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Segmented Tabs: New Plant • / Harvested */}
-            <div className={styles.mockupTabsBar}>
-              <div
-                className={activeTab === 'new' ? styles.mockupTabItemActive : styles.mockupTabItemInactive}
-                onClick={() => setActiveTab('new')}
-              >
-                New Plant {activeTab === 'new' && <span className={styles.mockupTabDot} />}
-              </div>
-              <div
-                className={activeTab === 'harvested' ? styles.mockupTabItemActive : styles.mockupTabItemInactive}
-                onClick={() => setActiveTab('harvested')}
-              >
-                Harvested {activeTab === 'harvested' && <span className={styles.mockupTabDot} />}
-              </div>
-            </div>
-
-            {/* Mini Plant Cards Grid with Circular Donut Rings */}
-            <div className={styles.mockupMiniGrid}>
-              <div className={styles.mockupMiniCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1572454591674-2739f30d8c40?w=200&q=80"
-                  alt="Pink Gerbera"
-                  className={styles.mockupMiniImg}
-                  onError={handlePlantImageError}
-                />
-                <div className={styles.mockupMiniTitle}>Pink Gerbera</div>
-                <div className={styles.mockupMiniSub}>
-                  <span style={{ color: '#ec4899', fontWeight: 800 }}>●</span> 10 days until harvest
-                </div>
-              </div>
-
-              <div className={styles.mockupMiniCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1512428813834-c702c7702b78?w=200&q=80"
-                  alt="Nest Fern"
-                  className={styles.mockupMiniImg}
-                  onError={handlePlantImageError}
-                />
-                <div className={styles.mockupMiniTitle}>Nest Fern</div>
-                <div className={styles.mockupMiniSub}>
-                  <span style={{ color: '#22c55e', fontWeight: 800 }}>●</span> 26 days until harvest
-                </div>
-              </div>
-
-              <div className={styles.mockupMiniCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1567689265664-1c48de61db0b?w=200&q=80"
-                  alt="Young Banana"
-                  className={styles.mockupMiniImg}
-                  onError={handlePlantImageError}
-                />
-                <div className={styles.mockupMiniTitle}>Young Banana</div>
-                <div className={styles.mockupMiniSub}>
-                  <span style={{ color: '#16a34a', fontWeight: 800 }}>●</span> 27 days until harvest
-                </div>
-              </div>
-
-              <div className={styles.mockupMiniCard}>
-                <img
-                  src="https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=200&q=80"
-                  alt="Dahlia"
-                  className={styles.mockupMiniImg}
-                  onError={handlePlantImageError}
-                />
-                <div className={styles.mockupMiniTitle}>Dahlia</div>
-                <div className={styles.mockupMiniSub}>
-                  <span style={{ color: '#f59e0b', fontWeight: 800 }}>●</span> 8 days until harvest
-                </div>
-              </div>
-            </div>
-
-            {/* Mockup Floating Bottom Dock */}
-            <div className={styles.mockupBottomDock}>
-              <div className={styles.mockupDockBtnActive}><Sprout size={16} /></div>
-              <div className={styles.mockupDockBtn}><CalendarIcon size={16} /></div>
-              <div className={styles.mockupDockBtn}><ShoppingBag size={16} /></div>
-              <div className={styles.mockupDockBtn}><Heart size={16} /></div>
-            </div>
-          </div>
-
-          {/* Orbiting Bento Pill 2 (Right): Botanical Intelligence */}
-          <div className={styles.orbitCardRight}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#15803d', fontWeight: 800, fontSize: '0.82rem' }}>
-              <Sparkles size={16} />
-              <span>Pnapana AI Verified</span>
-            </div>
-            <p style={{ fontSize: '0.78rem', color: '#557061', lineHeight: '1.4' }}>
-              Access over <strong>400,000+ scientific species</strong>, verified taxonomy &amp; custom watering formulas.
-            </p>
-            <div style={{ background: '#f4f8f5', borderRadius: '12px', padding: '0.6rem 0.8rem', border: '1px solid #dce8e0' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#12281b' }}>🌿 Quercus lobata</div>
-              <div style={{ fontSize: '0.68rem', color: '#637c6d' }}>Valley Oak • Family: Fagaceae</div>
-            </div>
-            <Link
-              href={isLoggedIn ? "/explore" : "/login"}
-              style={{
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                color: '#15803d',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                textDecoration: 'none'
-              }}
-            >
-              Browse Registry ↗
-            </Link>
-          </div>
-
-        </section>
+        {/* Decorative elements */}
+        <motion.div
+          className={styles.blob1}
+          animate={reduce ? undefined : { scale: [1, 1.1, 1], rotate: [0, 90, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
+          className={styles.blob2}
+          animate={reduce ? undefined : { scale: [1, 1.2, 1], rotate: [0, -90, 0] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+        />
       </header>
 
-      {/* =========================================================================
-          FOUR PILLARS BENTO GRID (MATCHING THE 4 SCREENS IN REFERENCE MOCKUP)
-          ========================================================================= */}
-      <section className={styles.bentoSection}>
-        <div className={styles.bentoHeader}>
-          <div className={styles.bentoTag}>
-            <Sparkles size={14} /> The Complete Botanical Suite
-          </div>
-          <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#12281b', letterSpacing: '-0.02em', marginBottom: '0.8rem' }}>
-            Built for Passionate Plant Parents
-          </h2>
-          <p style={{ color: '#557061', fontSize: '1.1rem', maxWidth: '620px', margin: '0 auto' }}>
-            From real-time room microclimate diagnostics to automated watering schedules and curated botanical accessories.
-          </p>
-        </div>
-
-        <div className={styles.bentoGrid}>
-          
-          {/* Card 1: Manage Your Home Plants (Span 8) */}
-          <div className={styles.bentoCardSpan8}>
-            <div>
-              <div className={styles.bentoTag}>
-                <Sprout size={14} /> Smart Plant Care
-              </div>
-              <h3 className={styles.bentoTitle}>Manage Every Room &amp; Species Seamlessly</h3>
-              <p className={styles.bentoDesc}>
-                Set tailored watering rhythms, track dormancy cycles, and log photo updates with precision harvest indicators.
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-              <div style={{ background: '#f4fbe4', borderRadius: '20px', padding: '1.2rem', border: '1px solid #e1f2c2' }}>
-                <div style={{ color: '#4d7c0f', fontWeight: 800, fontSize: '1.3rem', marginBottom: '0.2rem' }}>24°C</div>
-                <div style={{ fontSize: '0.85rem', color: '#4d7c0f', fontWeight: 600 }}>Adaptive Temperature</div>
-                <div style={{ fontSize: '0.76rem', color: '#65a30d', marginTop: '0.4rem' }}>Adjusts watering when heatwaves occur</div>
-              </div>
-
-              <div style={{ background: '#eafaf0', borderRadius: '20px', padding: '1.2rem', border: '1px solid #c8edd5' }}>
-                <div style={{ color: '#15803d', fontWeight: 800, fontSize: '1.3rem', marginBottom: '0.2rem' }}>76%</div>
-                <div style={{ fontSize: '0.85rem', color: '#15803d', fontWeight: 600 }}>Room Daylight Index</div>
-                <div style={{ fontSize: '0.76rem', color: '#16a34a', marginTop: '0.4rem' }}>Calculates photosynthesis health</div>
-              </div>
-
-              <div style={{ background: '#fef8e7', borderRadius: '20px', padding: '1.2rem', border: '1px solid #feeac1' }}>
-                <div style={{ color: '#b45309', fontWeight: 800, fontSize: '1.3rem', marginBottom: '0.2rem' }}>10 Days</div>
-                <div style={{ fontSize: '0.85rem', color: '#b45309', fontWeight: 600 }}>Optimal Watering Cycle</div>
-                <div style={{ fontSize: '0.76rem', color: '#d97706', marginTop: '0.4rem' }}>Zero root rot guarantee</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Scan Your Plant (Span 4) */}
-          <div className={styles.bentoCardSpan4}>
-            <div>
-              <div className={styles.bentoTag}>
-                <Scan size={14} /> Instant Camera Scan
-              </div>
-              <h3 className={styles.bentoTitle}>Pnapana Lens</h3>
-              <p className={styles.bentoDesc}>
-                Take a quick snap with your smartphone camera. Our system cross-references 400,000+ species to give you scientific taxonomy and care advice in seconds.
-              </p>
-            </div>
-            <div style={{ background: 'var(--grad-lime-banner)', borderRadius: '20px', padding: '1.2rem', color: '#ffffff', textAlign: 'center' }}>
-              <Scan size={32} style={{ margin: '0 auto 0.6rem' }} />
-              <div style={{ fontWeight: 800, fontSize: '1rem' }}>Instant Botanical ID</div>
-              <div style={{ fontSize: '0.78rem', opacity: 0.9 }}>Zero guessing, 100% botanical accuracy</div>
-            </div>
-          </div>
-
-          {/* Card 3: Your Plants Calendar (Span 4) */}
-          <div className={styles.bentoCardSpan4}>
-            <div>
-              <div className={styles.bentoTag}>
-                <CalendarIcon size={14} /> Watering Rituals
-              </div>
-              <h3 className={styles.bentoTitle}>Interactive Calendar</h3>
-              <p className={styles.bentoDesc}>
-                Never miss a drop. Visual calendar badges sync across all your devices so your plants get the right care at the exact moment they need it.
-              </p>
-            </div>
-
-            {/* Interactive Month Selector */}
-            <div style={{ background: '#f9fbf9', borderRadius: '20px', padding: '1rem', border: '1px solid #e1ece5' }}>
-              <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'space-between', marginBottom: '0.8rem' }}>
-                {['Jan', 'Feb', 'Mar', 'Apr', 'May'].map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setSelectedMonth(m)}
-                    style={{
-                      background: selectedMonth === m ? '#f5f042' : '#ffffff',
-                      color: '#12281b',
-                      fontWeight: 700,
-                      fontSize: '0.75rem',
-                      padding: '0.35rem 0.6rem',
-                      borderRadius: '999px',
-                      border: '1px solid #e1ece5'
-                    }}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '0.72rem', color: '#637c6d' }}>
-                <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((d) => (
-                  <div
-                    key={d}
-                    style={{
-                      padding: '0.35rem 0',
-                      borderRadius: '8px',
-                      background: [7, 8, 9, 13].includes(d) ? '#eaf7ee' : '#ffffff',
-                      color: [7, 8, 9, 13].includes(d) ? '#15803d' : '#12281b',
-                      fontWeight: [7, 8, 9, 13].includes(d) ? 800 : 500,
-                      border: [7, 8, 9, 13].includes(d) ? '1px solid #86efac' : 'none'
-                    }}
-                  >
-                    {d}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: Plants Market & Accessories (Span 8) */}
-          <div className={styles.bentoCardSpan8}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
-              <div>
-                <div className={styles.bentoTag}>
-                  <ShoppingBag size={14} /> Curated Market
-                </div>
-                <h3 className={styles.bentoTitle}>Plants Market &amp; Designer Accessories</h3>
-                <p className={styles.bentoDesc}>
-                  Explore trending houseplants alongside minimalist Scandinavian ceramic pots and hanging planters. All prices in Indian Rupee (₹).
-                </p>
-              </div>
-              <Link
-                href={isLoggedIn ? "/explore" : "/login"}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  color: '#15803d',
-                  textDecoration: 'none',
-                  background: '#eaf7ee',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '999px',
-                  border: '1px solid #ccebd4'
-                }}
-              >
-                Explore Market ↗
-              </Link>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-              <div style={{ background: '#f9fbf9', border: '1px solid #e1ece5', borderRadius: '20px', padding: '0.8rem', textAlign: 'center' }}>
-                <img
-                  src="https://images.unsplash.com/photo-1545241047-6083a3684587?w=160&q=80"
-                  alt="Yellow rose"
-                  style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 0.4rem' }}
-                />
-                <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Yellow Rose</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹499 – ₹1,199</div>
-              </div>
-
-              <div style={{ background: '#f9fbf9', border: '1px solid #e1ece5', borderRadius: '20px', padding: '0.8rem', textAlign: 'center' }}>
-                <img
-                  src="https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=160&q=80"
-                  alt="Echeveria"
-                  style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', margin: '0 auto 0.4rem' }}
-                />
-                <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Echeveria</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹1,899 – ₹4,199</div>
-              </div>
-
-              <div style={{ background: '#f9fbf9', border: '1px solid #e1ece5', borderRadius: '20px', padding: '0.8rem', textAlign: 'center' }}>
-                <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: '#eaf3ed', margin: '0 auto 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
-                  🪴
-                </div>
-                <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Vibes Fold Pot</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹799 – ₹1,199</div>
-              </div>
-
-              <div style={{ background: '#f9fbf9', border: '1px solid #e1ece5', borderRadius: '20px', padding: '0.8rem', textAlign: 'center' }}>
-                <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: '#fef3e2', margin: '0 auto 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>
-                  🏺
-                </div>
-                <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#12281b' }}>Brussels Planter</div>
-                <div style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>₹249 – ₹699</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* =========================================================================
-          LIVE BOTANICAL REGISTRY INTERACTIVE SEARCH ON HOMEPAGE
-          ========================================================================= */}
-      <section style={{ padding: 'clamp(2.5rem, 4vh, 3.5rem) 5%', background: '#ffffff', borderTop: '1px solid #e1ece5', borderBottom: '1px solid #e1ece5' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
-          <div className={styles.bentoTag} style={{ margin: '0 auto 0.75rem' }}>
-            <Sparkles size={14} /> Real-Time Botanical API
-          </div>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.3rem)', fontWeight: 800, color: '#12281b', marginBottom: '0.6rem' }}>
-            Search 400,000+ Plant Species Live
-          </h2>
-          <p style={{ color: '#557061', fontSize: '1rem', marginBottom: '1.2rem', maxWidth: '620px', marginInline: 'auto' }}>
-            Powered by Pnapana Botanical Intelligence. Type any plant genus, common name, or scientific specimen.
-          </p>
-
-          {/* Quick search tags */}
-          <div style={{ display: 'flex', gap: '0.45rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <span style={{ fontSize: '0.78rem', color: '#637c6d', alignSelf: 'center', fontWeight: 600 }}>Try:</span>
-            {SEARCH_QUICK_TAGS.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => handleLiveSearch(tag)}
-                style={{
-                  background: searchQuery === tag ? '#15803d' : '#f4f8f5',
-                  color: searchQuery === tag ? '#ffffff' : '#15803d',
-                  border: '1px solid #dce8e0',
-                  borderRadius: '999px',
-                  padding: '0.25rem 0.75rem',
-                  fontSize: '0.76rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ position: 'relative', maxWidth: '640px', margin: '0 auto 1.5rem' }}>
-            <input
-              type="text"
-              placeholder="Search 'Monstera', 'Quercus', 'Ficus', 'Rose'..."
-              value={searchQuery}
-              onChange={(e) => handleLiveSearch(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.85rem 1.3rem',
-                borderRadius: '999px',
-                border: '2px solid #dce8e0',
-                fontSize: '0.95rem',
-                outline: 'none',
-                boxShadow: '0 6px 20px rgba(18, 40, 27, 0.05)',
-                color: '#12281b'
-              }}
-            />
-            {isSearching && (
-              <span style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.82rem', color: '#22c55e', fontWeight: 700 }}>
-                Searching...
-              </span>
-            )}
-          </div>
-
-          {/* Plant Grid: Show search results when present, or featured species when query is empty */}
-          {searchResults.length > 0 ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '0.9rem',
-              textAlign: 'left'
-            }}>
-              {searchResults.map((item) => (
-                <div
-                  key={item.id}
-                  style={{
-                    background: '#f9fbf9',
-                    border: '1px solid #e1ece5',
-                    borderRadius: '18px',
-                    padding: '0.85rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem'
-                  }}
-                >
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.scientific_name}
-                      onError={handlePlantImageError}
-                      style={{ width: '46px', height: '46px', borderRadius: '12px', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div style={{ width: '46px', height: '46px', borderRadius: '12px', background: '#eaf7ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                      🌱
-                    </div>
-                  )}
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#12281b' }}>
-                      {item.common_name || item.scientific_name}
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: '#557061', fontStyle: 'italic' }}>
-                      {item.scientific_name}
-                    </div>
-                    <div style={{ fontSize: '0.68rem', color: '#15803d', fontWeight: 600 }}>
-                      Family: {item.family || 'Botanical'}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : searchQuery.trim().length >= 2 && !isSearching ? (
-            <div style={{ padding: '1rem', color: '#637c6d', fontSize: '0.9rem' }}>
-              No species found matching &ldquo;{searchQuery}&rdquo;. Try another genus or common name.
-            </div>
-          ) : (
-            <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#637c6d', textAlign: 'left', marginBottom: '0.75rem' }}>
-                🌿 Featured Species from 400,000+ Registry:
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '0.9rem',
-                textAlign: 'left'
-              }}>
-                {FEATURED_SPECIES.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#f9fbf9',
-                      border: '1px solid #e1ece5',
-                      borderRadius: '18px',
-                      padding: '0.85rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem'
-                    }}
-                  >
-                    <img
-                      src={item.image_url}
-                      alt={item.scientific_name}
-                      onError={handlePlantImageError}
-                      style={{ width: '46px', height: '46px', borderRadius: '12px', objectFit: 'cover' }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#12281b' }}>
-                        {item.common_name}
-                      </div>
-                      <div style={{ fontSize: '0.74rem', color: '#557061', fontStyle: 'italic' }}>
-                        {item.scientific_name}
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#15803d', fontWeight: 600 }}>
-                        Family: {item.family}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* =========================================================================
-          TESTIMONIALS SECTION
-          ========================================================================= */}
-      <section className={styles.testimonials}>
+      {/* How It Works Section */}
+      <section id="how-it-works" className={styles.howItWorks}>
         <Reveal blur>
-          <h2 className={styles.sectionTitle}>Loved by Plant Lovers Worldwide</h2>
+          <h2 className={styles.sectionTitle}>{t('landing.howItWorksTitle')}</h2>
         </Reveal>
         <Reveal delay={0.1}>
-          <p className={styles.sectionSubtitle}>
-            Join thousands of enthusiastic indoor gardeners who keep their collections alive and thriving every day.
-          </p>
+          <p className={styles.sectionSubtitle}>{t('landing.howItWorksSubtitle')}</p>
+        </Reveal>
+
+        <div className={styles.stepsContainer} ref={stepsRef}>
+          <div className={styles.railTrack} aria-hidden="true">
+            <motion.div
+              className={styles.railFill}
+              style={reduce ? { scaleY: 1 } : { scaleY: railScaleY }}
+            />
+          </div>
+
+          {STEPS.map((step, index) => (
+            <Reveal
+              key={step.number}
+              className={styles.step}
+              direction={index % 2 === 0 ? 'right' : 'left'}
+              distance={60}
+              amount={0.3}
+            >
+              <div className={styles.stepImage}>{step.emoji}</div>
+              <div className={styles.stepContent}>
+                <div className={styles.stepNumber}>{step.number}</div>
+                <h3>{t(step.titleKey)}</h3>
+                <p>{t(step.textKey)}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats Band */}
+      <section className={styles.statsBand}>
+        <Stagger className={styles.statsGrid} stagger={0.1} amount={0.3}>
+          {STATS.map((stat) => (
+            <StaggerItem key={stat.labelKey} className={styles.statCard}>
+              <div className={styles.statValue}>
+                <CountUp to={stat.value} />
+                {stat.suffix}
+              </div>
+              <div className={styles.statLabel}>{t(stat.labelKey)}</div>
+            </StaggerItem>
+          ))}
+        </Stagger>
+      </section>
+
+      {/* Features Section */}
+      <section className={styles.features}>
+        <Stagger className={styles.featureGrid} stagger={0.14}>
+          {FEATURES.map((feature) => (
+            <StaggerItem key={feature.titleKey} className={styles.featureCell}>
+              <TiltCard className={styles.featureCard}>
+                <div className={styles.featureThumb}>
+                  <img src={feature.image} alt="" loading="lazy" />
+                </div>
+                <div className={styles.iconWrapper}>{feature.icon}</div>
+                <h3>{t(feature.titleKey)}</h3>
+                <p>{t(feature.textKey)}</p>
+              </TiltCard>
+            </StaggerItem>
+          ))}
+        </Stagger>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className={styles.testimonials}>
+        <Reveal blur>
+          <h2 className={styles.sectionTitle}>{t('landing.testimonialsTitle')}</h2>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <p className={styles.sectionSubtitle}>{t('landing.testimonialsSubtitle')}</p>
         </Reveal>
 
         <Reveal amount={0.1} distance={24}>
-          <VelocityMarquee baseVelocity={-2.0}>
+          <VelocityMarquee baseVelocity={-2.2}>
             {TESTIMONIALS.map((item, i) => (
               <div className={styles.testimonialCard} key={i}>
                 <div className={styles.quoteMark}>&quot;</div>
@@ -853,62 +419,15 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* =========================================================================
-          VIBRANT FINAL LIME-EMERALD CTA BANNER
-          ========================================================================= */}
-      <section style={{ padding: '0 5% clamp(2.5rem, 4vh, 3.5rem)' }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          background: 'var(--grad-lime-banner)',
-          borderRadius: '32px',
-          padding: 'clamp(2.4rem, 4vw, 3.5rem) clamp(1.5rem, 3vw, 2.5rem)',
-          textAlign: 'center',
-          color: '#ffffff',
-          boxShadow: '0 25px 60px -15px rgba(46, 179, 79, 0.45)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.8rem', color: '#ffffff' }}>
-            Ready to Build Your Dream Garden?
-          </h2>
-          <p style={{ fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)', maxWidth: '580px', margin: '0 auto 1.6rem', opacity: 0.95 }}>
-            Join over 12,000+ plant parents. Get started with 5 free plants, smart reminders, and instant botanical scans.
-          </p>
-          <div style={{ display: 'flex', gap: '0.9rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/login"}
-              style={{
-                background: '#ffffff',
-                color: '#15803d',
-                fontWeight: 800,
-                fontSize: '1rem',
-                padding: '0.95rem 2.2rem',
-                borderRadius: '999px',
-                textDecoration: 'none',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)'
-              }}
-            >
-              {isLoggedIn ? 'Go To Dashboard →' : 'Get Started Free →'}
-            </Link>
-            <Link
-              href={isLoggedIn ? "/explore" : "/login"}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                backdropFilter: 'blur(12px)',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '1rem',
-                padding: '0.95rem 2.2rem',
-                borderRadius: '999px',
-                textDecoration: 'none',
-                border: '1px solid rgba(255, 255, 255, 0.4)'
-              }}
-            >
-              Browse Plants Market
-            </Link>
-          </div>
-        </div>
+      {/* Final CTA Section */}
+      <section className={styles.finalCta}>
+        <Reveal className={styles.finalCtaContent} blur distance={50}>
+          <h2>{t('landing.finalCtaTitle')}</h2>
+          <p>{t('landing.finalCtaText')}</p>
+          <Link href="/login" className={styles.finalCtaBtn}>
+            {t('landing.finalCtaBtn')}
+          </Link>
+        </Reveal>
       </section>
 
     </div>
