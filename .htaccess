@@ -1,4 +1,24 @@
-# Never serve dotfiles (.env, .git, .htaccess) or the repo's own metadata.
+# Directory Index
+DirectoryIndex index.html index.php
+
+# Prevent directory browsing
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# Cache-Control headers: ensure HTML is never cached so deployments reflect instantly
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+    <FilesMatch "\.(js|css|webp|png|jpg|jpeg|gif|svg|ico|woff|woff2)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+# Never serve dotfiles (.env, .git, .htaccess)
 <FilesMatch "^\.">
     <IfModule mod_authz_core.c>
         Require all denied
@@ -9,6 +29,27 @@
     </IfModule>
 </FilesMatch>
 
-<IfModule mod_autoindex.c>
-    Options -Indexes
+# 404 Error page
+ErrorDocument 404 /404.html
+
+# Enable Rewrite Engine for SPA / clean routing
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # If the request is for backend API, let Apache handle it directly
+    RewriteCond %{REQUEST_URI} ^/backend [NC]
+    RewriteRule .* - [L]
+
+    # If the exact directory with an index.html exists, serve it
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteCond %{REQUEST_FILENAME}/index.html -f
+    RewriteRule ^(.*)$ $1/index.html [L]
+
+    # If the exact file exists (CSS, JS, images), serve it directly
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    # Fallback to index.html for client-side navigation
+    RewriteRule ^(.*)$ /index.html [L]
 </IfModule>
