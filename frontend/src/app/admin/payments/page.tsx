@@ -99,7 +99,7 @@ export default function PaymentsManagement() {
   async function review(payment: Payment, decision: 'APPROVED' | 'REJECTED') {
     const verb = decision === 'APPROVED' ? 'Approve' : 'Reject';
     const note = prompt(
-      `${verb} ${payment.plan_name} payment of Rs${payment.amount} from ${payment.customer_id}?\n\nOptional note for the record:`
+      `${verb} ${payment.plan_name} payment of ₹${payment.amount} from ${payment.customer_id}?\n\nOptional note for the record:`
     );
     if (note === null) return;
 
@@ -183,7 +183,7 @@ export default function PaymentsManagement() {
           <img
             src={proofUrl}
             alt="Payment screenshot"
-            style={{ maxWidth: '100%', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{ maxWidth: '100%', borderRadius: '12px', border: '1px solid var(--border-color)' }}
           />
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap' }}>
             {proofFor.status === 'PENDING' && (
@@ -216,7 +216,7 @@ export default function PaymentsManagement() {
                 placeholder="Customer ID, name, email, UPI ref"
                 style={{
                   padding: '0.5rem 0.75rem', borderRadius: '8px', minWidth: '230px',
-                  border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid var(--border-color)', background: 'rgba(255,255,255,0.04)',
                   color: 'var(--text-primary)'
                 }}
               />

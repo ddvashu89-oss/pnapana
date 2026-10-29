@@ -24,7 +24,7 @@
   justify-content: center;
   color: var(--text-primary);
   border-radius: 50%;
-  background: rgba(0,0,0,0.2);
+  background: var(--bg-tertiary);
   backdrop-filter: blur(5px);
   border: none;
   cursor: pointer;
@@ -54,7 +54,7 @@
   width: 250px;
   height: 250px;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--border-color);
   z-index: 1;
 }
 
@@ -91,11 +91,11 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-secondary);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.85rem;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--border-color);
 }
 
 .statusDot {
@@ -109,7 +109,7 @@
 .tabs {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid var(--border-color);
   margin-bottom: 1.5rem;
 }
 
@@ -152,7 +152,7 @@
   display: flex;
   justify-content: space-between;
   padding: 1rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .attrLabel {
@@ -180,7 +180,7 @@
 
 .careItem {
   padding: 1rem;
-  background: rgba(255,255,255,0.03);
+  background: var(--bg-secondary);
   border-radius: 12px;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .cancelCamBtn {
-  background: rgba(255,255,255,0.1);
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
@@ -294,7 +294,7 @@
   margin-bottom: 2rem;
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(0,0,0,0.2);
+  background: var(--bg-tertiary);
 }
 
 .imagePreview {
@@ -312,7 +312,7 @@
   color: var(--accent-orange);
   font-weight: 500;
   overflow: hidden;
-  background: rgba(0,0,0,0.3);
+  background: var(--bg-tertiary);
 }
 
 .scanLine {
@@ -340,8 +340,8 @@
 }
 
 .scanCard {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   padding: 1rem;
   border-radius: 12px;
   margin-bottom: 1rem;
@@ -374,3 +374,70 @@
 }
 
 .statusDot.orange { background-color: var(--accent-orange); }
+
+/* Plant passport, weather guidance, and care plan share the app's paper surfaces. */
+.container { max-width: 920px; margin: 0 auto; position: relative; min-height: calc(100vh - 82px); padding: 22px 32px 60px; }
+.topNav { position: relative; padding: 0; margin-bottom: 16px; }
+.iconBtn { background: white; border: var(--glass-border); color: var(--primary-green); }
+.imageSection { background: #eef3e8; height: 270px; border-radius: 26px 26px 0 0; }
+.plantImage { object-fit: contain; width: 100%; max-height: 100%; padding: 15px; animation: none; }
+.circleBg { width: 200px; height: 200px; border-color: #d5e3cf; }
+.content { padding: 22px 0 0; background: transparent; border-radius: 0; margin-top: 0; }
+.headerRow { margin: -22px 0 0; padding: 24px 24px 20px; background: white; border: var(--glass-border); border-top: 0; border-bottom: 0; position: relative; }
+.titleBox h1 { font-size: 30px; font-weight: 700; }
+.titleBox p { font-style: italic; color: var(--text-muted); font-size: 14px; }
+.statusTag { background: #edf5ea; color: #4f7256; border: 0; font-size: 12px; padding: 7px 10px; white-space: nowrap; }
+.plantStats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: white; padding: 17px 24px 22px; border: var(--glass-border); border-top: 1px solid #eff0e9; border-radius: 0 0 26px 26px; gap: 10px; }
+.plantStats > div { display: flex; flex-direction: column; gap: 8px; }
+.plantStats span { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font-size: 11px; }
+.plantStats strong { font-size: 14px; font-weight: 500; }
+.plantActions { display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; margin: 21px 0 27px; }
+.plantActions button { display: flex; gap: 10px; align-items: center; justify-content: center; padding: 15px; border-radius: 99px; border: 1px solid #d9dcd1; color: var(--text-primary); font-size: 16px; }
+.plantActions button:last-child { background: var(--primary-green); border-color: var(--primary-green); color: white; }
+.waterMessage { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--primary-green); margin-bottom: 20px; }
+.sectionTitle { font: 600 24px var(--font-serif); margin: 25px 0 17px; scroll-margin-top: 105px; }
+.tabs { gap: 8px; background: #f0f2e9; border: 0; border-radius: 99px; padding: 5px; margin-bottom: 18px; }
+.tab { flex: 1; padding: 10px 5px; font-size: 13px; border-radius: 99px; }
+.tab.active { background: white; color: var(--primary-green); box-shadow: 0 1px 3px #233c2a0a; }
+.tab.active::after { display: none; }
+.attributeList, .carePlanList { background: white; border: var(--glass-border); border-radius: 25px; overflow: hidden; box-shadow: var(--glass-shadow); gap: 0; }
+.attributeItem { justify-content: flex-start; align-items: flex-start; gap: 20px; padding: 25px; border-bottom: var(--glass-border); }
+.attributeItem:last-child { border-bottom: 0; }
+.attributeItem > div { flex: 1; min-width: 0; }
+.careIcon { display: flex; align-items: center; justify-content: center; background: #f0f7f0; color: #437d53; width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0; }
+.attrLabel { display: flex; align-items: center; flex-wrap: wrap; color: var(--text-muted); font-size: 15px; margin-bottom: 9px; gap: 8px; }
+.attrLabel em { display: inline-block; font-style: normal; background: #f3f0e6; color: #596251; font-size: 12px; padding: 4px 11px; border-radius: 99px; }
+.attrValue { display: block; font-size: 16px; color: var(--text-secondary); line-height: 1.8; }
+.careItem { background: white; padding: 24px; border-radius: 0; border-bottom: var(--glass-border); }
+.careItem:last-child { border-bottom: 0; }
+.careItem p { color: var(--text-secondary); line-height: 1.8; font-size: 15px; }
+.careItem .attrLabel { color: var(--primary-green); }
+.tabContent > div > p { color: var(--text-muted); font-size: 13px; }
+.aiScannerArea { padding: 22px; background: white; border: var(--glass-border); border-radius: 25px; }
+.aiScanBtn, .snapBtn, .submitScanBtn { background: var(--primary-green); color: white; border-radius: 99px; box-shadow: none; }
+.cameraActions, .previewBox { background: #f1f4ed; }
+.cancelCamBtn { background: white; color: var(--text-primary); border: var(--glass-border); border-radius: 99px; }
+.scanCard { background: #f8faf5; border: var(--glass-border); border-radius: 18px; }
+@media (max-width: 768px) { .container { padding: 18px 20px 35px; } .imageSection { height: 240px; } .headerRow { padding: 20px; gap: 10px; } .plantStats { padding: 17px 20px 22px; } .attributeItem { padding: 24px 20px; gap: 17px; } .sectionTitle { font-size: 22px; } }
+@media (max-width: 360px) { .plantStats { padding: 15px; } .plantStats span { font-size: 10px; gap: 3px; } .statusTag { padding: 7px; font-size: 10px; } .attributeItem { padding: 20px 16px; gap: 12px; } }
+/* The care-plan rows flow directly below the weather card, as in the reference. */
+.tabs { margin: 22px 0 18px; scroll-margin-top: 80px; }
+.attributeList { border-radius: 25px; }
+.attrLabel { font-size: 15px; gap: 9px; }
+.attrValue { font-size: 16px; line-height: 1.75; }
+.attributeItem { padding: 25px; gap: 22px; }
+.attrLabel em { font-size: 14px; font-weight: 500; padding: 4px 12px; }
+@media (max-width: 768px) {
+ .container { padding: 16px 16px 35px; }
+ .plantStats { padding: 17px 20px 20px; }
+ .plantStats span { font-size: 11px; }
+ .plantStats strong { font-size: 14px; }
+ .plantActions { margin: 20px 0 22px; gap: 10px; }
+ .plantActions button { padding: 13px; font-size: 15px; }
+ .sectionTitle { font-size: 21px; margin: 21px 0 15px; }
+ .attributeItem { padding: 25px 20px; gap: 21px; }
+ .careIcon { width: 44px; height: 44px; background: #f0f6f1; }
+ .attrLabel { font-size: 15px; margin-bottom: 9px; }
+ .attrValue { font-size: 16px; }
+ .attrLabel em { font-size: 13px; }
+}

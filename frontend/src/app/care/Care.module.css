@@ -16,8 +16,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(7,9,8,0.35) 0%, rgba(7,9,8,0.92) 100%),
+  background: linear-gradient(180deg, rgba(7,9,8,0.35) 0%, rgba(7,9,8,0.92) 100%),
     url('https://images.unsplash.com/photo-1515150144380-bca9f1650ed9?w=1200&q=80') center 30%/cover;
   z-index: 0;
 }
@@ -59,16 +58,16 @@
   flex-direction: column;
   align-items: center;
   padding: 1rem 0;
-  background: rgba(255,255,255,0.03);
+  background: var(--bg-secondary);
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
   cursor: pointer;
   transition: background 0.3s ease, border-color 0.3s ease;
   overflow: hidden;
 }
 
 .dateCard:hover:not(.active) {
-  background: rgba(255,255,255,0.08);
+  background: var(--bg-secondary);
 }
 
 .activePill {
@@ -135,8 +134,8 @@
 .taskCard {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   padding: 1rem;
   border-radius: 16px;
   gap: 1rem;
@@ -171,7 +170,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid var(--border-color);
   background: transparent;
   display: flex;
   align-items: center;
@@ -184,3 +183,16 @@
   background: var(--accent-green);
   border-color: var(--accent-green);
 }
+
+.container { max-width: 1000px; margin: auto; min-height: calc(100vh - 82px); }
+.header { padding: 30px 28px 24px; }
+.header::before { display: none; }
+.header h1 { font-weight: 600; }
+.content { padding: 0 28px; }
+.dateCard { border-radius: 20px; background: white; }
+.dateCard.active .date, .dateCard.active .day { color: white; }
+.activePill { box-shadow: none; background: var(--primary-green); }
+.taskCard { border-radius: 23px; background: white; padding: 20px; box-shadow: var(--glass-shadow); }
+.sectionHeader h3 { font: 600 23px var(--font-serif); }
+.markAllBtn { color: var(--primary-green); }
+@media (max-width: 768px) { .header { padding: 27px 20px 24px; } .content { padding: 0 20px; } }

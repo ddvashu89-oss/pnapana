@@ -40,7 +40,7 @@
   gap: 0.4rem;
   background: rgba(245, 197, 24, 0.12);
   border: 1px solid rgba(245, 197, 24, 0.35);
-  color: #f5c518;
+  color: #936c22;
   font-weight: 700;
   padding: 0.6rem 1rem;
   border-radius: 20px;
@@ -49,7 +49,7 @@
 
 .shareBtn {
   background: var(--primary-green);
-  color: var(--text-primary);
+  color: var(--on-accent);
   border: none;
   padding: 0.8rem 1.4rem;
   border-radius: 16px;
@@ -67,7 +67,7 @@
 .earnedToast {
   background: rgba(245, 197, 24, 0.15);
   border: 1px solid rgba(245, 197, 24, 0.4);
-  color: #f5c518;
+  color: #936c22;
   font-weight: 600;
   padding: 0.8rem 1.2rem;
   border-radius: 14px;
@@ -164,8 +164,8 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
   padding: 0.5rem 0.9rem;
   border-radius: 20px;
@@ -176,7 +176,7 @@
 }
 
 .likeBtn:hover {
-  background: rgba(255,255,255,0.08);
+  background: var(--bg-secondary);
 }
 
 .likeBtn.liked {
@@ -187,7 +187,7 @@
 
 .coinsTag {
   font-size: 0.8rem;
-  color: #f5c518;
+  color: #936c22;
   font-weight: 600;
 }
 
@@ -197,8 +197,7 @@
   padding: 5rem 2rem;
   border-radius: 32px;
   border: 1px dashed rgba(48, 124, 70, 0.3);
-  background:
-    linear-gradient(180deg, rgba(7,9,8,0.55) 0%, rgba(7,9,8,0.88) 100%),
+  background: linear-gradient(180deg, rgba(7,9,8,0.55) 0%, rgba(7,9,8,0.88) 100%),
     url('https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=1200&q=80') center/cover;
   display: flex;
   flex-direction: column;
@@ -220,7 +219,7 @@
 /* Composer Modal */
 .modalOverlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(255,255,255,0.2); backdrop-filter: blur(15px);
+  background: var(--bg-secondary); backdrop-filter: blur(15px);
   z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
 }
 
@@ -230,8 +229,8 @@
   max-height: 90vh; overflow-y: auto;
 }
 
-.closeBtn { position: absolute; top: 1.5rem; right: 1.5rem; background: rgba(0,0,0,0.3); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background 0.2s; }
-.closeBtn:hover { background: rgba(0,0,0,0.1); }
+.closeBtn { position: absolute; top: 1.5rem; right: 1.5rem; background: var(--bg-tertiary); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background 0.2s; }
+.closeBtn:hover { background: var(--bg-tertiary); }
 .modalContent h2 { font-size: 1.8rem; margin-bottom: 1.5rem; font-family: var(--font-serif); color: var(--text-primary); }
 
 .inputGroup { margin-bottom: 1.5rem; }
@@ -239,18 +238,18 @@
 .inputGroup input,
 .inputGroup select,
 .inputGroup textarea {
-  width: 100%; padding: 1rem 1.2rem; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px;
-  font-size: 1rem; background: rgba(255, 255, 255, 0.05); outline: none;
+  width: 100%; padding: 1rem 1.2rem; border: 1px solid var(--border-color); border-radius: 16px;
+  font-size: 1rem; background: var(--bg-secondary); outline: none;
   transition: border 0.3s, background 0.3s; color: var(--text-primary); font-family: inherit; resize: vertical;
 }
 .inputGroup input:focus,
 .inputGroup select:focus,
-.inputGroup textarea:focus { border-color: var(--accent-green); background: rgba(255, 255, 255, 0.08); }
+.inputGroup textarea:focus { border-color: var(--accent-green); background: var(--bg-secondary); }
 .inputGroup select option { background: var(--bg-secondary); color: var(--text-primary); }
 
 .imagePreview { width: 100%; height: 200px; object-fit: cover; border-radius: 16px; margin-top: 0.8rem; }
 
-.submitBtn { width: 100%; padding: 1.2rem; background: var(--primary-green); color: var(--text-primary); border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 25px rgba(48, 124, 70, 0.3); transition: transform 0.2s; }
+.submitBtn { width: 100%; padding: 1.2rem; background: var(--primary-green); color: var(--on-accent); border: none; border-radius: 16px; font-size: 1.1rem; font-weight: 600; cursor: pointer; box-shadow: 0 10px 25px rgba(48, 124, 70, 0.3); transition: transform 0.2s; }
 .submitBtn:hover { transform: translateY(-2px); }
 .submitBtn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
@@ -261,3 +260,14 @@
   .modalOverlay { padding: 1rem; }
   .modalContent { padding: 1.5rem; border-radius: 20px; }
 }
+
+.container { max-width: 1040px; margin: auto; padding: 26px 32px 60px; min-height: calc(100vh - 82px); }
+.header h1 { font-weight: 600; }
+.postCard { background: white; box-shadow: var(--glass-shadow); padding: 20px; border-radius: 25px; }
+.shareBtn, .submitBtn { color: white; border-radius: 99px; box-shadow: none; }
+.coinPill { background: #fcf3dd; color: #936c22; border-color: #eee1b9; }
+.emptyState { background: #f0f5eb; border-color: #cfddc7; }
+.modalOverlay { background: #18271e55; z-index: 1200; backdrop-filter: blur(5px); }
+.modalContent { background: white; }
+.closeBtn { background: #f1f4ed; }
+@media (max-width: 768px) { .container { padding: 22px 20px 40px; } .headerActions { gap: 12px; } }

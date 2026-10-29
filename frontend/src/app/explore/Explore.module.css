@@ -27,7 +27,7 @@
 .searchBar {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.08);
+  background: var(--bg-secondary);
   border-radius: 12px;
   padding: 0.8rem 1rem;
   gap: 0.8rem;
@@ -69,9 +69,9 @@
 }
 
 .catBtn {
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-secondary);
   color: var(--text-primary);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--border-color);
   padding: 0.5rem 1.2rem;
   border-radius: 20px;
   font-size: 0.9rem;
@@ -95,7 +95,7 @@
 
 .featuredCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 45px rgba(35, 60, 42, 0.07);
 }
 
 .featuredCard img {
@@ -118,7 +118,7 @@
 
 .featuredTag {
   background: var(--accent-green);
-  color: var(--text-primary);
+  color: var(--on-accent);
   font-size: 0.7rem;
   padding: 0.2rem 0.6rem;
   border-radius: 10px;
@@ -178,8 +178,7 @@
   padding: 5rem 2rem;
   border-radius: 32px;
   border: 1px dashed rgba(48, 124, 70, 0.3);
-  background:
-    linear-gradient(180deg, rgba(7,9,8,0.55) 0%, rgba(7,9,8,0.88) 100%),
+  background: linear-gradient(180deg, rgba(7,9,8,0.55) 0%, rgba(7,9,8,0.88) 100%),
     url('https://images.unsplash.com/photo-1601985705806-5b9a71f6004f?w=1200&q=80') center/cover;
 }
 
@@ -209,3 +208,12 @@
   font-size: 0.95rem;
   font-weight: 500;
 }
+
+.container { max-width: 1040px; margin: auto; padding: 24px 32px 60px; min-height: calc(100vh - 82px); }
+.header h1 { font-weight: 600; }
+.searchBar { border: var(--glass-border); border-radius: 99px; padding: 15px 20px; }
+.catBtn.active { background: var(--primary-green); color: white; border-color: var(--primary-green); }
+.featuredCard, .gridItem { border-radius: 24px; }
+.featuredContent, .itemOverlay { color: white; }
+.emptyState { background: #f0f5eb; border-color: #cfddc7; }
+@media (max-width: 768px) { .container { padding: 20px; } }

@@ -90,7 +90,7 @@
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
@@ -200,7 +200,7 @@
 .metricValue {
   font-size: 3rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--on-accent);
   font-family: var(--font-serif);
   background: var(--grad-premium);
   -webkit-background-clip: text;
@@ -226,7 +226,7 @@
 
 .tableHeader {
   padding: 1.5rem 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -248,17 +248,17 @@
   color: var(--text-secondary);
   font-weight: 500;
   font-size: 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .table td {
   padding: 1.2rem 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
 }
 
 .table tr:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-secondary);
 }
 
 .badge {
@@ -275,7 +275,7 @@
 }
 
 .badge.inactive {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
   color: var(--text-secondary);
 }
 
@@ -296,7 +296,7 @@
 }
 
 .actionBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
   color: var(--text-primary);
 }
 
@@ -346,8 +346,8 @@
   width: 100%;
   padding: 0.8rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 0.95rem;
   outline: none;
@@ -364,7 +364,7 @@
   justify-content: space-between;
   gap: 1.5rem;
   padding: 1rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .settingRow:last-child {
@@ -409,7 +409,7 @@
   position: absolute;
   cursor: pointer;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-secondary);
   transition: 0.3s;
   border-radius: 34px;
 }
@@ -442,7 +442,7 @@
 
 .saveBtn {
   background: var(--accent-green);
-  color: #000;
+  color: var(--on-accent);
   border: none;
   padding: 0.9rem 2rem;
   border-radius: 12px;
@@ -472,9 +472,9 @@
 }
 
 .retryBtn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
   padding: 0.7rem 1.6rem;
   border-radius: 12px;
   font-weight: 600;
@@ -483,7 +483,7 @@
 }
 
 .retryBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-secondary);
 }
 
 /* Responsive: below this width the fixed 280px sidebar collapses into a
@@ -570,3 +570,10 @@
     white-space: nowrap;
   }
 }
+
+.sidebar { background: #fffdf8; }
+.logo { color: var(--primary-green); }
+.navItem.active { background: var(--accent-green-dim); box-shadow: none; }
+.metricCard, .tableContainer, .settingsCard { background: white; box-shadow: var(--glass-shadow); border-radius: 24px; }
+.mainContent::before { display: none; }
+.pageTitle { font-weight: 600; }

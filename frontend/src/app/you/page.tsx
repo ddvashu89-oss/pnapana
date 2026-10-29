@@ -6,6 +6,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
 import styles from './You.module.css';
+import { Compass, Droplets, Sparkles, ChevronRight } from 'lucide-react';
 
 export default function You() {
   const router = useRouter();
@@ -75,12 +76,21 @@ export default function You() {
           </div>
 
           <div className={styles.menuGroup}>
+            <h3>{language === 'hi' ? 'और जानें' : 'Keep growing'}</h3>
+            {[
+              { href: '/care', label: t('nav.care'), Icon: Droplets },
+              { href: '/rituals', label: t('nav.rituals'), Icon: Sparkles },
+              { href: '/explore', label: t('nav.explore'), Icon: Compass },
+            ].map(({ href, label, Icon }) => <Link key={href} href={href} className={styles.menuItem}><div className={styles.menuIcon}><Icon size={20} /></div><span>{label}</span><ChevronRight size={20} /></Link>)}
+          </div>
+
+          <div className={styles.menuGroup}>
             <h3>{t('you.settings')}</h3>
-            <button className={styles.menuItem}>
+            <Link href="/settings" className={styles.menuItem}>
               <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
               <span>{t('you.editProfile')}</span>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
+            </Link>
             <button className={styles.menuItem}>
               <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
               <span>{t('you.notifications')}</span>

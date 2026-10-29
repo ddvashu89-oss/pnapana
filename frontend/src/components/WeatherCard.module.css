@@ -1,0 +1,79 @@
+.card { background: linear-gradient(115deg, #f3fbff, #fff 68%, #f4faf5); border: 1px solid #cfe6ee; border-radius: 21px; padding: 16px; box-shadow: 0 1px 3px #233c2a05; }
+.overview { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.weatherIcon { font-size: 29px; line-height: 1; width: 30px; flex-shrink: 0; }
+.temperature { flex: 1; min-width: 0; }
+.temperatureLine { display: flex; align-items: center; flex-wrap: wrap; column-gap: 7px; }
+.temperature strong { font: italic 700 28px/1.15 var(--font-serif); letter-spacing: -.8px; }
+.temperature small { font-size: 11px; color: #8a918d; white-space: nowrap; }
+.temperature > span { display: block; color: #1e5973; font-size: 13px; line-height: 1.5; margin-top: 2px; }
+.humidity { display: flex; gap: 4px; align-items: center; background: #e5f0f6; color: #24718e; padding: 6px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.weatherBased { color: #1e5973; font-size: 11px; white-space: nowrap; }
+.refresh { width: 25px; height: 34px; display: grid; place-items: center; color: #3788ac; flex-shrink: 0; }
+.fallbackLocation { display: block; font-size: 9px; color: #728d96; margin: 5px 0 -3px 40px; }
+.tip { display: flex; gap: 10px; border-top: 1px solid #e5edef; margin-top: 15px; padding-top: 13px; font-size: 14px; line-height: 1.6; }
+.tip > span { font-size: 19px; line-height: 1.5; flex-shrink: 0; }
+.tip strong { font-weight: 700; }
+.plantCard .overview { padding-bottom: 17px; border-bottom: 1px solid #e5edef; }
+.plantCard .fallbackLocation { margin: 5px 0 0; }
+.plantCard .temperature strong { font-size: 27px; }
+.plantCard .temperature > span { font-size: 12px; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin: 13px 0; }
+.metrics > div { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 3px; background: #ffffff80; border-radius: 12px; min-width: 0; }
+.metricIcon { font-size: 15px; line-height: 1.25; }
+.metricLabel { color: #8a918d; font-size: 11px; letter-spacing: .7px; text-transform: uppercase; }
+.metrics strong { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 600; line-height: 1.5; }
+.verdict { display: flex; align-items: center; gap: 13px; background: #f0f7f0; border-radius: 17px; padding: 16px; }
+.check { display: grid; place-items: center; width: 44px; height: 44px; color: white; background: #31774a; border-radius: 50%; flex-shrink: 0; }
+.verdict > div { min-width: 0; }
+.verdict > div > span { font-size: 12px; color: #68806b; letter-spacing: .5px; }
+.verdictLine { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-top: 3px; }
+.verdict strong { font: 700 21px/1.2 var(--font-serif); color: #28573a; }
+.verdictLine p { font: 500 15px/1.3 var(--font-serif); color: #58765f; white-space: nowrap; }
+.advice { display: flex; align-items: flex-start; gap: 12px; margin: 18px 0; }
+.adviceIcon { width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; color: #428cb2; background: #e5f1f7; border-radius: 10px; }
+.advice h3, .detail h3 { font: 600 16px/1.4 var(--font-sans); letter-spacing: .1px; margin: 0 0 5px; }
+.advice p, .detail > p { font-size: 15px; line-height: 1.75; color: #5e6961; margin: 0; }
+.advice small { display: block; margin-top: 10px; color: #8a918d; font-size: 13px; }
+.detail { border-top: 1px solid #e9efed; padding-top: 18px; margin-top: 19px; }
+.detail h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.detail h3 svg { color: #63846a; flex-shrink: 0; }
+.lightScale { display: flex; gap: 5px; position: relative; }
+.lightScale i { width: 25%; height: 10px; border-radius: 99px; }
+.comfortable { background: #79b58a; }
+.harsh { background: #e6a98d; }
+.lightMarker { position: absolute; top: 20px; font-size: 12px; transform: translateX(-50%); color: #18271e; }
+.scaleLabels { display: flex; justify-content: space-between; margin: 20px 0 9px; color: #969c96; font-size: 13px; }
+.detail .legend { display: flex; align-items: center; gap: 5px; font-size: 13px; margin: 2px 0 12px; }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #79b58a; }
+.legend span, .lightAdvice strong, .detail > p > strong { color: #243229; font-weight: 500; }
+.pill { display: inline-block; border-radius: 99px; background: #e2f0e6; color: #3b6748; padding: 3px 12px; font-size: 14px; font-weight: 600; margin: 2px 0 13px; }
+.growthScale { height: 12px; background: linear-gradient(90deg, #e3eef5 0% 28%, #dcece1 28% 33%, #a4d2b2 33% 38%, #46995c 38% 70%, #a4d2b2 70% 78%, #e5aa8c 78%); border-radius: 99px; position: relative; }
+.growthScale > span { position: absolute; top: 20px; transform: translateX(-50%); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.growthScale + .scaleLabels { margin-top: 28px; }
+.spinning { animation: rotate 1s linear infinite; }
+@keyframes rotate { to { transform: rotate(360deg); } }
+@media (min-width: 601px) { .card { padding: 22px; } .temperature strong { font-size: 32px; } .temperature > span { font-size: 15px; } .tip { font-size: 16px; } .verdictLine { gap: 12px; } .verdict strong { font-size: 24px; } }
+@media (max-width: 360px) { .overview { gap: 7px; } .weatherIcon { width: 25px; font-size: 25px; } .temperature strong { font-size: 25px; } .temperature small { font-size: 10px; } .humidity { padding: 6px; font-size: 10px; } .weatherBased { font-size: 10px; } .plantCard .temperature > span { font-size: 10px; } .metricLabel { font-size: 9px; } .verdict { padding: 13px; gap: 10px; } .verdict strong { font-size: 18px; } .verdictLine p { font-size: 12px; } }
+@media (max-width: 600px) {
+ .overview { gap: 8px; }
+ .weatherIcon { width: 28px; font-size: 28px; }
+ .temperatureLine { column-gap: 4px; }
+ .temperature small { font-size: 10px; }
+ .humidity { padding: 6px 8px; font-size: 11px; }
+ .refresh { width: 23px; }
+ .dailyCard .tip { font-size: 13px; line-height: 1.65; }
+}
+@media (max-width: 600px) {
+ .verdict { padding: 15px; gap: 12px; }
+ .verdict strong { font-size: 19px; }
+ .verdictLine { column-gap: 8px; }
+ .verdictLine p { font-size: 13px; }
+}
+@media (min-width: 361px) and (max-width: 600px) {
+ .verdict { padding: 14px; }
+ .check { width: 36px; height: 36px; }
+ .check svg { width: 21px; height: 21px; }
+ .verdict strong { font-size: 18px; }
+ .verdictLine { flex-wrap: nowrap; gap: 7px; }
+ .verdictLine p { font-size: 13px; }
+}

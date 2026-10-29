@@ -168,8 +168,8 @@
 .inputGroup input {
   padding: 1rem 1.2rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 1rem;
@@ -179,13 +179,13 @@
 .inputGroup input:focus {
   outline: none;
   border-color: var(--accent-green);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-secondary);
   box-shadow: 0 0 15px rgba(82, 191, 120, 0.15);
 }
 
 .submitBtn {
   background: var(--grad-premium);
-  color: #000;
+  color: var(--on-accent);
   padding: 1.1rem;
   border-radius: 12px;
   border: none;
@@ -218,3 +218,13 @@
 .toggleLink:hover {
   color: var(--accent-orange);
 }
+
+.formPanel::before { display: none; }
+.card { background: white; border-radius: 27px; box-shadow: var(--glass-shadow); }
+.header h1 { background: none; color: var(--text-primary); }
+.submitBtn { color: white; border-radius: 99px; background: var(--primary-green); box-shadow: none; }
+.submitBtn:hover { box-shadow: none; }
+.inputGroup input { background: #fafbf7; border-color: #e1e6d9; border-radius: 15px; }
+.photoQuote span { color: #c3e1b5; }
+.backLink { background: #faf8f1ed; color: var(--primary-green); padding: 8px 14px; border-radius: 99px; }
+@media (max-width: 600px) { .formPanel { padding: 28px 20px; } .card { padding: 30px 24px; } }

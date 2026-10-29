@@ -254,7 +254,7 @@ const en: Dictionary = {
   'plant.tabAiScan': 'AI Scan',
   'plant.tabCare': 'Care',
   'plant.passportSubtitle': "Your plant's identity & preferences.",
-  'plant.native': 'Native',
+  'plant.native': 'Native to',
   'plant.light': 'Light',
   'plant.water': 'Water',
   'plant.dailyHealthCheck': 'Daily Health Check 🤖🌿',

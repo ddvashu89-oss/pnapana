@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import CareGuideLink from './CareGuideLink';
+import { Leaf } from 'lucide-react';
 import styles from '@/app/Landing.module.css';
 
 type Labels = {
@@ -38,7 +39,7 @@ export default function MarketingNav({ labels }: { labels?: Labels }) {
   return (
     <nav className={styles.nav}>
       <Link href="/" className={styles.logo}>
-        <span>🌿</span> pnapana
+        <span className={styles.brandMark}><Leaf size={23} strokeWidth={1.6} /></span> Pnapana
       </Link>
 
       <button
@@ -55,7 +56,7 @@ export default function MarketingNav({ labels }: { labels?: Labels }) {
       {isOpen && <div className={styles.navOverlay} onClick={close}></div>}
 
       <div className={`${styles.navLinks} ${isOpen ? styles.navLinksOpen : ''}`}>
-        <Link href="/explore" className={styles.navLink} onClick={close}>{l.explore}</Link>
+        <Link href={isLoggedIn ? "/explore" : "/login"} className={styles.navLink} onClick={close}>{l.explore}</Link>
         <Link href="/about" className={styles.navLink} onClick={close}>{l.about}</Link>
         <CareGuideLink className={styles.navLink}>{l.careGuide}</CareGuideLink>
         <Link href="/contact" className={styles.navLink} onClick={close}>{l.contact}</Link>

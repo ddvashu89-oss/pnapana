@@ -1,119 +1,56 @@
-/* Desktop Sidebar (Default) */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 250px;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur, blur(16px));
-  -webkit-backdrop-filter: var(--glass-blur, blur(16px));
-  border-right: var(--glass-border);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  padding: 2rem 1.5rem;
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-}
-
-.logoContainer {
-  margin-bottom: 3rem;
-  padding-left: 0.5rem;
-}
-
-.logo {
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: var(--primary-green);
-  text-decoration: none;
-  letter-spacing: -0.5px;
-}
-
-.navLinks {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.navItem {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 1.1rem;
-  font-weight: 500;
-  border-radius: 16px;
-  transition: all 0.3s ease;
-}
-
-.navItem:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-}
-
-.navItem.active {
-  background: var(--accent-green-dim);
-  color: var(--accent-green);
-  border: 1px solid rgba(72, 166, 104, 0.3);
-}
-
-.icon {
-  font-size: 1.3rem;
-}
-
-/* Mobile Bottom Navigation */
+.topbar { height: 82px; position: sticky; top: 0; z-index: 90; background: #faf8f1f5; border-bottom: var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; backdrop-filter: blur(16px); }
+.brand, .desktopBrand { display: inline-flex; align-items: center; gap: 12px; font: 700 25px var(--font-serif); letter-spacing: -.6px; }
+.brandMark { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 43px; height: 43px; background: var(--primary-green); color: white; border-radius: 50%; }
+.headerActions { display: flex; align-items: center; gap: 10px; }
+.streak, .coins { display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 99px; padding: 8px 12px; font-size: 15px; font-weight: 500; min-width: 55px; }
+.streak { color: #a14f39; background: #faeae2; }
+.coins { color: #946d24; background: #fcf2d9; border: 1px solid #f0e4bd; }
+.profile { width: 38px; height: 42px; display: grid; place-items: center; color: #536157; margin-left: 2px; }
+.sidebar { position: fixed; inset: 0 auto 0 0; width: 244px; padding: 28px 20px; background: #fffdf8; border-right: var(--glass-border); z-index: 100; display: flex; flex-direction: column; }
+.desktopBrand { margin: 0 8px 46px; }
+.navLinks { display: flex; flex-direction: column; gap: 7px; }
+.navItem { display: flex; align-items: center; gap: 14px; padding: 11px 14px; min-height: 50px; color: var(--text-secondary); border-radius: 16px; font-size: 16px; transition: background .2s, color .2s; }
+.icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; }
+.navItem:hover, .secondaryLinks a:hover { background: #f0f5ed; color: var(--primary-green); }
+.active { color: var(--primary-green); background: var(--accent-green-dim); font-weight: 500; }
+.scan .icon { background: var(--primary-green); border-radius: 50%; color: white; width: 38px; height: 38px; margin: -3px; margin-right: -3px; }
+.secondaryLinks { display: flex; flex-direction: column; gap: 2px; border-top: var(--glass-border); margin-top: 26px; padding-top: 24px; }
+.navCaption { color: var(--text-muted); font-size: 10px; letter-spacing: 2px; padding: 0 14px 12px; }
+.secondaryLinks a { display: flex; align-items: center; gap: 16px; padding: 12px 18px; color: var(--text-secondary); border-radius: 12px; font-size: 14px; }
+.sidebarNote { margin: auto 8px 0; padding: 20px 10px 0; display: flex; gap: 10px; color: #71846c; font-size: 13px; line-height: 1.7; }
+@media (min-width: 769px) { .brand { font-size: 20px; font-weight: 500; } .brandMark { width: 36px; height: 36px; } .desktopBrand .brandMark { width: 43px; height: 43px; } }
 @media (max-width: 768px) {
-  .sidebar {
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 80px;
-    flex-direction: row;
-    padding: 0 1rem;
-    border-right: none;
-    border-top: var(--glass-border);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
-    border-radius: 24px 24px 0 0;
-    justify-content: space-around;
-    align-items: center;
-  }
-
-  .logoContainer {
-    display: none;
-  }
-
-  .navLinks {
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-between;
-    gap: 0;
-  }
-
-  .navItem {
-    flex-direction: column;
-    gap: 0.3rem;
-    padding: 0.5rem;
-    border-radius: 12px;
-    flex: 1;
-    text-align: center;
-  }
-
-  .navItem.active {
-    background: transparent;
-    border: none;
-  }
-
-  .icon {
-    font-size: 1.5rem;
-  }
-
-  .label {
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
+ .topbar { height: 78px; padding: 0 20px; }
+ .brand { font-size: 23px; gap: 9px; }
+ .brandMark { width: 40px; height: 40px; }
+ .headerActions { gap: 7px; }
+ .streak, .coins { padding: 7px 9px; min-width: 48px; font-size: 14px; }
+ .profile { width: 30px; margin-left: 4px; }
+ .sidebar { top: auto; right: 0; width: 100%; height: calc(82px + env(safe-area-inset-bottom)); padding: 6px 8px env(safe-area-inset-bottom); border-right: 0; border-top: var(--glass-border); background: #fffffffa; backdrop-filter: blur(16px); }
+ .desktopBrand, .secondaryLinks, .sidebarNote { display: none; }
+ .navLinks { flex-direction: row; justify-content: space-around; gap: 0; }
+ .navItem { flex: 1; min-width: 0; flex-direction: column; justify-content: center; gap: 5px; padding: 5px 0; font-size: 11px; border-radius: 0; min-height: 64px; color: #858f87; }
+ .navItem.active { background: none; color: var(--primary-green); }
+ .icon { width: 38px; height: 36px; border-radius: 50%; }
+ .active .icon { background: var(--accent-green-dim); }
+ .scan .icon { width: 42px; height: 42px; margin: -3px 0; }
+ .navItem:hover { background: none; }
+}
+@media (max-width: 360px) { .topbar { padding: 0 14px; } .brand { font-size: 21px; gap: 7px; } .headerActions { gap: 4px; } .streak, .coins { min-width: 42px; padding: 7px; } }
+.flameEmoji { font-size: 18px; line-height: 1; }
+.coinEmblem { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid #caa54d; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #fff1aa, #d9b24f 65%, #f7de8d); color: #73531c; box-shadow: inset 0 0 0 2px #f6dd87; }
+@media (max-width: 768px) {
+ .topbar { height: 58px; padding: 0 16px; background: #faf8f2f8; }
+ .brand { font-size: 20px; gap: 8px; letter-spacing: -.5px; }
+ .brandMark { width: 32px; height: 32px; }
+ .brandMark svg { width: 20px; height: 20px; }
+ .streak, .coins { min-width: 46px; padding: 6px 8px; gap: 5px; font-size: 13px; }
+ .flameEmoji { font-size: 18px; }
+ .profile { width: 28px; height: 36px; margin-left: 2px; }
+ .profile svg { width: 21px; height: 21px; }
+ .sidebar { height: calc(74px + env(safe-area-inset-bottom)); padding: 5px 8px env(safe-area-inset-bottom); background: #fffffff7; }
+ .navItem { min-height: 62px; gap: 5px; font-size: 10px; letter-spacing: .3px; }
+ .icon { width: 34px; height: 34px; }
+ .icon svg { width: 21px; height: 21px; }
+ .scan .icon { width: 36px; height: 36px; margin: -1px 0; }
 }

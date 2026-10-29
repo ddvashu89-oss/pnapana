@@ -10,7 +10,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname().replace(/\/+$/, '') || '/';
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [adminName, setAdminName] = useState('');

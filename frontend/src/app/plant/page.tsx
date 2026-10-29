@@ -8,6 +8,8 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
 import styles from './Plant.module.css';
+import WeatherCard from '@/components/WeatherCard';
+import { Droplets, ScanLine, Globe, Sun, CalendarDays, Check } from 'lucide-react';
 
 function PlantDetailsInner() {
   const searchParams = useSearchParams();
@@ -30,6 +32,9 @@ function PlantDetailsInner() {
   });
 
   const [activeTab, setActiveTab] = useState('Passport');
+  const [now, setNow] = useState(() => Date.now());
+  const [watering, setWatering] = useState(false);
+  const [waterMessage, setWaterMessage] = useState('');
   
   // AI Scanner States
   const [scans, setScans] = useState<any[]>([]);
@@ -47,6 +52,7 @@ function PlantDetailsInner() {
       return;
     }
     setHasUser(true);
+    setActiveTab(searchParams.get('tab') === 'scan' ? 'AI Scan' : searchParams.get('tab') === 'care' ? 'Care' : 'Passport');
 
     authFetch(`get_plant_details.php?id=${plantId}`)
       .then(res => res.json())
@@ -124,6 +130,23 @@ function PlantDetailsInner() {
     }
   }
 
+  const waterPlant = async () => {
+    setWatering(true);
+    setWaterMessage('');
+    try {
+      const response = await authFetch('water_plant.php', { method: 'POST', body: JSON.stringify({ id: plantId }) });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setNow(Date.now());
+        setPlant((previous: any) => ({ ...previous, last_watered: new Date().toISOString() }));
+        setWaterMessage('Watering logged. Your plant says thanks!');
+        window.dispatchEvent(new Event('pnapana:rewards'));
+      } else setWaterMessage(data.message || 'Could not log watering. Please try again.');
+    } catch { setWaterMessage('Could not log watering. Please try again.'); }
+    finally { setWatering(false); }
+  };
+  const daysSinceWatering = plant.last_watered ? Math.max(0, Math.floor((now - new Date(plant.last_watered.replace(' ', 'T')).getTime()) / 86400000)) : null;
+
   if (!hasUser || isLoading) return <Loader fullScreen label={t('common.loading')} />;
 
   return (
@@ -133,7 +156,7 @@ function PlantDetailsInner() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
         </Link>
         <div style={{display: 'flex', gap: '1rem'}}>
-          <button className={styles.iconBtn}>
+          <button className={styles.iconBtn} aria-label="Share plant" onClick={() => { if (navigator.share) navigator.share({ title: plant.name, text: `Meet ${plant.name}, part of my green family on Pnapana.`, url: window.location.origin }).catch(() => {}); else router.push('/community'); }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           </button>
         </div>
@@ -141,7 +164,7 @@ function PlantDetailsInner() {
 
       <section className={styles.imageSection}>
         <div className={styles.circleBg}></div>
-        {plant.image_url && <img src={plant.image_url} alt={plant.name} className={styles.plantImage} />}
+        <img src={plant.image_url || "/plants/tulsi.webp"} alt={plant.name || "Your plant"} className={styles.plantImage} />
       </section>
 
       <main className={styles.content}>
@@ -156,12 +179,19 @@ function PlantDetailsInner() {
           </div>
         </div>
 
-        <div className={styles.tabs}>
-          <button className={`${styles.tab} ${activeTab === 'Passport' ? styles.active : ''}`} onClick={() => setActiveTab('Passport')}>{t('plant.tabPassport')}</button>
-          <button className={`${styles.tab} ${activeTab === 'AI Scan' ? styles.active : ''}`} onClick={() => setActiveTab('AI Scan')}>{t('plant.tabAiScan')}</button>
-          <button className={`${styles.tab} ${activeTab === 'Care' ? styles.active : ''}`} onClick={() => setActiveTab('Care')}>{t('plant.tabCare')}</button>
+        <div className={styles.plantStats}>
+          <div><span><Droplets size={14} />Last watered</span><strong>{daysSinceWatering === null || !Number.isFinite(daysSinceWatering) ? 'Not logged yet' : daysSinceWatering === 0 ? 'Today' : `${daysSinceWatering} days ago`}</strong></div>
+          <div><span><CalendarDays size={14} />Water every</span><strong>{plant.water_freq || 7} days</strong></div>
+          <div><span><Sun size={14} />Light</span><strong>{plant.light_req || 'See care plan'}</strong></div>
         </div>
-
+        <div className={styles.plantActions}>
+          <button onClick={waterPlant} disabled={watering}><Droplets size={19} />{watering ? 'Saving…' : 'Water it'}</button>
+          <button onClick={() => { setActiveTab('AI Scan'); requestAnimationFrame(() => document.getElementById('plant-care')?.scrollIntoView({ behavior: 'smooth' })); }}><ScanLine size={20} />Scan</button>
+        </div>
+        {waterMessage && <p className={styles.waterMessage} role="status"><Check size={16} />{waterMessage}</p>}
+        <h2 className={styles.sectionTitle}>Adjusted for today’s weather</h2>
+        <WeatherCard plant={plant} />
+        <h2 className={styles.sectionTitle}>Care plan</h2>
         <div className={styles.tabContent}>
         <motion.div
           key={activeTab}
@@ -169,25 +199,31 @@ function PlantDetailsInner() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: 'easeOut' }}
         >
-          {activeTab === 'Passport' && (
+          {(
             <>
-              <p>{t('plant.passportSubtitle')}</p>
               <div className={styles.attributeList}>
                 <div className={styles.attributeItem}>
-                  <span className={styles.attrLabel}>{t('plant.native')}</span>
-                  <span className={styles.attrValue}>{plant.native_region}</span>
+                  <span className={styles.careIcon}><Globe size={23} /></span><div><span className={styles.attrLabel}>{t('plant.native')}</span>
+                  <span className={styles.attrValue}>{plant.native_region || 'Native region not available'}</span></div>
                 </div>
                 <div className={styles.attributeItem}>
-                  <span className={styles.attrLabel}>{t('plant.light')}</span>
-                  <span className={styles.attrValue}>{plant.light_requirement}</span>
+                  <span className={styles.careIcon}><Sun size={24} /></span><div><span className={styles.attrLabel}>{t('plant.light')} <em>{plant.light_req || 'Medium'}</em></span>
+                  <span className={styles.attrValue}>{plant.light_requirement || 'Check the detailed care plan for light requirements.'}</span></div>
                 </div>
                 <div className={styles.attributeItem}>
-                  <span className={styles.attrLabel}>{t('plant.water')}</span>
-                  <span className={styles.attrValue}>{plant.water_requirement}</span>
+                  <span className={styles.careIcon}><Droplets size={24} /></span><div><span className={styles.attrLabel}>{t('plant.water')} <em>{plant.water_freq || 7} days between waterings</em></span>
+                  <span className={styles.attrValue}>{plant.water_requirement || 'Check the topsoil before watering.'}</span></div>
                 </div>
               </div>
             </>
           )}
+
+        <div className={styles.tabs} id="plant-care">
+          <button className={`${styles.tab} ${activeTab === 'Passport' ? styles.active : ''}`} onClick={() => setActiveTab('Passport')}>{t('plant.tabPassport')}</button>
+          <button className={`${styles.tab} ${activeTab === 'AI Scan' ? styles.active : ''}`} onClick={() => setActiveTab('AI Scan')}>{t('plant.tabAiScan')}</button>
+          <button className={`${styles.tab} ${activeTab === 'Care' ? styles.active : ''}`} onClick={() => setActiveTab('Care')}>{t('plant.tabCare')}</button>
+        </div>
+
 
           {activeTab === 'AI Scan' && (
             <div className={styles.aiScannerArea}>

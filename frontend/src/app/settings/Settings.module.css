@@ -58,11 +58,11 @@
   justify-content: center;
   color: var(--text-primary);
   text-decoration: none;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 10px rgba(35, 60, 42, 0.07);
   transition: all 0.3s ease;
 }
 .backBtn:hover {
-  background: var(--bg-secondary); transform: translateX(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  background: var(--bg-secondary); transform: translateX(-3px); box-shadow: 0 8px 20px rgba(35, 60, 42, 0.07);
 }
 
 .header h1 {
@@ -114,7 +114,7 @@
   border-radius: 50%;
   overflow: hidden;
   border: 4px solid white;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(35, 60, 42, 0.07);
   flex-shrink: 0;
 }
 .profilePicLarge img { width: 100%; height: 100%; object-fit: cover; }
@@ -133,7 +133,7 @@
   cursor: pointer;
   transition: all 0.3s;
 }
-.editBtn:hover { background: var(--primary-green); color: var(--text-primary); }
+.editBtn:hover { background: var(--primary-green); color: var(--on-accent); }
 
 /* --- Setting Rows --- */
 .settingRow {
@@ -169,7 +169,7 @@
 }
 .slider:before {
   position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px;
-  background-color: var(--bg-secondary); transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  background-color: var(--bg-secondary); transition: .4s; border-radius: 50%; box-shadow: 0 2px 5px rgba(35, 60, 42, 0.07);
 }
 input:checked + .slider { background-color: var(--primary-green); }
 input:checked + .slider:before { transform: translateX(24px); }
@@ -455,7 +455,7 @@ input:checked + .slider:before { transform: translateX(24px); }
   color: var(--text-primary);
   border: 1px solid rgba(0,0,0,0.1);
 }
-.logoutBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+.logoutBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(35, 60, 42, 0.07); }
 
 .deleteBtn {
   background: rgba(231, 76, 60, 0.1);
@@ -479,3 +479,9 @@ input:checked + .slider:before { transform: translateX(24px); }
   .modalActions { flex-direction: column; }
   .modalCancelBtn, .modalConfirmBtn { width: 100%; text-align: center; }
 }
+
+.container { padding-top: 30px; }
+.meshBg, .meshOrb1, .meshOrb2, .meshOrb3 { display: none; }
+.settingsCard { background: white; box-shadow: var(--glass-shadow); }
+.header h1 { font-weight: 600; }
+@media (max-width: 768px) { .container { padding: 26px 20px 40px; } }

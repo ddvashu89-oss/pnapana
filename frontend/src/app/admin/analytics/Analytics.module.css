@@ -56,7 +56,7 @@
 
 .deltaDown {
   color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-secondary);
 }
 
 .chartSvg {
@@ -66,7 +66,7 @@
 }
 
 .gridLine {
-  stroke: rgba(255, 255, 255, 0.06);
+  stroke: var(--border-color);
   stroke-width: 1;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .crosshair {
-  stroke: rgba(255, 255, 255, 0.15);
+  stroke: var(--border-color);
   stroke-width: 1;
 }
 
@@ -103,7 +103,7 @@
 
 .tooltipBox {
   fill: var(--bg-secondary);
-  stroke: rgba(255, 255, 255, 0.1);
+  stroke: var(--border-color);
   stroke-width: 1;
 }
 
@@ -143,7 +143,7 @@
 
 .barTrack {
   height: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-secondary);
   border-radius: 9px;
   overflow: hidden;
 }

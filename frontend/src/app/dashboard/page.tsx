@@ -3,41 +3,24 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Droplets, Scissors, FlaskConical } from 'lucide-react';
+import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight } from 'lucide-react';
+import WeatherCard from '@/components/WeatherCard';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
-import { authFetch, getApiUrl } from '@/lib/api';
+import { authFetch } from '@/lib/api';
 import styles from './Home.module.css';
-
-const AFFIRMATIONS_EN = [
-  "Bloom where you are planted. 🌸",
-  "To plant a garden is to believe in tomorrow.",
-  "Nature does not hurry, yet everything is accomplished.",
-  "Just like your plants, you are growing every day.",
-  "Deep roots are not reached by the frost."
-];
-
-const AFFIRMATIONS_HI = [
-  "जहां लगाए जाओ, वहीं खिलो। 🌸",
-  "बगीचा लगाना कल पर भरोसा करना है।",
-  "प्रकृति जल्दी नहीं करती, फिर भी सब कुछ पूरा हो जाता है।",
-  "अपने पौधों की तरह, आप भी हर दिन बढ़ रहे हैं।",
-  "गहरी जड़ों तक पाला नहीं पहुंचता।"
-];
 
 export default function Home() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const [user, setUser] = useState<{ id: number, name: string, token?: string } | null>(null);
   const [plants, setPlants] = useState<any[]>([]);
+  const [scanDates, setScanDates] = useState<Record<number, string[] | null>>({});
+  const [today] = useState(() => new Date());
+  const [plantsLoaded, setPlantsLoaded] = useState(false);
   const [thirstyPlants, setThirstyPlants] = useState<number[]>([]);
   const notifiedIds = useRef<Set<number>>(new Set());
   
-  // Weather state
-  const [weather, setWeather] = useState<{ temp: number | string, humidity: number | string }>({ temp: '--', humidity: '--' });
-  const [weatherAQI, setWeatherAQI] = useState<{ value: number | string, status: string }>({ value: '--', status: 'Loading' });
-  const [locationName, setLocationName] = useState('Locating...');
-
   // Add Plant Modal state
   const [isAddPlantModalOpen, setIsAddPlantModalOpen] = useState(false);
   const [newPlant, setNewPlant] = useState<{
@@ -69,8 +52,6 @@ export default function Home() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   
-  // New Features State
-  const [affirmation, setAffirmation] = useState('');
 
   // Gamification State
   const [streakDays, setStreakDays] = useState(0);
@@ -87,9 +68,8 @@ export default function Home() {
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
 
-    fetchPlants(parsedUser.id, parsedUser.token);
-    fetchWeather();
-    fetchGamification(parsedUser.token);
+    fetchPlants(parsedUser.id);
+    fetchGamification();
 
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
       Notification.requestPermission();
@@ -122,22 +102,43 @@ export default function Home() {
     checkWateringNeeds();
     const interval = setInterval(checkWateringNeeds, 30000);
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   useEffect(() => {
-    const affirmations = language === 'hi' ? AFFIRMATIONS_HI : AFFIRMATIONS_EN;
-    setAffirmation(affirmations[Math.floor(Math.random() * affirmations.length)]);
-  }, [language]);
+    const syncNavigation = () => {
+      if (new URLSearchParams(window.location.search).get('action') === 'scan') {
+        setIsAddPlantModalOpen(true);
+        window.history.replaceState(null, '', '/dashboard');
+      }
+    };
+    syncNavigation();
+    window.addEventListener('pnapana:scan', syncNavigation);
+    return () => window.removeEventListener('pnapana:scan', syncNavigation);
+  }, []);
 
-  function fetchPlants(userId: number, token?: string) {
+  useEffect(() => {
+    if (!user || !window.location.hash) return;
+    const frame = requestAnimationFrame(() => document.getElementById(window.location.hash.slice(1))?.scrollIntoView());
+    return () => cancelAnimationFrame(frame);
+  }, [user]);
+
+  function fetchPlants(userId: number) {
     authFetch(`get_plants.php?user_id=${userId}`)
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setPlants(data.plants); })
+      .then(data => {
+        if (data.status !== 'success') return;
+        setPlants(data.plants);
+        setPlantsLoaded(true);
+        data.plants.forEach((plant: { id: number }) => {
+          authFetch(`get_plant_scans.php?plant_id=${plant.id}`).then(response => response.json()).then(history => {
+            setScanDates(previous => ({ ...previous, [plant.id]: history.status === 'success' ? history.scans.map((scan: { created_at: string }) => scan.created_at) : null }));
+          }).catch(() => setScanDates(previous => ({ ...previous, [plant.id]: null })));
+        });
+      })
       .catch(() => {});
   }
 
-  function fetchGamification(token?: string) {
+  function fetchGamification() {
     authFetch('get_gamification.php')
       .then(res => res.json())
       .then(data => {
@@ -148,54 +149,6 @@ export default function Home() {
         }
       })
       .catch(e => console.error('Failed to fetch gamification data', e));
-  }
-
-  async function fetchWeather() {
-    const fetchWeatherData = async (lat: number, lon: number, locationFallback: string = 'Bangalore') => {
-      try {
-        try {
-          const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
-          const geoData = await geoRes.json();
-          setLocationName(geoData.city || geoData.locality || locationFallback);
-        } catch (e) {
-          console.error(e);
-          setLocationName(locationFallback);
-        }
-
-        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m&timezone=auto`);
-        const weatherData = await weatherRes.json();
-        if (weatherData.current) {
-          setWeather({ temp: Math.round(weatherData.current.temperature_2m), humidity: weatherData.current.relative_humidity_2m });
-        }
-
-        try {
-          const aqiRes = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi`);
-          const aqiData = await aqiRes.json();
-          if (aqiData.current) {
-            setWeatherAQI({ value: aqiData.current.us_aqi, status: 'Active' });
-          }
-        } catch (e) {
-          console.error(e);
-          setWeatherAQI({ value: '--', status: 'Error' });
-        }
-      } catch (e) {
-        console.error("Failed to fetch weather", e);
-      }
-    };
-
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          fetchWeatherData(position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-          console.warn("Geolocation denied or failed", error);
-          fetchWeatherData(12.9716, 77.5946, 'Bangalore');
-        }
-      );
-    } else {
-      fetchWeatherData(12.9716, 77.5946, 'Bangalore');
-    }
   }
 
   const handleAddPlant = async (e: React.FormEvent) => {
@@ -390,15 +343,12 @@ export default function Home() {
         notifiedIds.current.delete(id);
         setThirstyPlants(prev => prev.filter(pId => pId !== id));
         fetchGamification();
+        fetchPlants(user!.id);
+        window.dispatchEvent(new Event('pnapana:rewards'));
       }
     } catch(e) {
       console.error(e);
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    router.push('/login');
   };
 
   const filteredPlants = useMemo(() => {
@@ -410,6 +360,18 @@ export default function Home() {
   const needsAttentionCount = plants.filter(p => thirstyPlants.includes(p.id) || p.status_color === 'orange').length;
   const healthyCount = plants.length - needsAttentionCount;
   const healthPercent = plants.length > 0 ? Math.round((healthyCount / plants.length) * 100) : 100;
+
+  const dayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  const scannedDays = new Set(Object.values(scanDates).flatMap(dates => dates || []).map(value => dayKey(new Date(value.replace(' ', 'T')))));
+  const photoHistoryKnown = plantsLoaded && plants.every(plant => Array.isArray(scanDates[plant.id]));
+  const cursor = new Date(today);
+  let photoStreak = 0;
+  if (!scannedDays.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  while (scannedDays.has(dayKey(cursor))) {
+    photoStreak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  const scannedToday = (id: number) => scanDates[id]?.some(value => dayKey(new Date(value.replace(' ', 'T'))) === dayKey(today));
 
   if (!user) return <Loader fullScreen label={t('common.loading')} />;
 
@@ -578,50 +540,35 @@ export default function Home() {
 
       <header className={styles.header}>
         <div className={styles.greeting}>
-          <h1>{t('dashboard.greeting', { name: user.name })}</h1>
-          <p className={styles.affirmation}>{affirmation}</p>
+          <p className={styles.eyebrow}>{language === 'hi' ? 'आपका दिन शुभ हो' : new Date().getHours() < 12 ? 'GOOD MORNING' : new Date().getHours() < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING'}</p>
+          <h1>{user.name.split(' ')[0]}</h1>
         </div>
-        <div className={styles.actions}>
-          <button className={styles.iconButton} onClick={handleLogout} title={t('dashboard.logout')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          </button>
-          <div className={styles.profilePic}>
-            <img src={`https://ui-avatars.com/api/?name=${user.name}&background=c17b54&color=fff`} alt="Profile" />
-          </div>
-        </div>
+        <Link href="/explore" className={styles.discoverLink}>{language === 'hi' ? 'कुछ नया उगाएँ' : 'A little inspiration'} <ArrowUpRight size={17} /></Link>
       </header>
 
+      <WeatherCard />
 
+      <div className={styles.shortcuts}>
+        <Link href="/rituals"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'वास्तु और स्थान' : <>Vastu &<br />Space</>}</strong></Link>
+        <button onClick={() => startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'स्वास्थ्य' : 'Health'}</strong></button>
+        <Link href="/care"><span className={styles.shortcutPeach}><FlaskConical size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'देखभाल' : 'Remedies'}</strong></Link>
+      </div>
 
-      {/* --- PREMIUM BENTO BOX GRID --- */}
+      <section className={styles.todaySection}>
+        <div className={styles.sectionHeader}><h3>{language === 'hi' ? 'आज की देखभाल' : "Today's care"}</h3><Link href="/care">{language === 'hi' ? 'सभी देखें' : 'View schedule'} <ArrowUpRight size={14} /></Link></div>
+        {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा जोड़ें।' : 'Your green family starts with one plant.'}</p><button onClick={() => setIsAddPlantModalOpen(true)}>{t('dashboard.addPlant')}</button></div> : plants.map(plant => <div key={plant.id} className={styles.todayPlant}>
+          <Link href={`/plant?id=${plant.id}`} className={styles.todayPlantInfo}>{plant.image_url ? <img src={plant.image_url} alt={plant.name} /> : <span className={styles.plantPlaceholder}><Sprout size={25} /></span>}<div><strong>{plant.name}</strong><span className={styles.todayStatus}><ScanLine size={13} />{scanDates[plant.id] === null ? 'Scan status unavailable' : scanDates[plant.id] === undefined ? 'Checking scan status…' : scannedToday(plant.id) ? (language === 'hi' ? 'आज स्कैन किया' : 'Scanned today') : language === 'hi' ? 'आज स्कैन नहीं किया' : 'Not scanned today'}</span></div></Link>
+          <Link href={`/plant?id=${plant.id}&tab=scan`} className={styles.scanPill}>{language === 'hi' ? 'स्कैन' : 'Scan'}</Link>
+        </div>)}
+      </section>
+
+      <section className={styles.photoStreakCard}>
+        <span className={styles.photoStreakIcon} aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 3c1 4-2 5-2 8 0 2 2 3 3 1 1-1 1-3 1-3 4 4 5 6 4 9-2 5-10 5-12 0-1-3 1-6 3-8-1 4 1 5 2 4 2-2 2-5 1-11Z"/></svg></span>
+        <div><h3>{photoHistoryKnown ? `${photoStreak} day photo streak` : 'Your photo streak'}</h3><p>{language === 'hi' ? 'हर दिन एक तस्वीर लें और पौधे को बढ़ते देखें।' : 'A photo a day. Watch your green family grow.'}</p></div>
+        <Link href="/dashboard?action=scan" onClick={event => { event.preventDefault(); setIsAddPlantModalOpen(true); }} aria-label="Start a photo check-in"><ScanLine size={21} /></Link>
+      </section>
+
       <div className={styles.bentoGrid}>
-        
-        {/* Tile 1: Weather Snapshot */}
-        <div className={`${styles.bentoTile} ${styles.weatherTile}`}>
-          <div className={styles.bentoHeader}>
-            <div>
-              <h3>{locationName}</h3>
-              <span>{t('dashboard.todaysOutlook')}</span>
-            </div>
-          </div>
-          <div className={styles.weatherMain}>
-            <div className={styles.tempLarge}>{weather.temp}°</div>
-            <div className={styles.weatherIcon}>
-              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="url(#orange-grad)" strokeWidth="1.5"><defs><linearGradient id="orange-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#f39c12" /><stop offset="100%" stopColor="#d35400" /></linearGradient></defs><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-            </div>
-          </div>
-          <div className={styles.weatherStats}>
-            <div className={styles.wStat}>
-              <span className={styles.wLabel}>{t('dashboard.humidity')}</span>
-              <span className={styles.wValue}>{weather.humidity}%</span>
-            </div>
-            <div className={styles.wStat}>
-              <span className={styles.wLabel}>{t('dashboard.aqi')}</span>
-              <span className={styles.wValue}>{weatherAQI.value}</span>
-            </div>
-          </div>
-        </div>
-
         {/* Tile 2: Action Needed */}
         <div className={`${styles.bentoTile} ${styles.tasksTile}`}>
           <div className={styles.bentoHeader}>
@@ -655,7 +602,7 @@ export default function Home() {
         </div>
 
         {/* Tile 3: Achievement Badges */}
-        <div className={`${styles.bentoTile} ${styles.milestonesTile}`}>
+        <div id="rewards" className={`${styles.bentoTile} ${styles.milestonesTile}`}>
           <div className={styles.bentoHeader}>
             <h3>{t('dashboard.achievements')}</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -718,9 +665,9 @@ export default function Home() {
       </div>
 
       {/* --- PLANT COLLECTION --- */}
-      <section className={styles.collectionSection}>
+      <section id="garden" className={styles.collectionSection}>
         <div className={styles.sectionHeader}>
-          <h3>{t('dashboard.yourGreenFamily')}</h3>
+          <h3>{t('dashboard.yourGreenFamily')}</h3><button className={styles.addGardenBtn} onClick={() => setIsAddPlantModalOpen(true)}>+ {t('dashboard.addPlant')}</button>
         </div>
 
         {plants.length > 0 && (
@@ -774,7 +721,7 @@ export default function Home() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                       </button>
                       <div className={styles.plantImageWrapper}>
-                        <img src={plant.image_url} alt={plant.name} className={styles.plantImage} />
+                        <img src={plant.image_url || "/plants/tulsi.webp"} alt={plant.name} className={styles.plantImage} />
                         {isThirsty && <div className={styles.thirstyOverlay}>💧 {t('dashboard.water')}</div>}
                       </div>
                       <div className={styles.plantInfo}>
@@ -791,10 +738,10 @@ export default function Home() {
                         <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleWaterPlant(plant.id); }} title={t('dashboard.water')}>
                           <Droplets size={16} />
                         </button>
-                        <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} title={t('dashboard.prune')}>
-                          <Scissors size={16} />
+                        <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); router.push(`/plant?id=${plant.id}&tab=care`); }} title={t('dashboard.prune')}>
+                          <Sprout size={16} />
                         </button>
-                        <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} title={t('dashboard.fertilize')}>
+                        <button className={styles.quickActionBtn} onClick={(e) => { e.preventDefault(); router.push(`/plant?id=${plant.id}&tab=care`); }} title={t('dashboard.fertilize')}>
                           <FlaskConical size={16} />
                         </button>
                       </div>

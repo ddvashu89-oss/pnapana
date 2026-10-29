@@ -1,0 +1,11 @@
+---
+deployment:
+  tasks:
+    - export DEPLOY1=/home/panapnai/public_html/
+    - export DEPLOY2=/home/panapnai/pnapana.live/
+    - /bin/cp -a frontend/out/. $DEPLOY1 2>/dev/null || true
+    - /bin/cp -R backend $DEPLOY1 2>/dev/null || true
+    - /bin/cp .htaccess $DEPLOY1 2>/dev/null || true
+    - /bin/cp -a frontend/out/. $DEPLOY2 2>/dev/null || true
+    - /bin/cp -R backend $DEPLOY2 2>/dev/null || true
+    - /bin/cp .htaccess $DEPLOY2 2>/dev/null || true
