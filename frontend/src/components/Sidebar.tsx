@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sprout, ScanLine, Users, Leaf, UserRound, Compass, Droplets, Sparkles, Settings } from 'lucide-react';
+import { Home, Sprout, ScanLine, Users, Leaf, UserRound, Compass, Droplets, Sparkles, Settings, Trophy } from 'lucide-react';
 import { isAppShellRoute } from '@/lib/routePolicy';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { authFetch } from '@/lib/api';
@@ -40,6 +40,7 @@ export default function Sidebar() {
     { href: '/dashboard', label: hi ? 'आज' : 'Today', icon: Home, active: pathname === '/dashboard' && !hash },
     { href: '/dashboard#garden', label: hi ? 'बगीचा' : 'Garden', icon: Sprout, active: pathname === '/plant' || (pathname === '/dashboard' && hash === '#garden') },
     { href: '/dashboard?action=scan', label: hi ? 'स्कैन' : 'Scan', icon: ScanLine, active: false, scan: true },
+    { href: '/rewards', label: hi ? 'इनाम' : 'Rewards', icon: Trophy, active: pathname === '/rewards', mobileOnly: true },
     { href: '/community', label: t('nav.community'), icon: Users, active: pathname === '/community' },
   ];
 
@@ -59,8 +60,8 @@ export default function Sidebar() {
       <nav className={`${styles.sidebar} ${pathname === '/dashboard' ? styles.dashboardTabs : ''}`} aria-label="Main navigation">
         <Link href="/dashboard" className={styles.desktopBrand}><span className={styles.brandMark}><Leaf size={24} strokeWidth={1.6} /></span>Pnapana</Link>
         <div className={styles.navLinks}>
-          {links.map(({ href, label, icon: Icon, active, scan }) => (
-            <Link key={label} href={href} onClick={(event) => { setHash(href.includes('#') ? '#' + href.split('#')[1] : ''); if (scan && pathname === '/dashboard') { event.preventDefault(); window.history.replaceState(null, '', href); window.dispatchEvent(new Event('pnapana:scan')); } }} className={`${styles.navItem} ${active ? styles.active : ''} ${scan ? styles.scan : ''}`} aria-current={active ? 'page' : undefined}>
+          {links.map(({ href, label, icon: Icon, active, scan, mobileOnly }) => (
+            <Link key={label} href={href} onClick={(event) => { setHash(href.includes('#') ? '#' + href.split('#')[1] : ''); if (scan && pathname === '/dashboard') { event.preventDefault(); window.history.replaceState(null, '', href); window.dispatchEvent(new Event('pnapana:scan')); } }} className={`${styles.navItem} ${active ? styles.active : ''} ${scan ? styles.scan : ''} ${mobileOnly ? styles.mobileOnly : ''}`} aria-current={active ? 'page' : undefined}>
               <span className={styles.icon}><Icon size={23} strokeWidth={1.6} /></span>
               <span className={styles.label}>{label}</span>
             </Link>

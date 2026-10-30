@@ -536,8 +536,10 @@ export default function Home() {
         <div className={styles.sectionHeader}><h3>{language === 'hi' ? 'आज की देखभाल' : "Today's care"}</h3><Link href="/care">{language === 'hi' ? 'सभी देखें' : 'View schedule'} <ArrowUpRight size={14} /></Link></div>
         {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा जोड़ें।' : 'Your green family starts with one plant.'}</p><button onClick={() => setIsAddPlantModalOpen(true)}>{t('dashboard.addPlant')}</button></div> : plants.map(plant => {
           const statusText = String(plant.status || '').trim();
-          const isWaterOnlyStatus = /^(needs? water|water|needs watering|due for watering)( today)?[.!]?$/i.test(statusText);
-          const needsExtraCare = ['red', 'orange'].includes(String(plant.status_color || '').toLowerCase()) && !isWaterOnlyStatus;
+          const statusColor = String(plant.status_color || '').toLowerCase().replace(/[\s-]+/g, '_');
+          const isWaterOnlyStatus = /^(?:(?:needs?|due for|time to)\s+)?(?:water|watering)(?:\s+(?:today|now))?[.!]?$/i.test(statusText);
+          const statusNeedsAttention = /(?:needs? attention|urgent|pest|disease|unhealthy|extra care|check today)/i.test(statusText);
+          const needsExtraCare = (['red', 'orange', 'urgent', 'danger', 'needs_attention'].includes(statusColor) || statusNeedsAttention) && !isWaterOnlyStatus;
           const needsWaterToday = thirstyPlants.includes(Number(plant.id)) || isWaterOnlyStatus;
           const careMessage = needsExtraCare
             ? (language === 'hi' ? 'आज विशेष देखभाल चाहिए' : 'Needs attention today')
@@ -557,7 +559,7 @@ export default function Home() {
                 {plant.image_url ? <img src={plant.image_url} alt={plant.name} /> : <span className={styles.plantPlaceholder}><Sprout size={25} /></span>}
                 <div>
                   <strong>{plant.name}</strong>
-                  <span className={`${styles.todayCareStatus} ${needsExtraCare ? styles.todayCareUrgent : ''}`}>
+                  <span className={`${styles.todayCareStatus} ${needsExtraCare ? styles.todayCareUrgent : styles.todayCareMuted}`}>
                     {needsExtraCare && <i aria-hidden="true" />}
                     {!needsExtraCare && needsWaterToday && wateringStatus === 'ready' && <Droplets size={13} aria-hidden="true" />}
                     {careMessage}

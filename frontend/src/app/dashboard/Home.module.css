@@ -754,6 +754,8 @@
 .todayPlantInfo strong { display: block; font-size: 16px; font-weight: 500; margin-bottom: 6px; }
 .todayCareStatus { display: inline-flex; align-items: center; gap: 6px; margin-top: 1px; color: #89938c; font-size: 11px; line-height: 1.35; }
 .todayCareStatus svg { color: #929d95; }
+.todayCareStatus.todayCareMuted { color: #929b94; font-weight: 400; }
+.todayCareStatus.todayCareMuted svg { color: #a1aaa3; }
 .todayCareUrgent { color: #b6423b; font-weight: 600; }
 .todayCareUrgent i { width: 7px; height: 7px; border-radius: 50%; background: #d94b43; box-shadow: 0 0 0 3px rgba(217, 75, 67, .12); }
 .todayCareSecondary { margin-left: 5px; color: #89938c; font-size: 11px; font-weight: 400; }
