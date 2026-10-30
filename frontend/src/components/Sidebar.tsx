@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sprout, ScanLine, Trophy, Users, Leaf, UserRound, Compass, Droplets, Sparkles, Settings } from 'lucide-react';
+import { Home, Sprout, ScanLine, Users, Leaf, UserRound, Compass, Droplets, Sparkles, Settings } from 'lucide-react';
 import { isAppShellRoute } from '@/lib/routePolicy';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { authFetch } from '@/lib/api';
@@ -40,7 +40,6 @@ export default function Sidebar() {
     { href: '/dashboard', label: hi ? 'आज' : 'Today', icon: Home, active: pathname === '/dashboard' && !hash },
     { href: '/dashboard#garden', label: hi ? 'बगीचा' : 'Garden', icon: Sprout, active: pathname === '/plant' || (pathname === '/dashboard' && hash === '#garden') },
     { href: '/dashboard?action=scan', label: hi ? 'स्कैन' : 'Scan', icon: ScanLine, active: false, scan: true },
-    { href: '/dashboard#rewards', label: hi ? 'पुरस्कार' : 'Rewards', icon: Trophy, active: pathname === '/dashboard' && hash === '#rewards' },
     { href: '/community', label: t('nav.community'), icon: Users, active: pathname === '/community' },
   ];
 
@@ -52,8 +51,8 @@ export default function Sidebar() {
           <span>Pnapana</span>
         </Link>
         <div className={styles.headerActions}>
-          <Link href="/dashboard#rewards" className={styles.streak} aria-label={`${rewards.streak_days} day watering streak`}><span className={styles.flameEmoji} aria-hidden="true">🔥</span> {rewards.streak_days}</Link>
-          <Link href="/dashboard#rewards" className={styles.coins} aria-label={`${rewards.coins} coins`}><span className={styles.coinEmblem} aria-hidden="true"><Sprout size={13} strokeWidth={2.2} /></span> {rewards.coins}</Link>
+          <Link href="/rewards" className={styles.streak} aria-label={`${rewards.streak_days} day watering streak`}><span className={styles.flameEmoji} aria-hidden="true">🔥</span> {rewards.streak_days}</Link>
+          <Link href="/rewards" className={styles.coins} aria-label={`${rewards.coins} coins and rewards`}><span className={styles.coinEmblem} aria-hidden="true"><Sprout size={13} strokeWidth={2.2} /></span> {rewards.coins}</Link>
           <Link href="/you" className={styles.profile} aria-label={t('nav.you')}><UserRound size={23} strokeWidth={1.6} /></Link>
         </div>
       </header>

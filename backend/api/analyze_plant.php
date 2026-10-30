@@ -5,6 +5,7 @@ header("Content-Type: application/json");
 
 require_once '../db.php';
 require_once '../config.php';
+require_once '../kindwise_helper.php';
 require_once 'auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -40,8 +41,14 @@ $activeApiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : (def
 
 $ai_status = 'healthy';
 $ai_analysis = '';
+$kindwiseHealth = kindwise_health_assessment($image_url);
 
-if (!empty($activeApiKey)) {
+if (!empty($kindwiseHealth['ok'])) {
+    $summary = kindwise_health_summary($kindwiseHealth['data']);
+    $ai_status = $summary['status'];
+    $ai_analysis = trim($summary['diagnosis'] . '. ' . $summary['analysis']);
+} elseif (!empty($activeApiKey)) {
+
     // Strip data:image/jpeg;base64, prefix to get raw base64
     $base64_data = preg_replace('/^data:image\/\w+;base64,/', '', $image_url);
     

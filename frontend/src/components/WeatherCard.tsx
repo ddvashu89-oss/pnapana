@@ -21,7 +21,7 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
   const condition = weather ? describeWeather(weather.condition) : error ? 'Weather unavailable' : 'Checking the weather…';
   const icon = weather?.icon || '';
-  const weatherEmoji = !weather ? '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') ? '🌫️' : icon.includes('clear') && weather.isDay ? '☀️' : icon.includes('partly-cloudy') ? '🌤️' : icon.includes('cloudy') ? '☁️' : '🌤️';
+  const weatherEmoji = !weather ? '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') ? '🌫️' : (icon.includes('clear') || icon.includes('sun')) && !weather.isDay ? '🌙' : icon.includes('clear') || icon.includes('sun') ? '☀️' : icon.includes('partly-cloudy') ? weather.isDay ? '🌤️' : '☁️🌙' : icon.includes('cloudy') ? '☁️' : weather.isDay ? '🌤️' : '🌙';
   const lightIndex = weather?.solarPeak === null || !weather
     ? null
     : weather.solarPeak >= 650
@@ -50,7 +50,7 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const maxTemp = range ? Number(range[2]) : null;
   const growing = weather && minTemp !== null && maxTemp !== null ? weather.temp >= minTemp && weather.temp <= maxTemp : null;
   const temperaturePosition = weather ? Math.max(2, Math.min(96, weather.temp / 50 * 100)) : null;
-  const tip = !weather ? 'Check the soil before watering and follow each plant’s care plan.' : weather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : weather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a good growing day. Normal watering, and let them have the morning light.';
+  const tip = !weather ? 'Check the soil before watering and follow each plant’s care plan.' : !weather.isDay ? 'a calm evening. Keep to the usual care routine and water only if the soil is dry.' : weather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : weather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a good growing day. Normal watering, and let them have the morning light.';
 
   return (
     <section className={`${styles.card} ${plant ? styles.plantCard : styles.dailyCard}`} aria-label={hi ? 'आज का मौसम' : 'Today’s weather'}>

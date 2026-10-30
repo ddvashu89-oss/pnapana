@@ -32,6 +32,10 @@ define('ALLOWED_ORIGINS', getenv('ALLOWED_ORIGINS') ?: 'https://your-domain.com,
 define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: 'YOUR_KEY_HERE');
 define('GEMINI_MODEL', getenv('GEMINI_MODEL') ?: 'gemini-flash-lite-latest');
 
+// --- Kindwise plant identification and health diagnosis --------------------
+// Create a key in the Kindwise admin panel, or set KINDWISE_API_KEY in env.
+define('KINDWISE_API_KEY', getenv('KINDWISE_API_KEY') ?: '');
+
 // --- Auth -------------------------------------------------------------------
 // Generate your own with: php -r "echo bin2hex(random_bytes(32));"
 // Changing this signs every user out immediately.

@@ -15,9 +15,6 @@ export default function Home() {
   const { t, language } = useLanguage();
   const [user, setUser] = useState<{ id: number, name: string, token?: string } | null>(null);
   const [plants, setPlants] = useState<any[]>([]);
-  const [scanDates, setScanDates] = useState<Record<number, string[] | null>>({});
-  const [today] = useState(() => new Date());
-  const [plantsLoaded, setPlantsLoaded] = useState(false);
   const [thirstyPlants, setThirstyPlants] = useState<number[]>([]);
   const [wateringStatus, setWateringStatus] = useState<'checking' | 'ready' | 'unavailable'>('checking');
   const notifiedIds = useRef<Set<number>>(new Set());
@@ -57,10 +54,6 @@ export default function Home() {
   
 
   // Gamification State
-  const [streakDays, setStreakDays] = useState(0);
-  const [coins, setCoins] = useState(0);
-  const [badges, setBadges] = useState<{ id: string, label: string, icon: string, description: string, unlocked: boolean, progress: string }[]>([]);
-
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
@@ -72,8 +65,6 @@ export default function Home() {
     setUser(parsedUser);
 
     fetchPlants(parsedUser.id);
-    fetchGamification();
-
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
       Notification.requestPermission();
     }
@@ -135,27 +126,8 @@ export default function Home() {
       .then(data => {
         if (data.status !== 'success') return;
         setPlants(data.plants);
-        setPlantsLoaded(true);
-        data.plants.forEach((plant: { id: number }) => {
-          authFetch(`get_plant_scans.php?plant_id=${plant.id}`).then(response => response.json()).then(history => {
-            setScanDates(previous => ({ ...previous, [plant.id]: history.status === 'success' ? history.scans.map((scan: { created_at: string }) => scan.created_at) : null }));
-          }).catch(() => setScanDates(previous => ({ ...previous, [plant.id]: null })));
-        });
       })
       .catch(() => {});
-  }
-
-  function fetchGamification() {
-    authFetch('get_gamification.php')
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          setStreakDays(data.streak_days);
-          setCoins(data.coins);
-          setBadges(data.badges);
-        }
-      })
-      .catch(e => console.error('Failed to fetch gamification data', e));
   }
 
   const handleAddPlant = async (e: React.FormEvent) => {
@@ -178,7 +150,6 @@ export default function Home() {
           water_freq: 7, light_req: 'Medium', care_plan: null
         });
         fetchPlants(user.id);
-        fetchGamification();
       } else {
         if (data.code === 'PLAN_LIMIT_REACHED') {
           if (confirm(`${data.message}\n\nWould you like to upgrade your plan now?`)) {
@@ -199,6 +170,7 @@ export default function Home() {
 
   const startCamera = async (mode: 'capture' | 'identify' | 'diagnose' = 'capture') => {
     setCameraMode(mode);
+    setAiError(null);
     if (mode === 'diagnose') setIsDiagnosingModalOpen(true);
     
     setIsCapturing(true);
@@ -304,18 +276,26 @@ export default function Home() {
     }
   };
 
-  const diagnosePlant = (imageUrl: string) => {
-    console.log("diagnosePlant", imageUrl);
+  const diagnosePlant = async (imageUrl: string) => {
     setIsIdentifying(true);
     setHealthStatus(null);
-    setTimeout(() => {
-      const mockHealth = {
-        diagnosis: "Mild Sunburn",
-        treatment: "Move the plant away from direct, harsh sunlight. Mist leaves gently to recover moisture."
-      };
-      setHealthStatus(mockHealth);
+    setAiError(null);
+    try {
+      const res = await authFetch('diagnose_plant.php', {
+        method: 'POST',
+        body: JSON.stringify({ image_base64: imageUrl })
+      });
+      const data = await res.json();
+      if (!res.ok || data.status !== 'success') {
+        throw new Error(data.message || t('dashboard.aiIdentifyFailed'));
+      }
+      setHealthStatus({ diagnosis: data.diagnosis, treatment: data.treatment });
+    } catch (err) {
+      console.error(err);
+      setAiError(err instanceof Error ? err.message : t('dashboard.aiIdentifyFailed'));
+    } finally {
       setIsIdentifying(false);
-    }, 3000);
+    }
   };
 
   const closeModal = () => {
@@ -349,7 +329,6 @@ export default function Home() {
       if (data.status === 'success') {
         notifiedIds.current.delete(id);
         setThirstyPlants(prev => prev.filter(pId => pId !== id));
-        fetchGamification();
         fetchPlants(user!.id);
         window.dispatchEvent(new Event('pnapana:rewards'));
       }
@@ -367,18 +346,6 @@ export default function Home() {
   const needsAttentionCount = plants.filter(p => thirstyPlants.includes(Number(p.id)) || p.status_color === 'orange').length;
   const healthyCount = plants.length - needsAttentionCount;
   const healthPercent = plants.length > 0 ? Math.round((healthyCount / plants.length) * 100) : 100;
-
-  const dayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-  const scannedDays = new Set(Object.values(scanDates).flatMap(dates => dates || []).map(value => dayKey(new Date(value.replace(' ', 'T')))));
-  const photoHistoryKnown = plantsLoaded && plants.every(plant => Array.isArray(scanDates[plant.id]));
-  const cursor = new Date(today);
-  let photoStreak = 0;
-  if (!scannedDays.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  while (scannedDays.has(dayKey(cursor))) {
-    photoStreak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  const scannedToday = (id: number) => scanDates[id]?.some(value => dayKey(new Date(value.replace(' ', 'T'))) === dayKey(today));
 
   if (!user) return <Loader fullScreen label={t('common.loading')} />;
 
@@ -528,6 +495,10 @@ export default function Home() {
               </div>
             )}
 
+            {aiError && cameraMode === 'diagnose' && (
+              <p role="alert" style={{ marginTop: '1rem', color: 'var(--error, #b42318)' }}>{aiError}</p>
+            )}
+
             {healthStatus && (
               <div className={styles.diagnosisCard}>
                 <div className={styles.diagHeader}>
@@ -556,7 +527,7 @@ export default function Home() {
       <WeatherCard />
 
       <div className={styles.shortcuts}>
-        <Link href="/rituals"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'वास्तु और स्थान' : <>Vastu &<br />Space</>}</strong></Link>
+        <Link href="/space"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'वास्तु और स्थान' : <>Vastu &<br />Space</>}</strong></Link>
         <button onClick={() => startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'स्वास्थ्य' : 'Health'}</strong></button>
         <Link href="/care"><span className={styles.shortcutPeach}><FlaskConical size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'देखभाल' : 'Remedies'}</strong></Link>
       </div>
@@ -600,12 +571,6 @@ export default function Home() {
             </div>
           );
         })}
-      </section>
-
-      <section className={styles.photoStreakCard}>
-        <span className={styles.photoStreakIcon} aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 3c1 4-2 5-2 8 0 2 2 3 3 1 1-1 1-3 1-3 4 4 5 6 4 9-2 5-10 5-12 0-1-3 1-6 3-8-1 4 1 5 2 4 2-2 2-5 1-11Z"/></svg></span>
-        <div><h3>{photoHistoryKnown ? `${photoStreak} day photo streak` : 'Your photo streak'}</h3><p>{language === 'hi' ? 'हर दिन एक तस्वीर लें और पौधे को बढ़ते देखें।' : 'A photo a day. Watch your green family grow.'}</p></div>
-        <Link href="/dashboard?action=scan" onClick={event => { event.preventDefault(); setIsAddPlantModalOpen(true); }} aria-label="Start a photo check-in"><ScanLine size={21} /></Link>
       </section>
 
       {carePlant && (
@@ -685,39 +650,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Tile 3: Achievement Badges */}
-        <div id="rewards" className={`${styles.bentoTile} ${styles.milestonesTile}`}>
-          <div className={styles.bentoHeader}>
-            <h3>{t('dashboard.achievements')}</h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <span className={styles.coinPill}>🪙 {coins}</span>
-              <span>{badges.filter(b => b.unlocked).length}/{badges.length}</span>
-            </div>
-          </div>
-          <div className={styles.badgeGrid}>
-            {badges.map(b => (
-              <div key={b.id} className={`${styles.badgeItem} ${!b.unlocked ? styles.locked : ''}`} title={t(`badges.${b.id}.description`)}>
-                <div className={styles.badgeIconWrap}>
-                  {b.icon}
-                  {b.unlocked && <span className={styles.badgeCheck}>✓</span>}
-                </div>
-                <span className={styles.badgeLabel}>{t(`badges.${b.id}.label`)}</span>
-                {!b.unlocked && <span className={styles.badgeProgress}>{b.progress}</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Tile 4: Stats & Streak */}
+        {/* Collection health stays on Home; rewards live under the header coin. */}
         <div className={`${styles.bentoTile} ${styles.statsTile}`}>
-          <div className={styles.streakWidget}>
-            <div className={styles.streakFlame}>🔥</div>
-            <div className={styles.streakInfo}>
-              <h4>{streakDays} {streakDays === 1 ? t('dashboard.day') : t('dashboard.days')}</h4>
-              <p>{streakDays > 0 ? t('dashboard.wateringStreak') : t('dashboard.startStreak')}</p>
-            </div>
-          </div>
-          <div className={styles.statDivider}></div>
           <div className={styles.happinessWidget}>
             <div className={styles.statCircle}>
               <svg viewBox="0 0 36 36" className={styles.circularChart}>

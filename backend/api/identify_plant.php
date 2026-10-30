@@ -8,6 +8,7 @@ if (file_exists(__DIR__ . '/../config.php')) {
     require_once __DIR__ . '/../config.php';
 }
 require_once __DIR__ . '/../gemini_helper.php';
+require_once __DIR__ . '/../kindwise_helper.php';
 require_once __DIR__ . '/../botanical_catalog.php';
 require_once __DIR__ . '/auth.php';
 
@@ -45,7 +46,22 @@ $hint = trim($data['hint'] ?? $data['name'] ?? '');
 $lang = strtolower(trim($data['lang'] ?? 'en'));
 $metrics = $data['metrics'] ?? null;
 
+// Use Kindwise as the primary identifier when configured. Gemini remains useful
+// for the richer care plan this endpoint returns, but cannot override the species.
+$kindwiseMatch = null;
+$kindwiseResponse = kindwise_identify($imageBase64, $lang);
+if (!empty($kindwiseResponse['ok'])) {
+    $parsedIdentification = kindwise_top_identification($kindwiseResponse['data']);
+    if (empty($parsedIdentification['is_plant'])) {
+        http_response_code(422);
+        echo json_encode(["status" => "error", "message" => "That doesn't look like a plant. Try a clearer photo."]);
+        exit;
+    }
+    $kindwiseMatch = $parsedIdentification['suggestion'] ?? null;
+}
+
 $prompt = "You are an expert botanist. Identify the plant in this photo and provide a complete care plan. "
+    . (!empty($kindwiseMatch['species']) ? "Kindwise's plant-identification API identified this as '{$kindwiseMatch['species']}' (common name '{$kindwiseMatch['common_name']}'). Treat that identity as authoritative; do not substitute another species. Focus on a reliable species-specific care plan. " : "")
     . (!empty($hint) ? "The user suggests this plant may be: '$hint'. Verify and prioritize if accurate. " : "")
     . "Respond with ONLY a JSON object matching exactly this shape (no markdown, no commentary): "
     . '{"is_plant": boolean, "species": string, "common_name": string, "confidence": "high"|"medium"|"low", '
@@ -78,6 +94,26 @@ if ($result !== null && isset($result['is_plant']) && $result['is_plant'] === fa
 // If AI vision failed, was unconfigured, or returned an incomplete shape, seamlessly use the botanical classifier
 if ($result === null || empty($result['species']) || !isset($result['care_plan'])) {
     $result = identify_plant_fallback($imageBase64, $hint, $lang, $metrics);
+}
+
+if ($kindwiseMatch !== null) {
+    $result['is_plant'] = true;
+    $result['species'] = $kindwiseMatch['species'];
+    $result['common_name'] = $kindwiseMatch['common_name'];
+    $result['confidence'] = $kindwiseMatch['confidence'];
+    if (empty($result['description'])) {
+        $result['description'] = $kindwiseMatch['description'];
+    }
+    $result['alternatives'] = [];
+    foreach (($kindwiseResponse['data']['result']['classification']['suggestions'] ?? []) as $alternative) {
+        if (!is_array($alternative) || empty($alternative['name']) || $alternative['name'] === $kindwiseMatch['species']) continue;
+        $alternativeNames = $alternative['details']['common_names'] ?? [];
+        $result['alternatives'][] = [
+            'species' => $alternative['name'],
+            'common_name' => is_array($alternativeNames) ? ($alternativeNames[0] ?? $alternative['name']) : $alternative['name']
+        ];
+        if (count($result['alternatives']) >= 3) break;
+    }
 }
 
 // Log care event for user streak and activity tracking

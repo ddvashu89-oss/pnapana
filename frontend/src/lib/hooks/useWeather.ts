@@ -9,6 +9,9 @@ export type Weather = {
   icon: string;
   cloud: number;
   isDay: boolean;
+  sunrise: string | null;
+  sunset: string | null;
+  timezone: string | null;
   solarPeak: number | null;
   location: string;
 };
@@ -17,6 +20,7 @@ type Coordinates = { lat: number; lon: number; location: string };
 type VisualCrossingResponse = {
   resolvedAddress?: string;
   currentConditions?: {
+    datetime?: string;
     temp?: number;
     feelslike?: number;
     humidity?: number;
@@ -26,8 +30,11 @@ type VisualCrossingResponse = {
     solarradiation?: number;
   };
   days?: Array<{
+    sunrise?: string;
+    sunset?: string;
     hours?: Array<{ solarradiation?: number }>;
   }>;
+  timezone?: string;
 };
 
 let cachedWeather: { key: string; value: Weather; expiresAt: number } | null = null;
@@ -38,6 +45,27 @@ function locationKey({ lat, lon }: Coordinates) {
   return `${lat.toFixed(2)},${lon.toFixed(2)}`;
 }
 
+function clockMinutes(value?: string | null) {
+  if (!value) return null;
+  const match = value.match(/(?:T)?(\d{1,2}):(\d{2})/);
+  return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+}
+
+function isDayAtLocation(timezone?: string | null, sunrise?: string | null, sunset?: string | null, fallback = true) {
+  const rise = clockMinutes(sunrise);
+  const set = clockMinutes(sunset);
+  let localMinutes: number | null = null;
+  try {
+    const localTime = timezone
+      ? new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date())
+      : null;
+    localMinutes = clockMinutes(localTime);
+  } catch { /* Use the weather observation's day/night flag if the zone is invalid. */ }
+  return localMinutes !== null && rise !== null && set !== null
+    ? localMinutes >= rise && localMinutes < set
+    : fallback;
+}
+
 async function fetchWeather(position: Coordinates, force = false): Promise<Weather> {
   const key = locationKey(position);
   if (pendingWeather?.key === key) return pendingWeather.promise;
@@ -45,8 +73,8 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
 
   const params = new URLSearchParams({
     unitGroup: 'metric',
-    include: 'current,hours',
-    elements: 'datetime,temp,feelslike,humidity,conditions,icon,cloudcover,solarradiation',
+    include: 'current,days,hours',
+    elements: 'datetime,temp,feelslike,humidity,conditions,icon,cloudcover,solarradiation,sunrise,sunset',
     contentType: 'json',
   });
   const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${position.lat},${position.lon}/today?${params}`;
@@ -65,6 +93,10 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
       ? Math.max(...hourlySolar)
       : typeof currentSolar === 'number' && Number.isFinite(currentSolar) ? currentSolar : null;
     const icon = current.icon || 'cloudy';
+    const sunrise = data.days?.[0]?.sunrise || null;
+    const sunset = data.days?.[0]?.sunset || null;
+    const isDay = isDayAtLocation(data.timezone, sunrise, sunset,
+      typeof current.solarradiation === 'number' ? current.solarradiation > 0 : !icon.includes('night'));
 
     return {
       temp: Math.round(current.temp),
@@ -73,7 +105,10 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
       condition: current.conditions || 'Conditions unavailable',
       icon,
       cloud: typeof current.cloudcover === 'number' ? current.cloudcover : 0,
-      isDay: !icon.includes('night'),
+      isDay,
+      sunrise,
+      sunset,
+      timezone: data.timezone || null,
       solarPeak,
       location: position.location,
     };
@@ -113,6 +148,16 @@ export function useWeather() {
       setLoading(false);
     }
   }, []);
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+    const dayNightTimer = setInterval(() => {
+      setWeather(previous => {
+        if (!previous) return previous;
+        const isDay = isDayAtLocation(previous.timezone, previous.sunrise, previous.sunset, previous.isDay);
+        return previous.isDay === isDay ? previous : { ...previous, isDay };
+      });
+    }, 60_000);
+    return () => clearInterval(dayNightTimer);
+  }, [refresh]);
   return { weather, loading, error, refresh: () => refresh(true) };
 }

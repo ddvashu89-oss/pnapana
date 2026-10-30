@@ -75,7 +75,7 @@ function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
         }
 
         $parsed = json_decode($text, true);
-        if (is_array($parsed) && (isset($parsed['is_plant']) || isset($parsed['species']))) {
+        if (is_array($parsed) && (isset($parsed['is_plant']) || isset($parsed['species']) || isset($parsed['diagnosis']))) {
             return $parsed;
         }
     }
