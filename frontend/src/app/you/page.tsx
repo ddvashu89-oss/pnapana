@@ -6,26 +6,44 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
 import styles from './You.module.css';
-import { Compass, Droplets, Sparkles, ChevronRight } from 'lucide-react';
+import { Bell, ChevronRight, CircleHelp, Compass, CreditCard, Droplets, Globe2, LogOut, MessageCircle, Sparkles, UserRound } from 'lucide-react';
+
+type ProfileUser = { id: number; name: string; email: string; level?: number };
+type ProfileStats = { plants: number; streak: number; rituals: number };
 
 export default function You() {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: number, name: string, email: string } | null>(null);
-  const [plantsCount, setPlantsCount] = useState<number>(0);
+  const [user, setUser] = useState<ProfileUser | null>(null);
+  const [stats, setStats] = useState<ProfileStats>({ plants: 0, streak: 0, rituals: 0 });
   const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
-    const parsedUser = JSON.parse(storedUser);
-    setUser(parsedUser);
 
-    authFetch('get_plants.php')
+    try {
+      const parsedUser = JSON.parse(storedUser) as ProfileUser;
+      if (!parsedUser?.name || !parsedUser?.email) throw new Error('Invalid saved profile');
+      setUser(parsedUser);
+    } catch {
+      localStorage.removeItem('user');
+      router.replace('/login');
+      return;
+    }
+
+    authFetch('get_gamification.php')
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setPlantsCount(data.plants.length); })
+      .then(data => {
+        if (data.status !== 'success') return;
+        setStats({
+          plants: Number(data.stats?.total_plants) || 0,
+          streak: Number(data.streak_days) || 0,
+          rituals: Number(data.stats?.total_rituals) || 0,
+        });
+      })
       .catch(() => {});
   }, [router]);
 
@@ -35,108 +53,64 @@ export default function You() {
   };
 
   if (!user) return <Loader fullScreen label={t('common.loading')} />;
+  const initials = user.name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || '🌿';
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.profileInfo}>
-          <img src={`https://ui-avatars.com/api/?name=${user.name}&background=2a693c&color=fff&size=100`} alt="Profile" className={styles.avatar} />
+          <span className={styles.avatar} role="img" aria-label={`${user.name} profile`}>{initials}</span>
           <h1>{user.name}</h1>
           <p>{user.email}</p>
-          <span className={styles.levelBadge}>{t('you.plantParentLevel')}</span>
+          <span className={styles.levelBadge}>🌿 {user.level ? `Plant Parent Lv ${user.level}` : 'Plant Parent'}</span>
         </div>
       </header>
 
       <main className={styles.content}>
-
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>{plantsCount}</span>
-            <span className={styles.statLabel}>{t('you.plants')}</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>45</span>
-            <span className={styles.statLabel}>{t('you.daysStreak')}</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>8</span>
-            <span className={styles.statLabel}>{t('you.rituals')}</span>
-          </div>
-        </div>
+        <section className={styles.statsGrid} aria-label="Your garden stats">
+          <div className={styles.statCard}><span className={styles.statValue}>{stats.plants}</span><span className={styles.statLabel}>{t('you.plants')}</span></div>
+          <div className={styles.statCard}><span className={styles.statValue}>{stats.streak}</span><span className={styles.statLabel}>{t('you.daysStreak')}</span></div>
+          <div className={styles.statCard}><span className={styles.statValue}>{stats.rituals}</span><span className={styles.statLabel}>{t('you.rituals')}</span></div>
+        </section>
 
         <div className={styles.menuList}>
-
-          <div className={styles.menuGroup}>
-            <h3>Plan &amp; billing</h3>
+          <section className={styles.menuGroup}>
+            <h2>Plan &amp; billing</h2>
             <Link href="/subscription" className={styles.menuItem}>
-              <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
-              <span>Subscription &amp; payments</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
+              <span className={styles.menuIcon}><CreditCard size={20} /></span><span>Subscription &amp; payments</span><ChevronRight size={20} />
             </Link>
-          </div>
+          </section>
 
-          <div className={styles.menuGroup}>
-            <h3>{language === 'hi' ? 'और जानें' : 'Keep growing'}</h3>
+          <section className={styles.menuGroup}>
+            <h2>{language === 'hi' ? 'और जानें' : 'Keep growing'}</h2>
             {[
               { href: '/care', label: t('nav.care'), Icon: Droplets },
               { href: '/rituals', label: t('nav.rituals'), Icon: Sparkles },
               { href: '/explore', label: t('nav.explore'), Icon: Compass },
-            ].map(({ href, label, Icon }) => <Link key={href} href={href} className={styles.menuItem}><div className={styles.menuIcon}><Icon size={20} /></div><span>{label}</span><ChevronRight size={20} /></Link>)}
-          </div>
+            ].map(({ href, label, Icon }) => <Link key={href} href={href} className={styles.menuItem}><span className={styles.menuIcon}><Icon size={20} /></span><span>{label}</span><ChevronRight size={20} /></Link>)}
+          </section>
 
-          <div className={styles.menuGroup}>
-            <h3>{t('you.settings')}</h3>
-            <Link href="/settings" className={styles.menuItem}>
-              <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-              <span>{t('you.editProfile')}</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-            </Link>
-            <button className={styles.menuItem}>
-              <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
-              <span>{t('you.notifications')}</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
-            <div className={styles.menuItem} style={{ cursor: 'default' }}>
-              <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
-              <span>{t('you.language')}</span>
+          <section className={styles.menuGroup}>
+            <h2>{t('you.settings')}</h2>
+            <Link href="/settings" className={styles.menuItem}><span className={styles.menuIcon}><UserRound size={20} /></span><span>{t('you.editProfile')}</span><ChevronRight size={20} /></Link>
+            <Link href="/settings" className={styles.menuItem}><span className={styles.menuIcon}><Bell size={20} /></span><span>{t('you.notifications')}</span><ChevronRight size={20} /></Link>
+            <div className={`${styles.menuItem} ${styles.languageRow}`}>
+              <span className={styles.menuIcon}><Globe2 size={20} /></span><span>{t('you.language')}</span>
               <div className={styles.langToggle}>
-                <button
-                  type="button"
-                  className={`${styles.langOption} ${language === 'en' ? styles.langOptionActive : ''}`}
-                  onClick={() => setLanguage('en')}
-                >
-                  English
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.langOption} ${language === 'hi' ? styles.langOptionActive : ''}`}
-                  onClick={() => setLanguage('hi')}
-                >
-                  हिन्दी
-                </button>
+                <button type="button" className={`${styles.langOption} ${language === 'en' ? styles.langOptionActive : ''}`} onClick={() => setLanguage('en')}>English</button>
+                <button type="button" className={`${styles.langOption} ${language === 'hi' ? styles.langOptionActive : ''}`} onClick={() => setLanguage('hi')}>हिन्दी</button>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className={styles.menuGroup}>
-            <h3>{t('you.support')}</h3>
-            <button className={styles.menuItem}>
-              <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></div>
-              <span>{t('you.helpCenter')}</span>
-            </button>
-            <button className={styles.menuItem}>
-              <div className={styles.menuIcon}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-              <span>{t('you.feedback')}</span>
-            </button>
-          </div>
-
+          <section className={styles.menuGroup}>
+            <h2>{t('you.support')}</h2>
+            <Link href="/contact" className={styles.menuItem}><span className={styles.menuIcon}><CircleHelp size={20} /></span><span>{t('you.helpCenter')}</span><ChevronRight size={20} /></Link>
+            <Link href="/contact?category=feedback" className={styles.menuItem}><span className={styles.menuIcon}><MessageCircle size={20} /></span><span>{t('you.feedback')}</span><ChevronRight size={20} /></Link>
+          </section>
         </div>
 
-        <button className={styles.logoutBtn} onClick={handleLogout}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          {t('you.logOut')}
-        </button>
-
+        <button className={styles.logoutBtn} onClick={handleLogout}><LogOut size={19} />{t('you.logOut')}</button>
       </main>
     </div>
   );

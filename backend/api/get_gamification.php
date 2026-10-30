@@ -26,6 +26,17 @@ try {
     $totalPostsStmt->execute([$user_id]);
     $totalPosts = (int)$totalPostsStmt->fetchColumn();
 
+    // Ritual tracking was added after the original gamification tables. Keep
+    // this endpoint usable on installations that have not applied that migration.
+    $totalRituals = 0;
+    try {
+        $totalRitualsStmt = $pdo->prepare("SELECT COUNT(*) FROM mobile_ritual_events WHERE user_id = ?");
+        $totalRitualsStmt->execute([$user_id]);
+        $totalRituals = (int)$totalRitualsStmt->fetchColumn();
+    } catch (PDOException $ignored) {
+        $totalRituals = 0;
+    }
+
     $coinsStmt = $pdo->prepare("SELECT coins FROM users WHERE id = ?");
     $coinsStmt->execute([$user_id]);
     $coins = (int)$coinsStmt->fetchColumn();
@@ -113,7 +124,8 @@ try {
             "total_plants" => $totalPlants,
             "total_waterings" => $totalWaterings,
             "total_ai_scans" => $totalAiScans,
-            "total_posts" => $totalPosts
+            "total_posts" => $totalPosts,
+            "total_rituals" => $totalRituals
         ],
         "badges" => $badges
     ]);

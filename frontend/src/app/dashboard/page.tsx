@@ -118,7 +118,7 @@ export default function Home() {
     if (!user || !window.location.hash) return;
     const frame = requestAnimationFrame(() => document.getElementById(window.location.hash.slice(1))?.scrollIntoView());
     return () => cancelAnimationFrame(frame);
-  }, [user]);
+  }, [user, carePlant?.id]);
 
   function fetchPlants(userId: number) {
     authFetch(`get_plants.php?user_id=${userId}`)
@@ -574,7 +574,7 @@ export default function Home() {
       </section>
 
       {carePlant && (
-        <section className={styles.plantCareForecast} aria-labelledby="plant-care-forecast-title">
+        <section id="garden" className={styles.plantCareForecast} aria-labelledby="plant-care-forecast-title">
           <div className={styles.plantCareHeader}>
             <div>
               <h2 id="plant-care-forecast-title">Adjusted for today’s weather</h2>
@@ -683,7 +683,7 @@ export default function Home() {
       </div>
 
       {/* --- PLANT COLLECTION --- */}
-      <section id="garden" className={styles.collectionSection}>
+      <section id={carePlant ? 'collection' : 'garden'} className={styles.collectionSection}>
         <div className={styles.sectionHeader}>
           <h3>{t('dashboard.yourGreenFamily')}</h3><button className={styles.addGardenBtn} onClick={() => setIsAddPlantModalOpen(true)}>+ {t('dashboard.addPlant')}</button>
         </div>
