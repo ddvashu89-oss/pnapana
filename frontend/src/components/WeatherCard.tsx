@@ -19,13 +19,32 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const lastWatered = plant?.last_watered ? new Date(plant.last_watered.replace(' ', 'T')).getTime() : NaN;
   const elapsed = Number.isFinite(lastWatered) ? Math.max(0, Math.floor((now - lastWatered) / 86400000)) : null;
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
-  const condition = weather ? describeWeather(weather.code) : error ? 'Weather unavailable' : 'Checking the weather…';
-  const weatherEmoji = !weather ? '🌤️' : !weather.isDay ? '🌙' : weather.code >= 71 && weather.code <= 86 ? '🌨️' : weather.code >= 51 ? '🌦️' : weather.code === 0 ? '☀️' : '🌤️';
-  const lightIndex = weather ? (!weather.isDay ? 0 : weather.cloud >= 65 ? 1 : weather.cloud >= 30 ? 2 : 3) : null;
-  const light = lightIndex === null ? '—' : ['Low', 'Weak', 'Moderate', 'Strong'][lightIndex];
+  const condition = weather ? describeWeather(weather.condition) : error ? 'Weather unavailable' : 'Checking the weather…';
+  const icon = weather?.icon || '';
+  const weatherEmoji = !weather ? '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') ? '🌫️' : icon.includes('clear') && weather.isDay ? '☀️' : icon.includes('partly-cloudy') ? '🌤️' : icon.includes('cloudy') ? '☁️' : '🌤️';
+  const lightIndex = weather?.solarPeak === null || !weather
+    ? null
+    : weather.solarPeak >= 650
+      ? 3
+      : weather.solarPeak >= 350
+        ? 2
+        : weather.solarPeak >= 120
+          ? 1
+          : 0;
+  const light = lightIndex === null ? '—' : ['Low', 'Soft', 'Bright', 'High'][lightIndex];
   const preferredLight = (plant?.light_req || plan.light?.level || 'Medium').toLowerCase();
-  const comfortable = preferredLight.includes('high') ? [2, 3] : preferredLight.includes('low') ? [0, 1] : [0, 1];
+  const comfortable = /high|full|direct|sun/.test(preferredLight) ? [2, 3] : /low|shade/.test(preferredLight) ? [0, 1] : [1, 2];
   const lightSuits = lightIndex !== null && comfortable.includes(lightIndex);
+  const lightEvidence = weather?.solarPeak === null || !weather
+    ? 'Outdoor sunlight forecast unavailable.'
+    : `Peak outdoor solar forecast: ${Math.round(weather.solarPeak)} W/m²`;
+  const lightAdvice = lightIndex === null
+    ? 'There is no solar forecast for today, so check the plant’s actual position and follow its care plan.'
+    : lightSuits
+      ? 'Outdoor sunlight is within its listed preference. Indoor light still depends on its window, shade, and placement.'
+      : lightIndex === 3
+        ? 'High solar intensity is forecast outdoors. If this plant prefers indirect light, protect it from prolonged afternoon exposure.'
+        : plant?.light_requirement || 'Today’s outdoor sunlight may be below its preferred range. Keep following its care plan.';
   const range = plan.temperature?.match(/(-?\d+)\s*[-–]\s*(-?\d+)/);
   const minTemp = range ? Number(range[1]) : null;
   const maxTemp = range ? Number(range[2]) : null;
@@ -60,12 +79,13 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
           <div className={styles.detail}>
             <h3><Sun size={18} /> Is the light right today?</h3>
             <div className={styles.lightScale} aria-label={`Estimated outdoor sunlight: ${light}`}>
-              {[0, 1, 2, 3].map(index => <i key={index} className={comfortable.includes(index) ? styles.comfortable : styles.harsh} />)}
-              {lightIndex !== null && <span className={styles.lightMarker} style={{ left: `${[6, 12, 55, 88][lightIndex]}%` }}>▲</span>}
+              {[0, 1, 2, 3].map(index => <i key={index} className={comfortable.includes(index) ? styles.comfortable : styles.outsideRange} />)}
+              {lightIndex !== null && <span className={styles.lightMarker} style={{ left: `${[6, 34, 63, 88][lightIndex]}%` }}>▲</span>}
             </div>
-            <div className={styles.scaleLabels}><span>Low</span><span>Harsh</span></div>
-            <p className={styles.legend}><i />Comfortable range · <span>▲ today</span></p>
-            <p className={styles.lightAdvice}><strong>{lightSuits ? 'Today suits it.' : lightIndex === null ? 'Check its position.' : 'Check the light.'}</strong> {lightSuits ? 'Soft light is within this one’s comfortable range. Leave it where it gets its usual light.' : plant.light_requirement || 'Give it the light in its care plan and protect tender leaves from harsh afternoon sun.'}</p>
+            <div className={styles.scaleLabels}><span>Low</span><span>High</span></div>
+            <p className={styles.legend}><i />Listed comfort range · <span>▲ forecast today</span></p>
+            <p className={styles.lightEvidence}>{lightEvidence}</p>
+            <p className={styles.lightAdvice}><strong>{lightSuits ? 'Outdoor forecast fits.' : lightIndex === null ? 'Check its position.' : 'Check the light.'}</strong> {lightAdvice}</p>
           </div>
           <div className={styles.detail}>
             <h3><Sprout size={20} /> How it will grow</h3>
@@ -76,6 +96,7 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
           </div>
         </>
       )}
+      <p className={styles.attribution}><a href="https://www.visualcrossing.com/" target="_blank" rel="noreferrer">Weather data: Visual Crossing</a>{plant && ' · Outdoor solar estimate; indoor light varies by placement.'}</p>
     </section>
   );
 }

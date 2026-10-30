@@ -40,12 +40,15 @@
 .lightScale { display: flex; gap: 5px; position: relative; }
 .lightScale i { width: 25%; height: 10px; border-radius: 99px; }
 .comfortable { background: #79b58a; }
-.harsh { background: #e6a98d; }
+.outsideRange { background: #e6a98d; }
 .lightMarker { position: absolute; top: 20px; font-size: 12px; transform: translateX(-50%); color: #18271e; }
 .scaleLabels { display: flex; justify-content: space-between; margin: 20px 0 9px; color: #969c96; font-size: 13px; }
 .detail .legend { display: flex; align-items: center; gap: 5px; font-size: 13px; margin: 2px 0 12px; }
 .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #79b58a; }
 .legend span, .lightAdvice strong, .detail > p > strong { color: #243229; font-weight: 500; }
+.lightEvidence { margin: 0 0 8px; color: #7f8b83; font-size: 11px; line-height: 1.5; }
+.attribution { margin: 12px 0 0; color: #8a918d; font-size: 10px; line-height: 1.5; }
+.attribution a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .pill { display: inline-block; border-radius: 99px; background: #e2f0e6; color: #3b6748; padding: 3px 12px; font-size: 14px; font-weight: 600; margin: 2px 0 13px; }
 .growthScale { height: 12px; background: linear-gradient(90deg, #e3eef5 0% 28%, #dcece1 28% 33%, #a4d2b2 33% 38%, #46995c 38% 70%, #a4d2b2 70% 78%, #e5aa8c 78%); border-radius: 99px; position: relative; }
 .growthScale > span { position: absolute; top: 20px; transform: translateX(-50%); font-size: 13px; font-weight: 600; white-space: nowrap; }
