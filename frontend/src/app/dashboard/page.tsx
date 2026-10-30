@@ -19,6 +19,7 @@ export default function Home() {
   const [today] = useState(() => new Date());
   const [plantsLoaded, setPlantsLoaded] = useState(false);
   const [thirstyPlants, setThirstyPlants] = useState<number[]>([]);
+  const [wateringStatus, setWateringStatus] = useState<'checking' | 'ready' | 'unavailable'>('checking');
   const notifiedIds = useRef<Set<number>>(new Set());
   
   // Add Plant Modal state
@@ -83,7 +84,8 @@ export default function Home() {
         const data = await res.json();
         if (data.status === 'success') {
           const tPlants = data.notifications;
-          setThirstyPlants(tPlants.map((p: any) => p.id));
+          setThirstyPlants(tPlants.map((p: any) => Number(p.id)));
+          setWateringStatus('ready');
           
           tPlants.forEach((plant: any) => {
             if (!notifiedIds.current.has(plant.id)) {
@@ -95,8 +97,11 @@ export default function Home() {
               notifiedIds.current.add(plant.id);
             }
           });
+        } else {
+          setWateringStatus('unavailable');
         }
       } catch (e) {
+        setWateringStatus('unavailable');
         console.error("Failed to check notifications", e);
       }
     };
@@ -358,8 +363,8 @@ export default function Home() {
     return plants.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.species.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [plants, searchQuery]);
 
-  const thirstyPlantsList = plants.filter(p => thirstyPlants.includes(p.id));
-  const needsAttentionCount = plants.filter(p => thirstyPlants.includes(p.id) || p.status_color === 'orange').length;
+  const thirstyPlantsList = plants.filter(p => thirstyPlants.includes(Number(p.id)));
+  const needsAttentionCount = plants.filter(p => thirstyPlants.includes(Number(p.id)) || p.status_color === 'orange').length;
   const healthyCount = plants.length - needsAttentionCount;
   const healthPercent = plants.length > 0 ? Math.round((healthyCount / plants.length) * 100) : 100;
 
@@ -602,10 +607,43 @@ export default function Home() {
 
       <section className={styles.todaySection}>
         <div className={styles.sectionHeader}><h3>{language === 'hi' ? 'आज की देखभाल' : "Today's care"}</h3><Link href="/care">{language === 'hi' ? 'सभी देखें' : 'View schedule'} <ArrowUpRight size={14} /></Link></div>
-        {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा जोड़ें।' : 'Your green family starts with one plant.'}</p><button onClick={() => setIsAddPlantModalOpen(true)}>{t('dashboard.addPlant')}</button></div> : plants.map(plant => <div key={plant.id} className={styles.todayPlant}>
-          <Link href={`/plant?id=${plant.id}`} className={styles.todayPlantInfo}>{plant.image_url ? <img src={plant.image_url} alt={plant.name} /> : <span className={styles.plantPlaceholder}><Sprout size={25} /></span>}<div><strong>{plant.name}</strong><span className={styles.todayStatus}><ScanLine size={13} />{scanDates[plant.id] === null ? 'Scan status unavailable' : scanDates[plant.id] === undefined ? 'Checking scan status…' : scannedToday(plant.id) ? (language === 'hi' ? 'आज स्कैन किया' : 'Scanned today') : language === 'hi' ? 'आज स्कैन नहीं किया' : 'Not scanned today'}</span></div></Link>
-          <Link href={`/plant?id=${plant.id}&tab=scan`} className={styles.scanPill}>{language === 'hi' ? 'स्कैन' : 'Scan'}</Link>
-        </div>)}
+        {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा जोड़ें।' : 'Your green family starts with one plant.'}</p><button onClick={() => setIsAddPlantModalOpen(true)}>{t('dashboard.addPlant')}</button></div> : plants.map(plant => {
+          const statusText = String(plant.status || '').trim();
+          const isWaterOnlyStatus = /^(needs? water|water|needs watering|due for watering)( today)?[.!]?$/i.test(statusText);
+          const needsExtraCare = ['red', 'orange'].includes(String(plant.status_color || '').toLowerCase()) && !isWaterOnlyStatus;
+          const needsWaterToday = thirstyPlants.includes(Number(plant.id)) || isWaterOnlyStatus;
+          const careMessage = needsExtraCare
+            ? (language === 'hi' ? 'आज विशेष देखभाल चाहिए' : 'Needs attention today')
+            : isWaterOnlyStatus
+              ? (language === 'hi' ? 'आज पानी दें' : 'Water today')
+              : wateringStatus === 'checking'
+              ? (language === 'hi' ? 'आज की देखभाल देख रहे हैं…' : 'Checking today’s care…')
+              : wateringStatus === 'unavailable'
+                ? (language === 'hi' ? 'देखभाल की जानकारी उपलब्ध नहीं' : 'Care status unavailable')
+                : needsWaterToday
+                  ? (language === 'hi' ? 'आज पानी दें' : 'Water today')
+                  : (language === 'hi' ? 'आज कुछ करने की ज़रूरत नहीं' : 'Nothing needed today');
+
+          return (
+            <div key={plant.id} className={styles.todayPlant}>
+              <Link href={`/plant?id=${plant.id}`} className={styles.todayPlantInfo}>
+                {plant.image_url ? <img src={plant.image_url} alt={plant.name} /> : <span className={styles.plantPlaceholder}><Sprout size={25} /></span>}
+                <div>
+                  <strong>{plant.name}</strong>
+                  <span className={`${styles.todayCareStatus} ${needsExtraCare ? styles.todayCareUrgent : ''}`}>
+                    {needsExtraCare && <i aria-hidden="true" />}
+                    {!needsExtraCare && needsWaterToday && wateringStatus === 'ready' && <Droplets size={13} aria-hidden="true" />}
+                    {careMessage}
+                  </span>
+                  {needsExtraCare && needsWaterToday && wateringStatus === 'ready' && (
+                    <span className={styles.todayCareSecondary}>{language === 'hi' ? '· आज पानी दें' : '· Water today'}</span>
+                  )}
+                </div>
+              </Link>
+              <Link href={`/plant?id=${plant.id}&tab=scan`} className={styles.scanPill}>{language === 'hi' ? 'स्कैन' : 'Scan'}</Link>
+            </div>
+          );
+        })}
       </section>
 
       <section className={styles.photoStreakCard}>
@@ -749,7 +787,7 @@ export default function Home() {
             transition={{ staggerChildren: 0.1 }}
           >
               {filteredPlants.map(plant => {
-                const isThirsty = thirstyPlants.includes(plant.id);
+                const isThirsty = thirstyPlants.includes(Number(plant.id));
                 return (
                   <motion.div
                     layout
