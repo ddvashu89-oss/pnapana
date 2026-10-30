@@ -555,50 +555,6 @@ export default function Home() {
 
       <WeatherCard />
 
-      {carePlant && (
-        <section className={styles.plantCareForecast} aria-labelledby="plant-care-forecast-title">
-          <div className={styles.plantCareHeader}>
-            <div>
-              <h2 id="plant-care-forecast-title">Adjusted for today’s weather</h2>
-              <p>Weather, watering, light, and growth guidance for your plant.</p>
-            </div>
-            <label className={styles.plantCarePicker}>
-              <span>Plant</span>
-              <select
-                value={carePlant.id}
-                onChange={event => setCarePlantId(Number(event.target.value))}
-                aria-label="Choose a plant for today's care guidance"
-              >
-                {plants.map(plant => <option key={plant.id} value={plant.id}>{plant.name}</option>)}
-              </select>
-            </label>
-          </div>
-
-          <WeatherCard plant={carePlant} />
-
-          <div className={styles.dashboardCarePlan}>
-            <div className={styles.dashboardCarePlanHeader}>
-              <h2>Care plan</h2>
-              <Link href={`/plant?id=${carePlant.id}`}>Full plant details <ArrowUpRight size={15} /></Link>
-            </div>
-            <div className={styles.dashboardCareRows}>
-              <div className={styles.dashboardCareRow}>
-                <span className={styles.dashboardCareIcon}><Globe size={22} /></span>
-                <div><span className={styles.dashboardCareLabel}>Native to</span><p>{carePlant.native_region || 'Native region not available'}</p></div>
-              </div>
-              <div className={styles.dashboardCareRow}>
-                <span className={styles.dashboardCareIcon}><Sun size={22} /></span>
-                <div><span className={styles.dashboardCareLabel}>Light <em>{carePlant.light_req || 'Medium'}</em></span><p>{carePlant.light_requirement || 'Check the detailed care plan for light requirements.'}</p></div>
-              </div>
-              <div className={styles.dashboardCareRow}>
-                <span className={styles.dashboardCareIcon}><Droplets size={22} /></span>
-                <div><span className={styles.dashboardCareLabel}>Water <em>{carePlant.water_freq || 7} days between waterings</em></span><p>{carePlant.water_requirement || 'Check the topsoil before watering.'}</p></div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       <div className={styles.shortcuts}>
         <Link href="/rituals"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'वास्तु और स्थान' : <>Vastu &<br />Space</>}</strong></Link>
         <button onClick={() => startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'स्वास्थ्य' : 'Health'}</strong></button>
@@ -651,6 +607,50 @@ export default function Home() {
         <div><h3>{photoHistoryKnown ? `${photoStreak} day photo streak` : 'Your photo streak'}</h3><p>{language === 'hi' ? 'हर दिन एक तस्वीर लें और पौधे को बढ़ते देखें।' : 'A photo a day. Watch your green family grow.'}</p></div>
         <Link href="/dashboard?action=scan" onClick={event => { event.preventDefault(); setIsAddPlantModalOpen(true); }} aria-label="Start a photo check-in"><ScanLine size={21} /></Link>
       </section>
+
+      {carePlant && (
+        <section className={styles.plantCareForecast} aria-labelledby="plant-care-forecast-title">
+          <div className={styles.plantCareHeader}>
+            <div>
+              <h2 id="plant-care-forecast-title">Adjusted for today’s weather</h2>
+              <p>Weather, watering, light, and growth guidance for your plant.</p>
+            </div>
+            <label className={styles.plantCarePicker}>
+              <span>Plant</span>
+              <select
+                value={carePlant.id}
+                onChange={event => setCarePlantId(Number(event.target.value))}
+                aria-label="Choose a plant for today's care guidance"
+              >
+                {plants.map(plant => <option key={plant.id} value={plant.id}>{plant.name}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <WeatherCard plant={carePlant} />
+
+          <div className={styles.dashboardCarePlan}>
+            <div className={styles.dashboardCarePlanHeader}>
+              <h2>Care plan</h2>
+              <Link href={`/plant?id=${carePlant.id}`}>Full plant details <ArrowUpRight size={15} /></Link>
+            </div>
+            <div className={styles.dashboardCareRows}>
+              <div className={styles.dashboardCareRow}>
+                <span className={styles.dashboardCareIcon}><Globe size={22} /></span>
+                <div><span className={styles.dashboardCareLabel}>Native to</span><p>{carePlant.native_region || 'Native region not available'}</p></div>
+              </div>
+              <div className={styles.dashboardCareRow}>
+                <span className={styles.dashboardCareIcon}><Sun size={22} /></span>
+                <div><span className={styles.dashboardCareLabel}>Light <em>{carePlant.light_req || 'Medium'}</em></span><p>{carePlant.light_requirement || 'Check the detailed care plan for light requirements.'}</p></div>
+              </div>
+              <div className={styles.dashboardCareRow}>
+                <span className={styles.dashboardCareIcon}><Droplets size={22} /></span>
+                <div><span className={styles.dashboardCareLabel}>Water <em>{carePlant.water_freq || 7} days between waterings</em></span><p>{carePlant.water_requirement || 'Check the topsoil before watering.'}</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className={styles.bentoGrid}>
         {/* Tile 2: Action Needed */}
