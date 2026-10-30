@@ -17,7 +17,6 @@ export default function Sidebar() {
 
   useEffect(() => {
     document.body.classList.toggle('has-sidebar', inApp);
-    document.body.classList.toggle('dashboard-top-tabs', inApp && pathname === '/dashboard');
     const syncHash = () => setHash(window.location.hash);
     syncHash();
     window.addEventListener('hashchange', syncHash);
@@ -57,7 +56,7 @@ export default function Sidebar() {
           <Link href="/you" className={styles.profile} aria-label={t('nav.you')}><UserRound size={23} strokeWidth={1.6} /></Link>
         </div>
       </header>
-      <nav className={`${styles.sidebar} ${pathname === '/dashboard' ? styles.dashboardTabs : ''}`} aria-label="Main navigation">
+      <nav className={styles.sidebar} aria-label="Main navigation">
         <Link href="/dashboard" className={styles.desktopBrand}><span className={styles.brandMark}><Leaf size={24} strokeWidth={1.6} /></span>Pnapana</Link>
         <div className={styles.navLinks}>
           {links.map(({ href, label, icon: Icon, active, scan, mobileOnly }) => (

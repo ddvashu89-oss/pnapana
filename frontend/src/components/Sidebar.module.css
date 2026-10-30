@@ -51,9 +51,7 @@
  .profile { width: 28px; height: 36px; margin-left: 2px; }
  .profile svg { width: 21px; height: 21px; }
  .sidebar { height: calc(74px + env(safe-area-inset-bottom)); padding: 5px 8px env(safe-area-inset-bottom); background: #fffffff7; }
- .dashboardTabs { position: sticky; inset: auto; top: 58px; right: auto; bottom: auto; left: auto; width: 100%; height: 66px; padding: 3px 6px; border: 0; border-bottom: var(--glass-border); border-radius: 0; background: #fffffff7; z-index: 89; }
  .navItem { min-height: 62px; gap: 5px; font-size: 10px; letter-spacing: .3px; }
- .dashboardTabs .navItem { min-height: 58px; }
  .icon { width: 34px; height: 34px; }
  .icon svg { width: 21px; height: 21px; }
  .scan .icon { width: 36px; height: 36px; margin: -1px 0; }
