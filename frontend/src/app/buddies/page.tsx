@@ -8,7 +8,7 @@ import Loader from '@/components/Loader';
 import styles from './Buddies.module.css';
 
 type Buddy = { id: number; name: string };
-type Plant = { id: number; name: string; species: string; image_url?: string; placement?: string; water_freq: number; last_watered?: string };
+type Plant = { id: number; name: string; species: string; image_url?: string; placement?: string; light_req?: string; light_requirement?: string; water_freq: number; last_watered?: string };
 type CareTask = Plant & { owner_id: number; owner_name: string; starts_on: string; ends_on: string; instructions?: string };
 
 export default function PlantBuddies() {
