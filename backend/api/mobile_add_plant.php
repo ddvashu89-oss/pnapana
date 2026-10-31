@@ -38,9 +38,10 @@ try {
         if (file_put_contents($imageFile, $imageBytes, LOCK_EX) === false) throw new RuntimeException('Plant upload failed');
         $image = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/') . '/uploads/plants/' . $filename;
     }
-    $stmt = $pdo->prepare('INSERT INTO plants (user_id, name, species, image_url, water_freq, light_req, native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $placement = in_array($data['placement'] ?? '', ['indoor', 'outdoor'], true) ? $data['placement'] : null;
+    $stmt = $pdo->prepare('INSERT INTO plants (user_id, name, species, image_url, water_freq, light_req, native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan, placement) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     // PDO array binding turns PHP false into an empty string on strict MySQL. Bind 0/1 explicitly.
-    $stmt->execute([$user['id'], $name, $species, $image ?: '/leaf.png', $frequency, $data['light_req'] ?? 'Medium', $data['native_region'] ?? null, $data['light_requirement'] ?? null, $data['water_requirement'] ?? null, $data['humidity'] ?? null, !empty($data['pet_friendly']) ? 1 : 0, $planJson]);
+    $stmt->execute([$user['id'], $name, $species, $image ?: '/leaf.png', $frequency, $data['light_req'] ?? 'Medium', $data['native_region'] ?? null, $data['light_requirement'] ?? null, $data['water_requirement'] ?? null, $data['humidity'] ?? null, !empty($data['pet_friendly']) ? 1 : 0, $planJson, $placement]);
     $id = $pdo->lastInsertId();
     $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'add_plant')")->execute([$user['id'], $id]);
     $pdo->commit();

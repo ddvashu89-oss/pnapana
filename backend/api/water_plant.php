@@ -19,18 +19,32 @@ if (!isset($data['id'])) {
 $plant_id = $data['id'];
 
 try {
-    $ownerStmt = $pdo->prepare("SELECT id FROM plants WHERE id = ? AND user_id = ?");
-    $ownerStmt->execute([$plant_id, $user_id]);
-    if (!$ownerStmt->fetch()) {
+    $ownerStmt = $pdo->prepare("SELECT p.id, p.user_id, u.name AS owner_name FROM plants p JOIN users u ON u.id = p.user_id WHERE p.id = ?");
+    $ownerStmt->execute([$plant_id]);
+    $plantOwner = $ownerStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$plantOwner) {
         http_response_code(404);
         echo json_encode(["status" => "error", "message" => "Plant not found."]);
         exit();
     }
+    $ownerId = (int)$plantOwner['user_id'];
+    $byBuddy = $ownerId !== (int)$user_id;
+    if ($byBuddy) {
+        $delegate = $pdo->prepare("SELECT 1 FROM vacation_modes vm
+            JOIN plant_buddies b ON b.status = 'accepted' AND ((b.requester_id = vm.user_id AND b.recipient_id = vm.buddy_id) OR (b.recipient_id = vm.user_id AND b.requester_id = vm.buddy_id))
+            WHERE vm.user_id = ? AND vm.buddy_id = ? AND vm.enabled = 1 AND vm.starts_on <= CURDATE() AND vm.ends_on >= CURDATE()");
+        $delegate->execute([$ownerId, $user_id]);
+        if (!$delegate->fetchColumn()) {
+            http_response_code(403);
+            echo json_encode(["status" => "error", "message" => "You can water another garden only during an active vacation plan shared with you."]);
+            exit();
+        }
+    }
     $stmt = $pdo->prepare("UPDATE plants SET last_watered = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
-    $stmt->execute([$plant_id, $user_id]);
+    $stmt->execute([$plant_id, $ownerId]);
 
-    $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'water')");
-    $eventStmt->execute([$user_id, $plant_id]);
+    $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type, details) VALUES (?, ?, 'water', ?)");
+    $eventStmt->execute([$ownerId, $plant_id, $byBuddy ? 'Watered by ' . $user['name'] . ' during vacation care.' : null]);
 
     echo json_encode([
         "status" => "success",

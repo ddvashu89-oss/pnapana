@@ -37,13 +37,19 @@ Write down the *prefixed* names — those are what go in `config.php`.
 Then cPanel → **phpMyAdmin** → select the database → **Import** → upload
 `backend/install.sql` → Go.
 
-That one file creates all 13 tables and seeds the plans and default settings.
+That one file creates the application tables and seeds the plans and default settings.
 It is safe to import twice. You do **not** need the CLI migration scripts in
 `backend/migrations/` — those exist for servers where you have SSH.
 
-For an existing Pnapana database, import `backend/migrations/004_plant_journal.sql`
-in phpMyAdmin before deploying this release. It adds purchase dates, favorites,
-and care-event notes without removing existing plant or watering records.
+For an existing Pnapana database, import these files in numeric order in
+phpMyAdmin before deploying this release:
+
+1. `backend/migrations/004_plant_journal.sql` adds purchase dates, favorites,
+   and care-event notes.
+2. `backend/migrations/005_garden_manager_buddies_vacation.sql` adds plant
+   placement, buddy relationships, and vacation care plans.
+
+Both migrations preserve existing plants and care records.
 
 ## 3. Backend configuration
 

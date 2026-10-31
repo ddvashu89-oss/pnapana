@@ -140,10 +140,38 @@ CREATE TABLE IF NOT EXISTS `plants` (
   `care_plan` text DEFAULT NULL,
   `purchased_on` date DEFAULT NULL,
   `is_favorite` tinyint(1) NOT NULL DEFAULT 0,
+  `placement` varchar(20) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `plants_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `plant_buddies` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `requester_id` int(11) NOT NULL,
+  `recipient_id` int(11) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_buddy_request` (`requester_id`,`recipient_id`),
+  CONSTRAINT `plant_buddies_requester_fk` FOREIGN KEY (`requester_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `plant_buddies_recipient_fk` FOREIGN KEY (`recipient_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `vacation_modes` (
+  `user_id` int(11) NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `starts_on` date DEFAULT NULL,
+  `ends_on` date DEFAULT NULL,
+  `buddy_id` int(11) DEFAULT NULL,
+  `instructions` varchar(1000) DEFAULT NULL,
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_id`),
+  KEY `vacation_buddy_idx` (`buddy_id`),
+  CONSTRAINT `vacation_modes_user_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `vacation_modes_buddy_fk` FOREIGN KEY (`buddy_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `post_likes` (

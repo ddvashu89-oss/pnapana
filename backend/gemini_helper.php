@@ -82,3 +82,28 @@ function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
 
     return null;
 }
+
+/** Calls Gemini for plain-text garden guidance. Returns null when unavailable. */
+function gemini_text_response($prompt, $apiKey = null) {
+    $activeKey = !empty($apiKey) ? $apiKey : (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: ''));
+    if ($activeKey === '') return null;
+    $configuredModel = defined('GEMINI_MODEL') ? GEMINI_MODEL : (getenv('GEMINI_MODEL') ?: null);
+    $models = array_values(array_unique(array_filter([$configuredModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-lite-latest'])));
+    $payload = json_encode(['contents' => [['parts' => [['text' => $prompt]]]], 'generationConfig' => ['temperature' => 0.35, 'maxOutputTokens' => 700]]);
+    foreach ($models as $model) {
+        $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($model) . ':generateContent?key=' . rawurlencode($activeKey));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 25);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($response === false || $httpCode < 200 || $httpCode >= 300) continue;
+        $decoded = json_decode($response, true);
+        $text = trim((string)($decoded['candidates'][0]['content']['parts'][0]['text'] ?? ''));
+        if ($text !== '') return $text;
+    }
+    return null;
+}

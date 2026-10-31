@@ -9,7 +9,7 @@ import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
 import styles from './Plant.module.css';
 import WeatherCard from '@/components/WeatherCard';
-import { Droplets, ScanLine, Globe, Sun, CalendarDays, Check, FlaskConical } from 'lucide-react';
+import { Droplets, Globe, Sun, CalendarDays, Check, FlaskConical, HeartPulse } from 'lucide-react';
 
 function PlantDetailsInner() {
   const searchParams = useSearchParams();
@@ -40,6 +40,8 @@ function PlantDetailsInner() {
   const [fertilizerMessage, setFertilizerMessage] = useState('');
   const [savingFertilizer, setSavingFertilizer] = useState(false);
   const [purchaseDate, setPurchaseDate] = useState('');
+  const [placement, setPlacement] = useState('');
+  const [lightReq, setLightReq] = useState('Medium');
   const [purchaseMessage, setPurchaseMessage] = useState('');
   
   // AI Scanner States
@@ -62,7 +64,7 @@ function PlantDetailsInner() {
 
     authFetch(`get_plant_details.php?id=${plantId}`)
       .then(res => res.json())
-      .then(data => { if(data.status === "success") { setPlant(data.plant); setPurchaseDate(data.plant.purchased_on || ''); } })
+      .then(data => { if(data.status === "success") { setPlant(data.plant); setPurchaseDate(data.plant.purchased_on || ''); setPlacement(data.plant.placement || ''); setLightReq(data.plant.light_req || 'Medium'); } })
       .finally(() => setIsLoading(false));
 
     fetchScans();
@@ -164,11 +166,11 @@ function PlantDetailsInner() {
     event.preventDefault();
     setPurchaseMessage('');
     try {
-      const response = await authFetch('update_plant_profile.php', { method: 'POST', body: JSON.stringify({ id: plantId, purchased_on: purchaseDate }) });
+      const response = await authFetch('update_plant_profile.php', { method: 'POST', body: JSON.stringify({ id: plantId, purchased_on: purchaseDate, placement, light_req: lightReq }) });
       const data = await response.json();
       if (data.status === 'success') {
-        setPlant((previous: any) => ({ ...previous, purchased_on: data.purchased_on }));
-        setPurchaseMessage('Purchase date saved.');
+        setPlant((previous: any) => ({ ...previous, purchased_on: data.purchased_on, placement: data.placement, light_req: data.light_req }));
+        setPurchaseMessage('Plant profile saved.');
       } else setPurchaseMessage(data.message || 'Could not save purchase date.');
     } catch { setPurchaseMessage('Could not save purchase date.'); }
   };
@@ -226,13 +228,15 @@ function PlantDetailsInner() {
         </div>
         <form className={styles.purchaseDateForm} onSubmit={savePurchaseDate}>
           <label htmlFor="purchase-date">Purchase date <input id="purchase-date" type="date" max={localDateInputValue()} value={purchaseDate} onChange={event => setPurchaseDate(event.target.value)} /></label>
+          <label htmlFor="plant-placement-detail">Location <select id="plant-placement-detail" value={placement} onChange={event => setPlacement(event.target.value)}><option value="">Not set</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option></select></label>
+          <label htmlFor="plant-light-detail">Light <select id="plant-light-detail" value={lightReq} onChange={event => setLightReq(event.target.value)}>{!['Medium', 'Direct sun', 'Full sun', 'Bright indirect', 'Low light'].includes(lightReq) && <option value={lightReq}>{lightReq}</option>}<option value="Medium">Not sure / medium</option><option value="Direct sun">Direct sun</option><option value="Full sun">Full sun</option><option value="Bright indirect">Bright, indirect</option><option value="Low light">Low light</option></select></label>
           <button type="submit">Save date</button>
           {plantAge && <span>Plant age: <strong>{plantAge}</strong></span>}
           {purchaseMessage && <small role="status">{purchaseMessage}</small>}
         </form>
         <div className={styles.plantActions}>
           <button onClick={waterPlant} disabled={watering}><Droplets size={19} />{watering ? 'Saving…' : 'Water it'}</button>
-          <button onClick={() => { setActiveTab('AI Scan'); requestAnimationFrame(() => document.getElementById('plant-care')?.scrollIntoView({ behavior: 'smooth' })); }}><ScanLine size={20} />Scan</button>
+          <button onClick={() => { setActiveTab('AI Scan'); requestAnimationFrame(() => { document.getElementById('plant-care')?.scrollIntoView({ behavior: 'smooth' }); startCamera(); }); }}><HeartPulse size={20} />Plant SOS</button>
         </div>
         {waterMessage && <p className={styles.waterMessage} role="status"><Check size={16} />{waterMessage}</p>}
         <h2 className={styles.sectionTitle}>Adjusted for today’s weather</h2>

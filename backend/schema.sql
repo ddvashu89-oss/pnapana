@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS plants (
     care_plan TEXT DEFAULT NULL,
     purchased_on DATE DEFAULT NULL,
     is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
+    placement VARCHAR(20) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -59,6 +60,30 @@ CREATE TABLE IF NOT EXISTS care_events (
     event_type VARCHAR(50) NOT NULL,
     details TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS plant_buddies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    requester_id INT NOT NULL,
+    recipient_id INT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_buddy_request (requester_id, recipient_id),
+    FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS vacation_modes (
+    user_id INT PRIMARY KEY,
+    enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    starts_on DATE DEFAULT NULL,
+    ends_on DATE DEFAULT NULL,
+    buddy_id INT DEFAULT NULL,
+    instructions VARCHAR(1000) DEFAULT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (buddy_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS contact_messages (

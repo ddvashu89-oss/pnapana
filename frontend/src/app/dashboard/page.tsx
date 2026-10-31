@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight, Globe, Sun, Heart } from 'lucide-react';
+import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight, Globe, Sun, Heart, Sparkles, Users, Plane } from 'lucide-react';
 import WeatherCard from '@/components/WeatherCard';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
@@ -25,12 +25,12 @@ export default function Home() {
     name: string, species: string, image_url: string,
     native_region: string, light_requirement: string, water_requirement: string,
     humidity: string, pet_friendly: boolean,
-    water_freq: number, light_req: string, care_plan: any, purchased_on: string
+    water_freq: number, light_req: string, care_plan: any, purchased_on: string, placement: string
   }>({
     name: '', species: '', image_url: '',
     native_region: '', light_requirement: '', water_requirement: '',
     humidity: '', pet_friendly: false,
-    water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: ''
+    water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: '', placement: ''
   });
   const [isAdding, setIsAdding] = useState(false);
   
@@ -148,7 +148,7 @@ export default function Home() {
           name: '', species: '', image_url: '',
           native_region: '', light_requirement: '', water_requirement: '',
           humidity: '', pet_friendly: false,
-          water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: ''
+          water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: '', placement: ''
         });
         fetchPlants(user.id);
       } else {
@@ -408,6 +408,18 @@ export default function Home() {
                 <label htmlFor="plant-purchased-on">Purchase date <span style={{color:'var(--text-muted)'}}>(optional)</span></label>
                 <input id="plant-purchased-on" type="date" max={localDateInputValue()} value={newPlant.purchased_on} onChange={e => setNewPlant({...newPlant, purchased_on: e.target.value})} />
               </div>
+                <div className={styles.inputGroup}>
+                <label htmlFor="plant-placement">Where does it grow?</label>
+                <select id="plant-placement" value={newPlant.placement} onChange={e => setNewPlant({...newPlant, placement: e.target.value})}>
+                  <option value="">Not set</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option>
+                </select>
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="plant-light-level">Light exposure</label>
+                <select id="plant-light-level" value={newPlant.light_req} onChange={e => setNewPlant({...newPlant, light_req: e.target.value})}>
+                  <option value="Medium">Not sure / medium</option><option value="Direct sun">Direct sun</option><option value="Full sun">Full sun</option><option value="Bright indirect">Bright, indirect light</option><option value="Low light">Low light</option>
+                </select>
+              </div>
 
               {isIdentifying && (
                 <div className={styles.identifyingState} style={{marginBottom: '1rem'}}>
@@ -543,8 +555,11 @@ export default function Home() {
 
       <div className={styles.shortcuts}>
         <Link href="/space"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'वास्तु और स्थान' : <>Vastu &<br />Space</>}</strong></Link>
-        <button onClick={() => startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'स्वास्थ्य' : 'Health'}</strong></button>
+        <button onClick={() => plants[0] ? router.push(`/plant?id=${plants[0].id}&tab=scan`) : startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'Plant SOS' : 'Plant SOS'}</strong></button>
         <Link href="/care"><span className={styles.shortcutPeach}><FlaskConical size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'देखभाल' : 'Remedies'}</strong></Link>
+        <Link href="/garden-manager"><span className={styles.shortcutGreen}><Sparkles size={25} strokeWidth={1.6} /></span><strong>Plant Manager</strong></Link>
+        <Link href="/buddies"><span className={styles.shortcutBlue}><Users size={25} strokeWidth={1.6} /></span><strong>Plant Buddy</strong></Link>
+        <Link href="/vacation"><span className={styles.shortcutPeach}><Plane size={25} strokeWidth={1.6} /></span><strong>Vacation Mode</strong></Link>
       </div>
 
       <section className={styles.todaySection}>

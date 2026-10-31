@@ -1,0 +1,59 @@
+.container { max-width: 1180px; padding: 38px 34px 120px; margin: 0 auto; color: var(--text-primary); }
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin: 10px 0 26px; }
+.eyebrow { color: var(--primary-green); font-size: 10px; font-weight: 700; letter-spacing: 2px; }
+.header h1 { margin: 8px 0; font: 600 clamp(28px,4vw,42px) var(--font-sans); letter-spacing: -1.5px; }
+.header p, .askHeading p { margin: 0; color: var(--text-muted); }
+.headerLink, .sectionHeading > a, .detailsLink { display: inline-flex; align-items: center; gap: 7px; color: var(--primary-green); font-weight: 600; }
+.headerLink { padding: 11px 14px; border: 1px solid var(--border-color); border-radius: 14px; background: var(--glass-bg); white-space: nowrap; }
+.summaryGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; margin-bottom: 20px; }
+.summaryGrid article { display: flex; flex-direction: column; gap: 5px; background: var(--glass-bg); border: 1px solid var(--border-color); border-radius: 18px; padding: 17px; box-shadow: var(--glass-shadow); }
+.summaryGrid article span { display: flex; gap: 7px; align-items: center; color: var(--text-secondary); font-size: 13px; }
+.summaryGrid strong { font-size: 27px; line-height: 1.1; }
+.summaryGrid small { color: var(--text-muted); font-size: 11px; }
+.askCard { padding: 22px; background: linear-gradient(120deg,#f4f7ed,#fffaf1); border: 1px solid #e1e9da; border-radius: 22px; margin: 18px 0 34px; }
+.askHeading { display: flex; align-items: center; gap: 12px; margin-bottom: 17px; }
+.askHeading h2 { margin: 0 0 4px; font-size: 20px; }
+.botIcon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; background: var(--primary-green); color: white; }
+.askForm { display: flex; gap: 10px; }
+.askForm input { flex: 1; min-width: 0; border: 1px solid #dce4d8; border-radius: 12px; padding: 13px 14px; font: inherit; color: var(--text-primary); background: white; }
+.askForm button, .sosBanner > a { display: inline-flex; justify-content: center; align-items: center; gap: 8px; border: 0; border-radius: 12px; padding: 0 17px; background: var(--primary-green); color: white; font-weight: 600; cursor: pointer; }
+.askForm button:disabled { opacity: .65; cursor: wait; }
+.answer { white-space: pre-wrap; line-height: 1.65; margin: 16px 0 0; padding: 14px; border-radius: 12px; background: white; }
+.error { color: #a3392f; margin: 12px 0 0; }
+.premiumNote { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--text-secondary); font-size: 14px; }
+.premiumNote a { display: inline-flex; align-items: center; gap: 4px; color: var(--primary-green); font-weight: 600; }
+.sectionHeading { display: flex; justify-content: space-between; align-items: end; margin: 0 0 15px; }
+.sectionHeading h2 { margin: 5px 0 0; font-size: 24px; }
+.sectionHeading > a { font-size: 14px; }
+.plantGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+.plantCard { display: flex; overflow: hidden; border: 1px solid var(--border-color); border-radius: 20px; background: var(--glass-bg); box-shadow: var(--glass-shadow); }
+.plantCard > img, .plantPlaceholder { width: 112px; min-width: 112px; min-height: 100%; object-fit: cover; background: #e9f0e4; }
+.plantPlaceholder { display: grid; place-items: center; color: var(--primary-green); }
+.plantBody { flex: 1; min-width: 0; padding: 15px; }
+.plantTitle { display: flex; justify-content: space-between; align-items: flex-start; gap: 9px; }
+.plantTitle h3 { margin: 0 0 3px; font-size: 17px; }
+.plantTitle p { margin: 0; font-size: 12px; color: var(--text-muted); }
+.placement { border-radius: 30px; padding: 5px 9px; font-size: 10px; text-transform: capitalize; white-space: nowrap; background: #e8f1e6; color: var(--primary-green); }
+.placement.unknown { background: #f1f0e9; color: #74766a; }
+.factGrid { display: grid; gap: 8px; margin: 16px 0; }
+.factGrid span { display: flex; gap: 7px; align-items: center; color: var(--text-secondary); font-size: 12px; }
+.consistency > div:first-child { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+.consistency strong { color: var(--text-primary); }
+.track { height: 6px; margin: 6px 0 4px; overflow: hidden; border-radius: 10px; background: #e7e9e2; }
+.track i { display: block; height: 100%; background: #5e9563; border-radius: inherit; }
+.consistency small { color: var(--text-muted); font-size: 10px; }
+.issue { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; padding: 10px; border-radius: 11px; color: #93563d; background: #fff1e8; }
+.issue strong { font-size: 11px; }
+.issue p { margin: 3px 0 0; color: #755f50; font-size: 10px; line-height: 1.4; }
+.detailsLink { margin-top: 13px; font-size: 12px; }
+.sosBanner { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 28px; padding: 20px; color: white; background: linear-gradient(120deg,#294f38,#3e7650); border-radius: 20px; }
+.sosBanner .eyebrow { color: #cce4c2; }
+.sosBanner h2 { margin: 5px 0; font-size: 23px; }
+.sosBanner p { margin: 0; color: #e4ece1; font-size: 13px; }
+.sosBanner > a { min-height: 44px; background: #fff; color: #294f38; white-space: nowrap; }
+.empty { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 42px; background: var(--glass-bg); border: 1px solid var(--border-color); border-radius: 20px; color: var(--text-muted); }
+.empty a { color: var(--primary-green); font-weight: 600; }
+.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media(max-width:900px) { .plantGrid { grid-template-columns: 1fr; } }
+@media(max-width:620px) { .container { padding: 24px 16px 105px; } .header { flex-direction: column; } .summaryGrid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; } .summaryGrid article { padding: 13px; } .askCard { padding: 17px; } .askForm { flex-direction: column; } .askForm button { min-height: 45px; } .sectionHeading { align-items: flex-start; gap: 10px; } .plantCard > img,.plantPlaceholder { width: 84px; min-width: 84px; } .plantBody { padding: 12px; } .sosBanner { align-items: flex-start; flex-direction: column; } .sosBanner > a { width: 100%; } }

@@ -663,8 +663,8 @@
 
 .inputGroup { margin-bottom: 1.5rem; }
 .inputGroup label { display: block; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; }
-.inputGroup input { width: 100%; padding: 1rem 1.2rem; border: 1px solid var(--border-color); border-radius: 16px; font-size: 1.05rem; background: var(--bg-secondary); outline: none; transition: border 0.3s, background 0.3s; color: var(--text-primary); }
-.inputGroup input:focus { border-color: var(--accent-green); background: var(--bg-secondary); }
+.inputGroup input, .inputGroup select { width: 100%; padding: 1rem 1.2rem; border: 1px solid var(--border-color); border-radius: 16px; font-size: 1.05rem; background: var(--bg-secondary); outline: none; transition: border 0.3s, background 0.3s; color: var(--text-primary); }
+.inputGroup input:focus, .inputGroup select:focus { border-color: var(--accent-green); background: var(--bg-secondary); }
 
 .cameraBtn { width: 100%; padding: 0.8rem; background: var(--glass-bg); border: 1px dashed var(--accent-orange); border-radius: 12px; color: var(--accent-orange); font-weight: 500; cursor: pointer; margin-top: 0.5rem; transition: background 0.2s; }
 .cameraBtn:hover { background: rgba(211, 106, 50, 0.1); }

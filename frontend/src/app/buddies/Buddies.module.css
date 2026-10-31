@@ -1,0 +1,50 @@
+.container { max-width: 1050px; margin: 0 auto; padding: 38px 32px 120px; }
+.header { margin: 8px 0 24px; }
+.eyebrow { color: var(--primary-green); font-size: 10px; font-weight: 700; letter-spacing: 2px; }
+.header h1 { margin: 8px 0; font: 600 clamp(30px,4vw,42px) var(--font-sans); letter-spacing: -1.4px; }
+.header p { max-width: 650px; margin: 0; color: var(--text-muted); line-height: 1.6; }
+.panel { margin: 17px 0; padding: 21px; border: 1px solid var(--border-color); border-radius: 20px; background: var(--glass-bg); box-shadow: var(--glass-shadow); }
+.panel h2 { margin: 0 0 13px; font-size: 19px; }
+.panelTitle { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+.panelTitle > span { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; color: var(--primary-green); background: #e8f1e6; }
+.panelTitle h2 { margin: 0 0 3px; }
+.panelTitle p { margin: 0; color: var(--text-muted); font-size: 13px; }
+.inviteForm { display: flex; gap: 9px; }
+.inviteForm input { flex: 1; min-width: 0; border: 1px solid var(--border-color); border-radius: 11px; padding: 12px 13px; font: inherit; background: var(--bg-primary); }
+.inviteForm button, .requestRow button, .careCard button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 11px; padding: 10px 14px; background: var(--primary-green); color: white; font-weight: 600; cursor: pointer; }
+.inviteForm button:disabled, .careCard button:disabled { opacity: .6; }
+.requestList { display: grid; gap: 8px; }
+.requestRow, .sentRow { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border-color); }
+.requestRow > div:first-child, .sentRow { display: flex; flex-direction: column; gap: 4px; }
+.requestRow small, .sentRow small { color: var(--text-muted); font-size: 12px; }
+.requestRow > div:last-child { display: flex; gap: 7px; }
+.requestRow .decline { padding: 10px; background: #f6e9e5; color: #a4473e; }
+.section { margin: 28px 0; }
+.sectionHeading { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.sectionHeading h2 { margin: 4px 0 0; font-size: 24px; }
+.sectionHeading > span { color: var(--text-muted); }
+.buddyGrid { display: grid; grid-template-columns: repeat(auto-fill,minmax(230px,1fr)); gap: 10px; }
+.buddyCard { width: 100%; display: flex; align-items: center; gap: 11px; text-align: left; border: 1px solid var(--border-color); border-radius: 16px; padding: 13px; background: var(--glass-bg); cursor: pointer; color: var(--text-primary); }
+.buddyIcon { width: 42px; height: 42px; display: grid; place-items: center; background: #e8f1e6; color: var(--primary-green); border-radius: 13px; }
+.buddyCard > span:nth-child(2) { display: flex; flex: 1; flex-direction: column; gap: 3px; }
+.buddyCard small { color: var(--text-muted); font-size: 11px; }
+.empty { display: flex; gap: 10px; align-items: center; padding: 19px; border: 1px dashed var(--border-color); border-radius: 16px; color: var(--text-muted); }
+.empty p, .muted { margin: 0; }
+.clearButton { border: 1px solid var(--border-color); background: transparent; padding: 8px 12px; border-radius: 10px; cursor: pointer; color: var(--text-secondary); }
+.plantGrid, .careGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.plantCard, .careCard { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 12px; border-radius: 14px; background: var(--bg-primary); }
+.plantCard img, .plantPlaceholder { width: 62px; min-width: 62px; height: 62px; object-fit: cover; border-radius: 12px; background: #e9f0e4; }
+.plantPlaceholder { display: grid; place-items: center; color: var(--primary-green); }
+.plantCard > div, .careCard > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.plantCard strong, .careCard strong { font-size: 14px; }
+.plantCard small, .plantCard span, .careCard small { color: var(--text-muted); font-size: 11px; }
+.carePanel { border-color: #dce8d7; background: #f6f9f1; }
+.careCard { align-items: flex-start; justify-content: space-between; }
+.careCard p { margin: 4px 0; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+.careCard button { flex-shrink: 0; padding: 9px 10px; font-size: 12px; }
+.notice,.error { padding: 11px 13px; border-radius: 11px; font-size: 13px; }
+.notice { color: #326342; background: #edf7ea; }
+.error { color: #9d382f; background: #fff0eb; }
+.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media(max-width:680px) { .container { padding: 24px 16px 105px; } .panel { padding: 16px; } .inviteForm { flex-direction: column; } .inviteForm button { min-height: 43px; } .plantGrid,.careGrid { grid-template-columns: 1fr; } .careCard { flex-direction: column; } .careCard button { width: 100%; min-height: 40px; } }

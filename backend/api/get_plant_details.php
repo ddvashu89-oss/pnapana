@@ -13,7 +13,9 @@ $plant_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if ($plant_id > 0) {
     // Scoped to the authenticated owner — this is the private management view
     // (care plan, AI scan history), not the public Explore listing.
-    $stmt = $conn->prepare("SELECT * FROM plants WHERE id = :id AND user_id = :user_id");
+    $stmt = $conn->prepare("SELECT p.*,
+        (SELECT ce.created_at FROM care_events ce WHERE ce.plant_id = p.id AND ce.user_id = p.user_id AND ce.event_type = 'water' ORDER BY ce.created_at DESC LIMIT 1) AS last_watered_logged
+        FROM plants p WHERE p.id = :id AND p.user_id = :user_id");
     $stmt->bindParam(':id', $plant_id);
     $stmt->bindParam(':user_id', $user['id']);
     $stmt->execute();
@@ -21,6 +23,8 @@ if ($plant_id > 0) {
     $plant = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($plant) {
+        $plant['last_watered'] = $plant['last_watered_logged'];
+        unset($plant['last_watered_logged']);
         echo json_encode(["status" => "success", "plant" => $plant]);
     } else {
         echo json_encode(["status" => "error", "message" => "Plant not found."]);
