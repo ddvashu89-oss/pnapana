@@ -4,8 +4,10 @@ pnapana_cors('GET, POST, OPTIONS');
 header('Content-Type: application/json; charset=UTF-8');
 header('Cache-Control: no-store');
 require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../feature_schema.php';
 require_once __DIR__ . '/auth.php';
 $user = authenticate($pdo);
+pnapana_ensure_care_sharing_schema($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt = $pdo->prepare("SELECT u.id, u.name FROM plant_buddies b JOIN users u ON u.id = CASE WHEN b.requester_id = ? THEN b.recipient_id ELSE b.requester_id END
