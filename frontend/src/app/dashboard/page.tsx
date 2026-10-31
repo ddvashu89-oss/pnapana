@@ -619,7 +619,7 @@ export default function Home() {
         </section>
       )}
 
-      <div className={styles.bentoGrid}>
+      {plants.length > 0 && <div className={styles.bentoGrid}>
         {/* Tile 2: Action Needed */}
         <div className={`${styles.bentoTile} ${styles.tasksTile}`}>
           <div className={styles.bentoHeader}>
@@ -682,7 +682,7 @@ export default function Home() {
           </div>
         </div>
 
-      </div>
+      </div>}
 
       {/* --- PLANT COLLECTION --- */}
       <section id={carePlant ? 'collection' : 'garden'} className={styles.collectionSection}>
