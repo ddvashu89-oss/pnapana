@@ -1,5 +1,42 @@
 .container { min-height: 100vh; padding: 32px 24px 120px; background: var(--bg-primary); color: var(--text-primary); }
 .header, .panel, .results { width: min(100%, 980px); margin: 0 auto; }
+.advisor { width: min(100%, 980px); margin: 0 auto 22px; padding: 23px; border: 1px solid rgba(48,124,70,.22); border-radius: 24px; background: linear-gradient(135deg, rgba(48,124,70,.09), var(--bg-secondary) 62%); box-shadow: var(--glass-shadow); }
+.advisorHeading { display: flex; align-items: flex-start; gap: 13px; }
+.advisorIcon { display: grid; place-items: center; flex: 0 0 auto; width: 46px; height: 46px; border-radius: 15px; color: var(--primary-green); background: rgba(48,124,70,.13); }
+.advisorHeading h2 { margin: 5px 0; font-size: clamp(20px, 3vw, 25px); }
+.advisorHeading p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.advisorControls { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; align-items: end; gap: 10px; margin-top: 19px; }
+.nameField { display: grid; gap: 7px; color: var(--text-secondary); font-size: 12px; font-weight: 650; }
+.nameField input { width: 100%; min-height: 46px; padding: 0 13px; border: 1px solid var(--border-color); border-radius: 13px; color: var(--text-primary); background: var(--bg-primary); font: inherit; font-weight: 400; }
+.photoButton, .checkButton { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; padding: 0 14px; border: 1px solid var(--border-color); border-radius: 13px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.photoButton { color: var(--text-primary); background: var(--bg-primary); }
+.photoButton input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.checkButton { color: white; border-color: var(--primary-green); background: var(--primary-green); }
+.checkButton:disabled { cursor: not-allowed; opacity: .55; }
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.45); border-top-color: white; border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.photoPreview { display: flex; align-items: center; gap: 9px; margin-top: 12px; color: var(--text-secondary); font-size: 12px; }
+.photoPreview img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; }
+.photoPreview span { flex: 1; }
+.photoPreview button { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 10px; color: var(--text-secondary); background: var(--bg-primary); cursor: pointer; }
+.advisorError { margin: 12px 0 0; color: #b2382e; font-size: 13px; }
+.assessment { margin-top: 17px; padding: 17px; border: 1px solid var(--border-color); border-radius: 18px; background: var(--bg-primary); }
+.assessmentTop { display: flex; align-items: center; gap: 10px; }
+.verdictIcon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; color: var(--primary-green); background: rgba(48,124,70,.11); }
+.verdict_skip .verdictIcon, .verdict_conditional .verdictIcon, .verdict_unknown .verdictIcon { color: #a46124; background: #fff1df; }
+.assessmentTop h3 { margin: 4px 0 0; font-size: 18px; }
+.fitScore { display: flex; flex-direction: column; align-items: center; margin-left: auto; color: var(--primary-green); font-size: 23px; }
+.fitScore small { color: var(--text-secondary); font-size: 10px; font-weight: 600; }
+.assessmentSummary { margin: 13px 0; line-height: 1.55; }
+.assessmentColumns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.assessmentColumns > div { display: grid; align-content: start; gap: 8px; }
+.assessmentColumns strong, .nurseryChecks > strong { margin-bottom: 2px; font-size: 12px; }
+.assessmentColumns span { display: flex; align-items: flex-start; gap: 7px; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+.assessmentColumns span svg { flex: 0 0 auto; margin-top: 1px; color: var(--primary-green); }
+.assessmentColumns > div:nth-child(2) svg { color: #b66e2d; }
+.nurseryChecks { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--border-color); }
+.nurseryChecks ol { display: grid; gap: 5px; margin: 8px 0 0; padding-left: 20px; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+.careLevel { display: block; margin-top: 12px; color: var(--text-secondary); font-size: 11px; }
 .header { padding: 10px 0 26px; }
 .eyebrow { color: var(--text-secondary); font-size: 11px; font-weight: 700; letter-spacing: .16em; }
 .header h1 { margin: 10px 0 8px; font-size: clamp(30px, 5vw, 42px); line-height: 1.12; font-family: var(--font-sans); }
@@ -7,6 +44,12 @@
 .panel { padding: 24px; border: 1px solid var(--border-color); border-radius: 24px; background: var(--bg-secondary); box-shadow: var(--glass-shadow); }
 .panel h2 { margin: 0 0 14px; font-size: 19px; }
 .spaceGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.balconyControls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 19px; }
+.balconyControls fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.balconyControls legend { margin-bottom: 8px; font-size: 12px; font-weight: 700; }
+.sunChoices { display: flex; flex-wrap: wrap; gap: 7px; }
+.sunChoices button { min-height: 38px; padding: 0 11px; border: 1px solid var(--border-color); border-radius: 11px; color: var(--text-primary); background: var(--bg-primary); cursor: pointer; font: inherit; font-size: 11px; }
+.sunChoices button.sunSelected { border-color: var(--primary-green); color: var(--primary-green); background: rgba(48,124,70,.09); }
 .spaceOption, .lightOption { color: var(--text-primary); background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 15px; cursor: pointer; font: inherit; text-align: left; transition: border-color .18s, background .18s, transform .18s; }
 .spaceOption { min-height: 68px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
 .spaceOption svg, .lightOption svg { color: var(--primary-green); flex: 0 0 auto; }
@@ -49,4 +92,4 @@
 .empty p { max-width: 440px; font-size: 13px; line-height: 1.5; }
 .ritualLink { display: inline-flex; align-items: center; gap: 8px; margin-top: 18px; color: var(--primary-green); font-size: 14px; font-weight: 700; text-decoration: none; }
 .ritualLink:hover { text-decoration: underline; }
-@media (max-width: 680px) { .container { padding: 22px 16px 110px; } .panel { padding: 18px 14px; border-radius: 20px; } .spaceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lightGrid { grid-template-columns: 1fr; } .lightOption { min-height: 64px; } .plantGrid { grid-template-columns: 1fr; } .plantCard > p { min-height: 0; } }
+@media (max-width: 680px) { .container { padding: 22px 16px 110px; } .panel, .advisor { padding: 18px 14px; border-radius: 20px; } .spaceGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lightGrid { grid-template-columns: 1fr; } .lightOption { min-height: 64px; } .plantGrid { grid-template-columns: 1fr; } .plantCard > p { min-height: 0; } .advisorControls { grid-template-columns: 1fr 1fr; } .nameField { grid-column: 1 / -1; } .checkButton { grid-column: 1 / -1; } .balconyControls { grid-template-columns: 1fr; } .assessmentColumns { grid-template-columns: 1fr; } }
