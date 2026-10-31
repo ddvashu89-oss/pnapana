@@ -41,6 +41,10 @@ That one file creates all 13 tables and seeds the plans and default settings.
 It is safe to import twice. You do **not** need the CLI migration scripts in
 `backend/migrations/` — those exist for servers where you have SSH.
 
+For an existing Pnapana database, import `backend/migrations/004_plant_journal.sql`
+in phpMyAdmin before deploying this release. It adds purchase dates, favorites,
+and care-event notes without removing existing plant or watering records.
+
 ## 3. Backend configuration
 
 Copy the template and fill it in:

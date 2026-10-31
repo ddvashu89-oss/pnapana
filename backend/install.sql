@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `care_events` (
   `user_id` int(11) NOT NULL,
   `plant_id` int(11) DEFAULT NULL,
   `event_type` varchar(50) NOT NULL,
+  `details` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -137,6 +138,8 @@ CREATE TABLE IF NOT EXISTS `plants` (
   `light_req` varchar(50) DEFAULT 'Medium',
   `last_watered` datetime DEFAULT current_timestamp(),
   `care_plan` text DEFAULT NULL,
+  `purchased_on` date DEFAULT NULL,
+  `is_favorite` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),

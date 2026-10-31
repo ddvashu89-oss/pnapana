@@ -53,16 +53,22 @@ $water_requirement = $data['water_requirement'] ?? null;
 $humidity = $data['humidity'] ?? null;
 $pet_friendly = isset($data['pet_friendly']) ? (bool)$data['pet_friendly'] : false;
 $care_plan = isset($data['care_plan']) ? json_encode($data['care_plan']) : null;
+$purchased_on = isset($data['purchased_on']) && $data['purchased_on'] !== '' ? $data['purchased_on'] : null;
+$parsedPurchaseDate = $purchased_on === null ? null : DateTime::createFromFormat('!Y-m-d', $purchased_on);
+if ($purchased_on !== null && (!$parsedPurchaseDate || $parsedPurchaseDate->format('Y-m-d') !== $purchased_on || $purchased_on > date('Y-m-d'))) {
+    echo json_encode(["status" => "error", "message" => "Choose a valid purchase date."]);
+    exit();
+}
 if ($care_plan === false) {
     $care_plan = null;
 }
 
 try {
     $stmt = $pdo->prepare("INSERT INTO plants (user_id, name, species, image_url, water_freq, light_req,
-        native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan, purchased_on)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([$user_id, $name, $species, $image_url, $water_freq, $light_req,
-        $native_region, $light_requirement, $water_requirement, $humidity, $pet_friendly, $care_plan]);
+        $native_region, $light_requirement, $water_requirement, $humidity, $pet_friendly, $care_plan, $purchased_on]);
 
     $plant_id = $pdo->lastInsertId();
     $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'add_plant')");

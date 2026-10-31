@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS plants (
     light_req VARCHAR(50) DEFAULT 'Medium',
     last_watered DATETIME DEFAULT CURRENT_TIMESTAMP,
     care_plan TEXT DEFAULT NULL,
+    purchased_on DATE DEFAULT NULL,
+    is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS care_events (
     user_id INT NOT NULL,
     plant_id INT,
     event_type VARCHAR(50) NOT NULL,
+    details TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

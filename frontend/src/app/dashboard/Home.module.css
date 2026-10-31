@@ -497,12 +497,22 @@
 .searchBar input { border: none; background: transparent; width: 100%; font-size: 1rem; outline: none; color: var(--text-primary); font-weight: 500; }
 .searchBar input::placeholder { color: #95a5a6; }
 
+.collectionTools { margin-bottom: 1.25rem; }
+.collectionFilters { display: flex; gap: 0.55rem; margin-bottom: 1rem; }
+.collectionFilters button { display: inline-flex; align-items: center; gap: 0.45rem; border: 1px solid var(--border-color); background: var(--glass-bg); color: var(--text-secondary); border-radius: 999px; padding: 0.55rem 0.9rem; font-weight: 600; cursor: pointer; }
+.collectionFilters button span { background: rgba(48,124,70,.1); padding: .12rem .42rem; border-radius: 999px; font-size: .75rem; }
+.collectionFilters .collectionFilterActive { color: var(--primary-green); border-color: rgba(48,124,70,.4); background: rgba(48,124,70,.08); }
+.collectionTools .searchBar { margin-bottom: 0; }
+
 
 .plantListGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1.5rem;
 }
+.plantCardWrapper { position: relative; }
+.favoriteBtn { position: absolute; z-index: 3; top: 14px; left: 14px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-muted); cursor: pointer; box-shadow: 0 3px 10px rgba(20,40,25,.1); }
+.favoriteBtn:hover, .favoriteActive { color: #d94f63; }
 
 .plantCard {
   background: var(--glass-bg);
@@ -599,6 +609,7 @@
 .plantInfo { margin-bottom: 1.2rem; }
 .plantName { font-weight: 600; font-size: 1.15rem; margin-bottom: 0.2rem; color: var(--text-primary); }
 .plantSpecies { font-size: 0.85rem; color: var(--text-muted); }
+.plantAge { margin-top: .35rem; font-size: .76rem; color: var(--primary-green); font-weight: 600; }
 
 .plantStatus {
   background: var(--bg-tertiary);

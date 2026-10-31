@@ -9,7 +9,7 @@ import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
 import styles from './Plant.module.css';
 import WeatherCard from '@/components/WeatherCard';
-import { Droplets, ScanLine, Globe, Sun, CalendarDays, Check } from 'lucide-react';
+import { Droplets, ScanLine, Globe, Sun, CalendarDays, Check, FlaskConical } from 'lucide-react';
 
 function PlantDetailsInner() {
   const searchParams = useSearchParams();
@@ -35,6 +35,12 @@ function PlantDetailsInner() {
   const [now, setNow] = useState(() => Date.now());
   const [watering, setWatering] = useState(false);
   const [waterMessage, setWaterMessage] = useState('');
+  const [careEvents, setCareEvents] = useState<any[]>([]);
+  const [fertilizerNote, setFertilizerNote] = useState('');
+  const [fertilizerMessage, setFertilizerMessage] = useState('');
+  const [savingFertilizer, setSavingFertilizer] = useState(false);
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [purchaseMessage, setPurchaseMessage] = useState('');
   
   // AI Scanner States
   const [scans, setScans] = useState<any[]>([]);
@@ -56,10 +62,11 @@ function PlantDetailsInner() {
 
     authFetch(`get_plant_details.php?id=${plantId}`)
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setPlant(data.plant); })
+      .then(data => { if(data.status === "success") { setPlant(data.plant); setPurchaseDate(data.plant.purchased_on || ''); } })
       .finally(() => setIsLoading(false));
 
     fetchScans();
+    fetchCareEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plantId]);
 
@@ -67,6 +74,13 @@ function PlantDetailsInner() {
     authFetch(`get_plant_scans.php?plant_id=${plantId}`)
       .then(res => res.json())
       .then(data => { if(data.status === "success") setScans(data.scans); });
+  }
+
+  function fetchCareEvents() {
+    authFetch(`get_plant_care.php?plant_id=${plantId}`)
+      .then(res => res.json())
+      .then(data => { if (data.status === 'success') setCareEvents(data.events); })
+      .catch(() => {});
   }
 
   const startCamera = async () => {
@@ -139,13 +153,39 @@ function PlantDetailsInner() {
       if (data.status === 'success') {
         setNow(Date.now());
         setPlant((previous: any) => ({ ...previous, last_watered: new Date().toISOString() }));
+        fetchCareEvents();
         setWaterMessage('Watering logged. Your plant says thanks!');
         window.dispatchEvent(new Event('pnapana:rewards'));
       } else setWaterMessage(data.message || 'Could not log watering. Please try again.');
     } catch { setWaterMessage('Could not log watering. Please try again.'); }
     finally { setWatering(false); }
   };
+  const savePurchaseDate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setPurchaseMessage('');
+    try {
+      const response = await authFetch('update_plant_profile.php', { method: 'POST', body: JSON.stringify({ id: plantId, purchased_on: purchaseDate }) });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setPlant((previous: any) => ({ ...previous, purchased_on: data.purchased_on }));
+        setPurchaseMessage('Purchase date saved.');
+      } else setPurchaseMessage(data.message || 'Could not save purchase date.');
+    } catch { setPurchaseMessage('Could not save purchase date.'); }
+  };
+  const logFertilizer = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSavingFertilizer(true);
+    setFertilizerMessage('');
+    try {
+      const response = await authFetch('log_fertilizer.php', { method: 'POST', body: JSON.stringify({ plant_id: plantId, details: fertilizerNote }) });
+      const data = await response.json();
+      if (data.status === 'success') { setFertilizerNote(''); setFertilizerMessage('Fertilizer application logged.'); fetchCareEvents(); }
+      else setFertilizerMessage(data.message || 'Could not save fertilizer entry.');
+    } catch { setFertilizerMessage('Could not save fertilizer entry.'); }
+    finally { setSavingFertilizer(false); }
+  };
   const daysSinceWatering = plant.last_watered ? Math.max(0, Math.floor((now - new Date(plant.last_watered.replace(' ', 'T')).getTime()) / 86400000)) : null;
+  const plantAge = plant.purchased_on ? describePlantAge(plant.purchased_on) : '';
 
   if (!hasUser || isLoading) return <Loader fullScreen label={t('common.loading')} />;
 
@@ -184,6 +224,12 @@ function PlantDetailsInner() {
           <div><span><CalendarDays size={14} />Water every</span><strong>{plant.water_freq || 7} days</strong></div>
           <div><span><Sun size={14} />Light</span><strong>{plant.light_req || 'See care plan'}</strong></div>
         </div>
+        <form className={styles.purchaseDateForm} onSubmit={savePurchaseDate}>
+          <label htmlFor="purchase-date">Purchase date <input id="purchase-date" type="date" max={localDateInputValue()} value={purchaseDate} onChange={event => setPurchaseDate(event.target.value)} /></label>
+          <button type="submit">Save date</button>
+          {plantAge && <span>Plant age: <strong>{plantAge}</strong></span>}
+          {purchaseMessage && <small role="status">{purchaseMessage}</small>}
+        </form>
         <div className={styles.plantActions}>
           <button onClick={waterPlant} disabled={watering}><Droplets size={19} />{watering ? 'Saving…' : 'Water it'}</button>
           <button onClick={() => { setActiveTab('AI Scan'); requestAnimationFrame(() => document.getElementById('plant-care')?.scrollIntoView({ behavior: 'smooth' })); }}><ScanLine size={20} />Scan</button>
@@ -288,10 +334,11 @@ function PlantDetailsInner() {
           {activeTab === 'Care' && (() => {
             let cp: any = null;
             try { cp = plant.care_plan ? JSON.parse(plant.care_plan) : null; } catch { cp = null; }
-            if (!cp) {
-              return <p>{t('plant.noCarePlan')}</p>;
-            }
+            const hasCarePlan = !!cp;
+            cp = cp || {};
             return (
+              <>
+              {!hasCarePlan && <p>{t('plant.noCarePlan')}</p>}
               <motion.div
                 className={styles.carePlanList}
                 variants={staggerContainer}
@@ -355,6 +402,19 @@ function PlantDetailsInner() {
                   </motion.div>
                 )}
               </motion.div>
+              <section className={styles.journalSection} aria-labelledby="fertilizer-journal-title">
+                <h3 id="fertilizer-journal-title"><FlaskConical size={19} /> Log fertilizer</h3>
+                <form onSubmit={logFertilizer} className={styles.fertilizerForm}>
+                  <input maxLength={500} value={fertilizerNote} onChange={event => setFertilizerNote(event.target.value)} placeholder="Fertilizer type or notes (optional)" aria-label="Fertilizer type or notes" />
+                  <button type="submit" disabled={savingFertilizer}>{savingFertilizer ? 'Saving…' : 'Log application'}</button>
+                </form>
+                {fertilizerMessage && <p role="status">{fertilizerMessage}</p>}
+              </section>
+              <section className={styles.journalSection} aria-labelledby="care-history-title">
+                <h3 id="care-history-title">Care history</h3>
+                {careEvents.length === 0 ? <p>No watering or fertilizer history yet.</p> : <ul className={styles.careHistoryList}>{careEvents.map(item => <li key={item.id}><span className={styles.historyIcon}>{item.event_type === 'water' ? <Droplets size={17} /> : <FlaskConical size={17} />}</span><div><strong>{item.event_type === 'water' ? 'Watered' : 'Fertilized'}</strong>{item.details && <p>{item.details}</p>}</div><time>{new Date(String(item.created_at).replace(' ', 'T')).toLocaleString()}</time></li>)}</ul>}
+              </section>
+              </>
             );
           })()}
 
@@ -371,4 +431,22 @@ export default function PlantDetails() {
       <PlantDetailsInner />
     </Suspense>
   );
+}
+
+function describePlantAge(date: string) {
+  const start = new Date(`${date}T00:00:00`);
+  if (!Number.isFinite(start.getTime())) return '';
+  const today = new Date();
+  let months = (today.getFullYear() - start.getFullYear()) * 12 + today.getMonth() - start.getMonth();
+  if (today.getDate() < start.getDate()) months--;
+  months = Math.max(0, months);
+  if (months < 1) return 'under 1 month';
+  const years = Math.floor(months / 12);
+  const remainder = months % 12;
+  return [years ? `${years} ${years === 1 ? 'year' : 'years'}` : '', remainder ? `${remainder} ${remainder === 1 ? 'month' : 'months'}` : ''].filter(Boolean).join(' ');
+}
+
+function localDateInputValue() {
+  const date = new Date();
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }

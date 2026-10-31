@@ -19,6 +19,13 @@ if (!isset($data['id'])) {
 $plant_id = $data['id'];
 
 try {
+    $ownerStmt = $pdo->prepare("SELECT id FROM plants WHERE id = ? AND user_id = ?");
+    $ownerStmt->execute([$plant_id, $user_id]);
+    if (!$ownerStmt->fetch()) {
+        http_response_code(404);
+        echo json_encode(["status" => "error", "message" => "Plant not found."]);
+        exit();
+    }
     $stmt = $pdo->prepare("UPDATE plants SET last_watered = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
     $stmt->execute([$plant_id, $user_id]);
 

@@ -3,7 +3,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight, Globe, Sun } from 'lucide-react';
+import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight, Globe, Sun, Heart } from 'lucide-react';
 import WeatherCard from '@/components/WeatherCard';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
@@ -25,12 +25,12 @@ export default function Home() {
     name: string, species: string, image_url: string,
     native_region: string, light_requirement: string, water_requirement: string,
     humidity: string, pet_friendly: boolean,
-    water_freq: number, light_req: string, care_plan: any
+    water_freq: number, light_req: string, care_plan: any, purchased_on: string
   }>({
     name: '', species: '', image_url: '',
     native_region: '', light_requirement: '', water_requirement: '',
     humidity: '', pet_friendly: false,
-    water_freq: 7, light_req: 'Medium', care_plan: null
+    water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: ''
   });
   const [isAdding, setIsAdding] = useState(false);
   
@@ -49,6 +49,7 @@ export default function Home() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFavorites, setShowFavorites] = useState(false);
   const [carePlantId, setCarePlantId] = useState<number | null>(null);
   const carePlant = plants.find(plant => Number(plant.id) === carePlantId) || plants[0] || null;
   
@@ -147,7 +148,7 @@ export default function Home() {
           name: '', species: '', image_url: '',
           native_region: '', light_requirement: '', water_requirement: '',
           humidity: '', pet_friendly: false,
-          water_freq: 7, light_req: 'Medium', care_plan: null
+          water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: ''
         });
         fetchPlants(user.id);
       } else {
@@ -337,10 +338,20 @@ export default function Home() {
     }
   };
 
+  const toggleFavorite = async (id: number, favorite: boolean) => {
+    setPlants(current => current.map(plant => Number(plant.id) === id ? { ...plant, is_favorite: favorite ? 1 : 0 } : plant));
+    try {
+      const response = await authFetch('toggle_favorite.php', { method: 'POST', body: JSON.stringify({ id, is_favorite: favorite }) });
+      const data = await response.json();
+      if (data.status !== 'success') fetchPlants(user!.id);
+    } catch { fetchPlants(user!.id); }
+  };
+
   const filteredPlants = useMemo(() => {
-    if (!searchQuery) return plants;
-    return plants.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.species.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [plants, searchQuery]);
+    const collection = showFavorites ? plants.filter(p => Number(p.is_favorite) === 1) : plants;
+    if (!searchQuery) return collection;
+    return collection.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.species.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [plants, searchQuery, showFavorites]);
 
   const thirstyPlantsList = plants.filter(p => thirstyPlants.includes(Number(p.id)));
   const needsAttentionCount = plants.filter(p => thirstyPlants.includes(Number(p.id)) || p.status_color === 'orange').length;
@@ -392,6 +403,10 @@ export default function Home() {
                   </button>
                 </label>
                 <input type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
+              </div>
+              <div className={styles.inputGroup}>
+                <label htmlFor="plant-purchased-on">Purchase date <span style={{color:'var(--text-muted)'}}>(optional)</span></label>
+                <input id="plant-purchased-on" type="date" max={localDateInputValue()} value={newPlant.purchased_on} onChange={e => setNewPlant({...newPlant, purchased_on: e.target.value})} />
               </div>
 
               {isIdentifying && (
@@ -691,6 +706,11 @@ export default function Home() {
         </div>
 
         {plants.length > 0 && (
+          <div className={styles.collectionTools}>
+          <div className={styles.collectionFilters} role="group" aria-label="Filter plant collection">
+            <button type="button" className={!showFavorites ? styles.collectionFilterActive : ''} onClick={() => setShowFavorites(false)}>All plants <span>{plants.length}</span></button>
+            <button type="button" className={showFavorites ? styles.collectionFilterActive : ''} onClick={() => setShowFavorites(true)}><Heart size={15} /> Favorites <span>{plants.filter(p => Number(p.is_favorite) === 1).length}</span></button>
+          </div>
           <div className={styles.searchBar}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input
@@ -699,6 +719,7 @@ export default function Home() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
           </div>
         )}
 
@@ -714,7 +735,7 @@ export default function Home() {
             </button>
           </div>
         ) : filteredPlants.length === 0 ? (
-          <div className={styles.emptySearch}>{t('dashboard.noPlantsFound', { query: searchQuery })}</div>
+          <div className={styles.emptySearch}>{showFavorites && !searchQuery ? 'No favorites yet. Tap the heart on a plant to save it here.' : t('dashboard.noPlantsFound', { query: searchQuery })}</div>
         ) : (
           <motion.div 
             className={styles.plantListGrid}
@@ -732,6 +753,9 @@ export default function Home() {
                     key={plant.id}
                     className={`${styles.plantCardWrapper}`}
                   >
+                    <button className={`${styles.favoriteBtn} ${Number(plant.is_favorite) === 1 ? styles.favoriteActive : ''}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(Number(plant.id), Number(plant.is_favorite) !== 1); }} aria-label={Number(plant.is_favorite) === 1 ? `Remove ${plant.name} from favorites` : `Add ${plant.name} to favorites`} title="Favorite plant">
+                      <Heart size={17} fill={Number(plant.is_favorite) === 1 ? 'currentColor' : 'none'} />
+                    </button>
                     <Link href={`/plant?id=${plant.id}`} className={`${styles.plantCard} ${isThirsty ? styles.thirstyCard : ''}`}>
                       <button
                         className={styles.removeBtn}
@@ -747,6 +771,7 @@ export default function Home() {
                       <div className={styles.plantInfo}>
                         <div className={styles.plantName}>{plant.name}</div>
                         <div className={styles.plantSpecies}>{plant.species}</div>
+                        {plant.purchased_on && <div className={styles.plantAge}>Age · {formatPlantAge(plant.purchased_on)}</div>}
                       </div>
                       <div className={styles.plantStatus}>
                         <div className={`${styles.statusDot} ${styles[isThirsty ? 'blue' : plant.status_color || 'green']}`}></div>
@@ -779,4 +804,22 @@ export default function Home() {
 
     </div>
   );
+}
+
+function formatPlantAge(date: string) {
+  const start = new Date(`${date}T00:00:00`);
+  if (!Number.isFinite(start.getTime())) return '';
+  const today = new Date();
+  let months = (today.getFullYear() - start.getFullYear()) * 12 + today.getMonth() - start.getMonth();
+  if (today.getDate() < start.getDate()) months--;
+  months = Math.max(0, months);
+  if (months < 1) return 'under 1 month';
+  const years = Math.floor(months / 12);
+  const remainder = months % 12;
+  return [years ? `${years}y` : '', remainder ? `${remainder}mo` : ''].filter(Boolean).join(' ');
+}
+
+function localDateInputValue() {
+  const date = new Date();
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
