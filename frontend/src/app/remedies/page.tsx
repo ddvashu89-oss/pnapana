@@ -2,12 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Sprout, ShieldCheck, Droplets, Scissors, Bug, Leaf, ExternalLink } from 'lucide-react';
+import { Search, Sprout, ShieldCheck, Droplets, Scissors, Bug, Leaf, ExternalLink, type LucideIcon } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import WeatherCard from '@/components/WeatherCard';
+import { authFetch } from '@/lib/api';
 import styles from './Remedies.module.css';
 
-const remedies = [
+type Remedy = { icon: LucideIcon; issue: string; issueHi?: string; method: string; methodHi?: string; source?: string; sourceLabel?: string; sourceLabelHi?: string };
+type PlantIssue = { issue: string; solution: string };
+
+const remedies: Remedy[] = [
   {
     icon: Droplets,
     issue: 'Aphids or spider mites',
@@ -65,21 +70,55 @@ export default function HomeRemedies() {
   const { language } = useLanguage();
   const [ready, setReady] = useState(false);
   const [query, setQuery] = useState('');
+  const [plants, setPlants] = useState<any[]>([]);
+  const [selectedPlantId, setSelectedPlantId] = useState('');
   const hi = language === 'hi';
+
+  const selectedPlant = plants.find(plant => String(plant.id) === selectedPlantId) || null;
+  const plantRemedies = useMemo<PlantIssue[]>(() => {
+    if (!selectedPlant?.care_plan) return [];
+    try {
+      const plan = typeof selectedPlant.care_plan === 'string' ? JSON.parse(selectedPlant.care_plan) : selectedPlant.care_plan;
+      return Array.isArray(plan?.common_issues)
+        ? plan.common_issues.filter((item: any) => typeof item?.issue === 'string' && typeof item?.solution === 'string')
+        : [];
+    } catch { return []; }
+  }, [selectedPlant]);
 
   useEffect(() => {
     if (!localStorage.getItem('user')) {
       router.push('/login');
       return;
     }
-    setReady(true);
+    const params = new URLSearchParams(window.location.search);
+    setSelectedPlantId(params.get('plant_id') || '');
+    authFetch('get_plants.php')
+      .then(response => response.json())
+      .then(data => { if (data.status === 'success' && Array.isArray(data.plants)) setPlants(data.plants); })
+      .catch(() => {})
+      .finally(() => setReady(true));
   }, [router]);
 
-  const visibleRemedies = useMemo(() => {
+  const visibleRemedies = useMemo<Remedy[]>(() => {
     const search = query.trim().toLocaleLowerCase();
-    if (!search) return remedies;
-    return remedies.filter(item => `${item.issue} ${item.issueHi} ${item.method} ${item.methodHi}`.toLocaleLowerCase().includes(search));
-  }, [query]);
+    const items: Remedy[] = selectedPlant ? plantRemedies.map(item => ({
+      icon: ShieldCheck,
+      issue: item.issue,
+      method: item.solution,
+      source: '',
+      sourceLabel: '',
+    })) : remedies;
+    if (!search) return items;
+    return items.filter(item => `${item.issue} ${item.issueHi || ''} ${item.method} ${item.methodHi || ''}`.toLocaleLowerCase().includes(search));
+  }, [plantRemedies, query, selectedPlant]);
+
+  const choosePlant = (id: string) => {
+    setSelectedPlantId(id);
+    const params = new URLSearchParams(window.location.search);
+    if (id) params.set('plant_id', id);
+    else params.delete('plant_id');
+    router.replace(`/remedies${params.size ? `?${params.toString()}` : ''}`, { scroll: false });
+  };
 
   if (!ready) return <Loader fullScreen label={hi ? 'लोड हो रहा है…' : 'Loading home remedies…'} />;
 
@@ -89,6 +128,20 @@ export default function HomeRemedies() {
       <h1>{hi ? 'पौधों के घरेलू उपाय' : 'Home Remedies'}</h1>
       <p>{hi ? 'आम पौधों की समस्याओं के लिए आसान घरेलू तरीके।' : 'Practical, low-risk ways to help with common houseplant problems.'}</p>
     </header>
+
+    <section className={styles.plantPicker} aria-label={hi ? 'पौधा चुनें' : 'Choose a plant'}>
+      <label htmlFor="remedy-plant">{hi ? 'व्यक्तिगत उपाय के लिए पौधा' : 'Remedies for your plant'}</label>
+      <select id="remedy-plant" value={selectedPlantId} onChange={event => choosePlant(event.target.value)}>
+        <option value="">{hi ? 'सभी पौधों के सामान्य उपाय' : 'General plant remedies'}</option>
+        {plants.map(plant => <option key={plant.id} value={plant.id}>{plant.name} · {plant.species}</option>)}
+      </select>
+      {selectedPlant && <p>{hi ? 'उपाय इस पौधे की सेव की गई देखभाल जानकारी से लिए गए हैं।' : `Showing recommendations saved for ${selectedPlant.name} (${selectedPlant.species}).`}</p>}
+    </section>
+
+    {selectedPlant && <div className={styles.weatherSection}>
+      <h2>{hi ? 'आज के मौसम के अनुसार देखभाल' : `Care for ${selectedPlant.name} in today’s weather`}</h2>
+      <WeatherCard plant={selectedPlant} />
+    </div>}
 
     <aside className={styles.safetyNote}>
       <span><ShieldCheck size={19} /></span>
@@ -101,16 +154,16 @@ export default function HomeRemedies() {
     </label>
 
     <section className={styles.results} aria-live="polite">
-      <div className={styles.resultsHeader}><h2>{hi ? 'घरेलू उपाय' : 'At-home remedies'}</h2><span>{visibleRemedies.length}</span></div>
+      <div className={styles.resultsHeader}><h2>{selectedPlant ? (hi ? `${selectedPlant.name} के लिए उपाय` : `Remedies for ${selectedPlant.name}`) : (hi ? 'घरेलू उपाय' : 'At-home remedies')}</h2><span>{visibleRemedies.length}</span></div>
       {visibleRemedies.length ? <div className={styles.grid}>{visibleRemedies.map(item => {
         const Icon = item.icon;
         return <article key={item.issue} className={styles.card}>
           <span className={styles.cardIcon}><Icon size={20} /></span>
-          <h3>{hi ? item.issueHi : item.issue}</h3>
-          <p>{hi ? item.methodHi : item.method}</p>
-          <a href={item.source} target="_blank" rel="noreferrer">{hi ? item.sourceLabelHi : item.sourceLabel}<ExternalLink size={14} aria-hidden="true" /></a>
+          <h3>{hi && item.issueHi ? item.issueHi : item.issue}</h3>
+          <p>{hi && item.methodHi ? item.methodHi : item.method}</p>
+          {item.source && <a href={item.source} target="_blank" rel="noreferrer">{hi ? item.sourceLabelHi : item.sourceLabel}<ExternalLink size={14} aria-hidden="true" /></a>}
         </article>;
-      })}</div> : <div className={styles.empty}><Sprout size={26} /><strong>{hi ? 'कोई उपाय नहीं मिला' : 'No home remedies found'}</strong><p>{hi ? 'दूसरा लक्षण खोजकर देखें।' : 'Try a different symptom or pest name.'}</p></div>}
+      })}</div> : <div className={styles.empty}><Sprout size={26} /><strong>{selectedPlant ? (hi ? 'इस पौधे के लिए अभी कोई उपाय नहीं है' : 'No plant-specific remedies saved yet') : (hi ? 'कोई उपाय नहीं मिला' : 'No home remedies found')}</strong><p>{selectedPlant ? (hi ? 'इस पौधे का स्कैन करें ताकि इसकी समस्याओं के अनुसार सलाह मिल सके।' : 'Run a plant health scan to get advice for its detected issues.') : (hi ? 'दूसरा लक्षण खोजकर देखें।' : 'Try a different symptom or pest name.')}</p>{selectedPlant && <button type="button" onClick={() => router.push(`/plant?id=${selectedPlant.id}&tab=scan`)}>{hi ? 'पौधे का स्कैन करें' : 'Scan this plant'}</button>}</div>}
     </section>
   </main>;
 }

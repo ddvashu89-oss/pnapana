@@ -3,6 +3,12 @@
 .eyebrow { color: var(--primary-green); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
 .header h1 { margin: 7px 0 6px; font: 600 clamp(30px,4vw,40px)/1.15 var(--font-sans); letter-spacing: -.04em; }
 .header p { margin: 0; color: var(--text-secondary); font-size: 15px; line-height: 1.55; }
+.plantPicker { display: grid; gap: 8px; margin: 20px 0; padding: 16px; border: 1px solid var(--border-color); border-radius: 16px; background: var(--bg-secondary); }
+.plantPicker label { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.plantPicker select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: 11px; background: var(--bg-primary); color: var(--text-primary); font: inherit; }
+.plantPicker p { margin: 2px 0 0; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+.weatherSection { margin: 22px 0; }
+.weatherSection h2 { margin: 0 0 12px; font: 600 19px/1.35 var(--font-sans); }
 .safetyNote { display: flex; align-items: flex-start; gap: 11px; padding: 13px 15px; border: 1px solid #e2e8d5; border-radius: 14px; background: #f5f7ee; }
 .safetyNote > span { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 10px; color: #416d48; background: #e7eedc; }
 .safetyNote p { margin: 1px 0 0; color: #53624f; font-size: 12px; line-height: 1.55; }
@@ -23,4 +29,5 @@
 .empty svg { color: var(--primary-green); }
 .empty strong { color: var(--text-primary); }
 .empty p { margin: 0; font-size: 13px; }
+.empty button { margin-top: 8px; min-height: 42px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--primary-green); color: var(--on-accent); font: inherit; font-weight: 650; cursor: pointer; }
 @media (max-width: 680px) { .container { padding: 24px 16px 110px; } .grid { grid-template-columns: 1fr; } .card { min-height: 0; } }

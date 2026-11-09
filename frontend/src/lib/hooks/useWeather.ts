@@ -17,23 +17,19 @@ export type Weather = {
 };
 
 type Coordinates = { lat: number; lon: number; location: string };
-type VisualCrossingResponse = {
-  resolvedAddress?: string;
-  currentConditions?: {
-    datetime?: string;
-    temp?: number;
-    feelslike?: number;
-    humidity?: number;
-    conditions?: string;
-    icon?: string;
-    cloudcover?: number;
-    solarradiation?: number;
+type OpenMeteoResponse = {
+  current?: {
+    time?: string;
+    temperature_2m?: number;
+    apparent_temperature?: number;
+    relative_humidity_2m?: number;
+    weather_code?: number;
+    cloud_cover?: number;
+    is_day?: number;
+    shortwave_radiation?: number;
   };
-  days?: Array<{
-    sunrise?: string;
-    sunset?: string;
-    hours?: Array<{ solarradiation?: number }>;
-  }>;
+  hourly?: { shortwave_radiation?: Array<number | null> };
+  daily?: { sunrise?: string[]; sunset?: string[] };
   timezone?: string;
 };
 
@@ -41,7 +37,6 @@ let cachedWeather: { key: string; value: Weather; expiresAt: number } | null = n
 let pendingWeather: { key: string; promise: Promise<Weather> } | null = null;
 
 function locationKey({ lat, lon }: Coordinates) {
-  // Geolocation can shift by a few metres between cards; this keeps requests shared.
   return `${lat.toFixed(2)},${lon.toFixed(2)}`;
 }
 
@@ -60,10 +55,23 @@ function isDayAtLocation(timezone?: string | null, sunrise?: string | null, suns
       ? new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date())
       : null;
     localMinutes = clockMinutes(localTime);
-  } catch { /* Use the weather observation's day/night flag if the zone is invalid. */ }
+  } catch { /* Fall back to the API's current day/night flag if the zone is invalid. */ }
   return localMinutes !== null && rise !== null && set !== null
     ? localMinutes >= rise && localMinutes < set
     : fallback;
+}
+
+function describeWmoCode(code: number) {
+  if (code === 0) return { condition: 'Clear sky', icon: 'clear' };
+  if (code === 1) return { condition: 'Mainly clear', icon: 'partly-cloudy' };
+  if (code === 2) return { condition: 'Partly cloudy', icon: 'partly-cloudy' };
+  if (code === 3) return { condition: 'Overcast', icon: 'cloudy' };
+  if (code === 45 || code === 48) return { condition: 'Fog', icon: 'fog' };
+  if ([51, 53, 55, 56, 57].includes(code)) return { condition: 'Drizzle', icon: 'rain' };
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { condition: 'Rain', icon: 'rain' };
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return { condition: 'Snow', icon: 'snow' };
+  if ([95, 96, 99].includes(code)) return { condition: 'Thunderstorm', icon: 'thunder' };
+  return { condition: 'Conditions unavailable', icon: 'cloudy' };
 }
 
 async function fetchWeather(position: Coordinates, force = false): Promise<Weather> {
@@ -71,40 +79,41 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
   if (pendingWeather?.key === key) return pendingWeather.promise;
   if (!force && cachedWeather?.key === key && cachedWeather.expiresAt > Date.now()) return cachedWeather.value;
 
-  const params = new URLSearchParams({
-    unitGroup: 'metric',
-    include: 'current,days,hours',
-    elements: 'datetime,temp,feelslike,humidity,conditions,icon,cloudcover,solarradiation,sunrise,sunset',
-    contentType: 'json',
-  });
-  const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${position.lat},${position.lon}/today?${params}`;
+  const url = new URL('https://api.open-meteo.com/v1/forecast');
+  url.search = new URLSearchParams({
+    latitude: String(position.lat),
+    longitude: String(position.lon),
+    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,cloud_cover,is_day,shortwave_radiation',
+    hourly: 'shortwave_radiation',
+    daily: 'sunrise,sunset',
+    forecast_days: '1',
+    timezone: 'auto',
+  }).toString();
+
   const promise = (async () => {
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) throw new Error('Weather unavailable');
-    const data: VisualCrossingResponse = await response.json();
-    const current = data.currentConditions;
-    if (typeof current?.temp !== 'number' || typeof current.humidity !== 'number') throw new Error('Weather unavailable');
+    const data: OpenMeteoResponse = await response.json();
+    const current = data.current;
+    if (typeof current?.temperature_2m !== 'number' || typeof current.relative_humidity_2m !== 'number') {
+      throw new Error('Weather unavailable');
+    }
 
-    const hourlySolar = data.days?.flatMap(day => day.hours || [])
-      .map(hour => hour.solarradiation)
-      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value)) || [];
-    const currentSolar = current.solarradiation;
-    const solarPeak = hourlySolar.length
-      ? Math.max(...hourlySolar)
-      : typeof currentSolar === 'number' && Number.isFinite(currentSolar) ? currentSolar : null;
-    const icon = current.icon || 'cloudy';
-    const sunrise = data.days?.[0]?.sunrise || null;
-    const sunset = data.days?.[0]?.sunset || null;
-    const isDay = isDayAtLocation(data.timezone, sunrise, sunset,
-      typeof current.solarradiation === 'number' ? current.solarradiation > 0 : !icon.includes('night'));
+    const solarValues = data.hourly?.shortwave_radiation?.filter((value): value is number => typeof value === 'number' && Number.isFinite(value)) || [];
+    const solarPeak = solarValues.length ? Math.max(...solarValues) : typeof current.shortwave_radiation === 'number' ? current.shortwave_radiation : null;
+    const sunrise = data.daily?.sunrise?.[0] || null;
+    const sunset = data.daily?.sunset?.[0] || null;
+    const fallbackDay = current.is_day === 1;
+    const isDay = isDayAtLocation(data.timezone, sunrise, sunset, fallbackDay);
+    const weatherDescription = describeWmoCode(Number(current.weather_code));
 
     return {
-      temp: Math.round(current.temp),
-      feelsLike: typeof current.feelslike === 'number' ? Math.round(current.feelslike) : null,
-      humidity: current.humidity,
-      condition: current.conditions || 'Conditions unavailable',
-      icon,
-      cloud: typeof current.cloudcover === 'number' ? current.cloudcover : 0,
+      temp: Math.round(current.temperature_2m),
+      feelsLike: typeof current.apparent_temperature === 'number' ? Math.round(current.apparent_temperature) : null,
+      humidity: Math.round(current.relative_humidity_2m),
+      condition: weatherDescription.condition,
+      icon: weatherDescription.icon,
+      cloud: typeof current.cloud_cover === 'number' ? current.cloud_cover : 0,
       isDay,
       sunrise,
       sunset,
@@ -117,7 +126,7 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
   pendingWeather = { key, promise };
   try {
     const value = await promise;
-    cachedWeather = { key, value, expiresAt: Date.now() + 15 * 60 * 1000 };
+    cachedWeather = { key, value, expiresAt: Date.now() + 10 * 60 * 1000 };
     return value;
   } finally {
     if (pendingWeather?.promise === promise) pendingWeather = null;
@@ -131,19 +140,26 @@ export function describeWeather(condition: string) {
 export function useWeather() {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(async (force = false) => {
     setLoading(true);
-    setError(false);
+    setError(null);
     try {
-      const position = await new Promise<Coordinates>(resolve => {
-        const fallback = () => resolve({ lat: 12.9716, lon: 77.5946, location: 'Bengaluru · default location' });
-        if (!navigator.geolocation) return fallback();
-        navigator.geolocation.getCurrentPosition(p => resolve({ lat: p.coords.latitude, lon: p.coords.longitude, location: 'Your local weather' }), fallback, { timeout: 8000, maximumAge: 600000 });
+      const position = await new Promise<Coordinates>((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Location access is unavailable'));
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          current => resolve({ lat: current.coords.latitude, lon: current.coords.longitude, location: 'Your local weather' }),
+          () => reject(new Error('Allow location access to get local weather')),
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 },
+        );
       });
       setWeather(await fetchWeather(position, force));
-    } catch {
-      setError(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Weather unavailable');
+      setWeather(null);
     } finally {
       setLoading(false);
     }

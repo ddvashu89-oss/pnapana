@@ -31,7 +31,7 @@ function PlantDetailsInner() {
     pet_friendly: false
   });
 
-  const [activeTab, setActiveTab] = useState('Passport');
+  const [activeTab, setActiveTab] = useState('Care');
   const [now, setNow] = useState(() => Date.now());
   const [watering, setWatering] = useState(false);
   const [waterMessage, setWaterMessage] = useState('');
@@ -60,7 +60,7 @@ function PlantDetailsInner() {
       return;
     }
     setHasUser(true);
-    setActiveTab(searchParams.get('tab') === 'scan' ? 'AI Scan' : searchParams.get('tab') === 'care' ? 'Care' : 'Passport');
+    setActiveTab(searchParams.get('tab') === 'scan' ? 'AI Scan' : searchParams.get('tab') === 'passport' ? 'Passport' : 'Care');
 
     authFetch(`get_plant_details.php?id=${plantId}`)
       .then(res => res.json())
@@ -243,7 +243,10 @@ function PlantDetailsInner() {
         {waterMessage && <p className={styles.waterMessage} role="status"><Check size={16} />{waterMessage}</p>}
         <h2 className={styles.sectionTitle}>Adjusted for today’s weather</h2>
         <WeatherCard plant={plant} />
-        <h2 className={styles.sectionTitle}>Care plan</h2>
+        <div className={styles.sectionTitleRow}>
+          <h2 className={styles.sectionTitle}>Care plan for {plant.name}</h2>
+          <Link className={styles.remediesLink} href={`/remedies?plant_id=${encodeURIComponent(String(plant.id))}`}>Plant remedies <span aria-hidden="true">↗</span></Link>
+        </div>
         <div className={styles.tabContent}>
         <motion.div
           key={activeTab}
@@ -338,10 +341,16 @@ function PlantDetailsInner() {
           )}
           
           {activeTab === 'Care' && (() => {
-            let cp: any = null;
-            try { cp = plant.care_plan ? JSON.parse(plant.care_plan) : null; } catch { cp = null; }
-            const hasCarePlan = !!cp;
-            cp = cp || {};
+            let savedPlan: any = {};
+            try { savedPlan = typeof plant.care_plan === 'string' ? JSON.parse(plant.care_plan) || {} : plant.care_plan || {}; } catch { savedPlan = {}; }
+            const cp: any = {
+              ...savedPlan,
+              native_region: savedPlan.native_region || plant.native_region,
+              light: { ...(savedPlan.light || {}), level: savedPlan.light?.level || plant.light_req, detail: savedPlan.light?.detail || plant.light_requirement },
+              water: { ...(savedPlan.water || {}), frequency_days: savedPlan.water?.frequency_days || plant.water_freq, instructions: savedPlan.water?.instructions || plant.water_requirement },
+              common_issues: Array.isArray(savedPlan.common_issues) ? savedPlan.common_issues : [],
+            };
+            const hasCarePlan = [cp.native_region, cp.light.detail, cp.water.instructions, cp.humidity?.detail, cp.soil, cp.temperature, cp.fertilizing, cp.pruning].some(Boolean);
             return (
               <>
               {!hasCarePlan && <p>{t('plant.noCarePlan')}</p>}

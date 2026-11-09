@@ -5,8 +5,8 @@ import { useWeather, describeWeather } from '@/lib/hooks/useWeather';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import styles from './WeatherCard.module.css';
 
-type CarePlan = { temperature?: string; pruning?: string; light?: { level?: string }; water?: { frequency_days?: number } };
-type CarePlant = { water_freq?: number; last_watered?: string; light_req?: string; light_requirement?: string; water_requirement?: string; care_plan?: string | CarePlan };
+type CarePlan = { temperature?: string; pruning?: string; light?: { level?: string }; water?: { frequency_days?: number; instructions?: string }; common_issues?: Array<{ issue?: string; solution?: string }> };
+type CarePlant = { name?: string; species?: string; water_freq?: number; last_watered?: string; light_req?: string; light_requirement?: string; water_requirement?: string; care_plan?: string | CarePlan };
 
 export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const { weather, loading, error, refresh } = useWeather();
@@ -19,9 +19,9 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const lastWatered = plant?.last_watered ? new Date(plant.last_watered.replace(' ', 'T')).getTime() : NaN;
   const elapsed = Number.isFinite(lastWatered) ? Math.max(0, Math.floor((now - lastWatered) / 86400000)) : null;
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
-  const condition = weather ? describeWeather(weather.condition) : error ? 'Weather unavailable' : 'Checking the weather…';
+  const condition = weather ? describeWeather(weather.condition) : error || 'Checking the weather…';
   const icon = weather?.icon || '';
-  const weatherEmoji = !weather ? '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') ? '🌫️' : (icon.includes('clear') || icon.includes('sun')) && !weather.isDay ? '🌙' : icon.includes('clear') || icon.includes('sun') ? '☀️' : icon.includes('partly-cloudy') ? weather.isDay ? '🌤️' : '☁️🌙' : icon.includes('cloudy') ? '☁️' : weather.isDay ? '🌤️' : '🌙';
+  const weatherEmoji = !weather ? error ? '📍' : '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') ? '🌫️' : (icon.includes('clear') || icon.includes('sun')) && !weather.isDay ? '🌙' : icon.includes('clear') || icon.includes('sun') ? '☀️' : icon.includes('partly-cloudy') ? weather.isDay ? '🌤️' : '☁️🌙' : icon.includes('cloudy') ? '☁️' : weather.isDay ? '🌤️' : '🌙';
   const lightIndex = weather?.solarPeak === null || !weather
     ? null
     : weather.solarPeak >= 650
@@ -45,10 +45,26 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
       : lightIndex === 3
         ? 'High solar intensity is forecast outdoors. If this plant prefers indirect light, protect it from prolonged afternoon exposure.'
         : plant?.light_requirement || 'Today’s outdoor sunlight may be below its preferred range. Keep following its care plan.';
-  const range = plan.temperature?.match(/(-?\d+)\s*[-–]\s*(-?\d+)/);
-  const minTemp = range ? Number(range[1]) : null;
-  const maxTemp = range ? Number(range[2]) : null;
+  const celsiusRange = plan.temperature?.match(/(-?\d+)\s*°?\s*C\s*(?:to|[-–])\s*(-?\d+)\s*°?\s*C?/i)
+    || plan.temperature?.match(/(-?\d+)\s*[-–]\s*(-?\d+)\s*°\s*C/i);
+  const fahrenheitRange = plan.temperature?.match(/(-?\d+)\s*°?\s*F\s*(?:to|[-–])\s*(-?\d+)\s*°?\s*F?/i);
+  const genericRange = plan.temperature?.match(/(-?\d+)\s*[-–]\s*(-?\d+)/);
+  const minTemp = celsiusRange ? Number(celsiusRange[1]) : fahrenheitRange
+    ? Math.round((Number(fahrenheitRange[1]) - 32) * 5 / 9)
+    : genericRange ? Number(genericRange[1]) : null;
+  const maxTemp = celsiusRange ? Number(celsiusRange[2]) : fahrenheitRange
+    ? Math.round((Number(fahrenheitRange[2]) - 32) * 5 / 9)
+    : genericRange ? Number(genericRange[2]) : null;
   const growing = weather && minTemp !== null && maxTemp !== null ? weather.temp >= minTemp && weather.temp <= maxTemp : null;
+  const hotterThanPreferred = weather && maxTemp !== null && weather.temp > maxTemp;
+  const coolerThanPreferred = weather && minTemp !== null && weather.temp < minTemp;
+  const wateringAdvice = !weather
+    ? 'Check the soil before watering and follow this plant’s care plan.'
+    : hotterThanPreferred || weather.temp >= 33
+      ? `Warm conditions can dry ${plant?.name ? `${plant.name}’s` : 'the pot’s'} soil faster. Check it more often, but water only when the top layer is dry.`
+      : coolerThanPreferred || weather.temp < 15
+        ? 'Cool conditions can keep this plant’s soil wet longer. Check the soil before watering and avoid watering on the calendar alone.'
+        : plan.water?.instructions || 'Weather does not change this plant’s usual schedule. Finger-test the soil and water when the top inch is dry.';
   const temperaturePosition = weather ? Math.max(2, Math.min(96, weather.temp / 50 * 100)) : null;
   const tip = !weather ? 'Check the soil before watering and follow each plant’s care plan.' : !weather.isDay ? 'a calm evening. Keep to the usual care routine and water only if the soil is dry.' : weather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : weather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a good growing day. Normal watering, and let them have the morning light.';
 
@@ -75,7 +91,7 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
             <span className={styles.check}><Check size={24} /></span>
             <div><span>{hi ? 'आज पानी देना है?' : 'WATER TODAY?'}</span><div className={styles.verdictLine}><strong>{remaining === null ? 'Check the soil first' : remaining === 0 ? 'Time to check the soil' : 'No, leave it today'}</strong>{remaining !== null && remaining > 0 && <p>next in {remaining} {remaining === 1 ? 'day' : 'days'}</p>}</div></div>
           </div>
-          <div className={styles.advice}><span className={styles.adviceIcon}><Droplets size={20} /></span><div><h3>Water on the usual schedule</h3><p>{weather && weather.temp >= 33 ? 'Warm weather can dry pots faster. Finger-test the soil and water when the top inch is dry.' : weather && weather.temp < 15 ? 'Cool weather can keep the soil wet for longer. Finger-test it before watering.' : "Nothing in today's weather changes this one's watering. Finger-test the soil and water when the top inch is dry."}</p><small>Today that means every {frequency} days</small></div></div>
+          <div className={styles.advice}><span className={styles.adviceIcon}><Droplets size={20} /></span><div><h3>{hotterThanPreferred || (weather && weather.temp >= 33) ? 'Check this plant more often' : coolerThanPreferred || (weather && weather.temp < 15) ? 'Let the soil dry more slowly' : 'Water on this plant’s usual schedule'}</h3><p>{wateringAdvice}</p><small>Usual interval: every {frequency} days</small></div></div>
           <div className={styles.detail}>
             <h3><Sun size={18} /> Is the light right today?</h3>
             <div className={styles.lightScale} aria-label={`Estimated outdoor sunlight: ${light}`}>
@@ -96,7 +112,7 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
           </div>
         </>
       )}
-      <p className={styles.attribution}><a href="https://www.visualcrossing.com/" target="_blank" rel="noreferrer">Weather data: Visual Crossing</a>{plant && ' · Outdoor solar estimate; indoor light varies by placement.'}</p>
+      <p className={styles.attribution}><a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Weather data: Open-Meteo</a>{plant && ' · Outdoor solar estimate; indoor light varies by placement.'}</p>
     </section>
   );
 }
