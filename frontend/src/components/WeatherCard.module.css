@@ -10,6 +10,9 @@
 .weatherBased { color: #1e5973; font-size: 11px; white-space: nowrap; }
 .refresh { width: 25px; height: 34px; display: grid; place-items: center; color: #3788ac; flex-shrink: 0; }
 .fallbackLocation { display: block; font-size: 9px; color: #728d96; margin: 5px 0 -3px 40px; }
+.locationMeta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 6px 0 0 40px; color: #71827a; font-size: 10px; line-height: 1.4; }
+.locationMeta strong { color: #2d6844; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .35px; }
+.locationMeta time { color: #89938b; }
 .tip { display: flex; gap: 10px; border-top: 1px solid #e5edef; margin-top: 15px; padding-top: 13px; font-size: 14px; line-height: 1.6; }
 .tip > span { font-size: 19px; line-height: 1.5; flex-shrink: 0; }
 .tip strong { font-weight: 700; }
@@ -65,6 +68,7 @@
  .humidity { padding: 6px 8px; font-size: 11px; }
  .refresh { width: 23px; }
  .dailyCard .tip { font-size: 13px; line-height: 1.65; }
+ .locationMeta { margin-left: 36px; font-size: 9px; }
 }
 @media (max-width: 600px) {
  .verdict { padding: 15px; gap: 12px; }

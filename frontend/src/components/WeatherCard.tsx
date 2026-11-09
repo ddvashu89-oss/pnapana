@@ -21,7 +21,8 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
   const condition = weather ? describeWeather(weather.condition) : error || 'Checking the weather…';
   const icon = weather?.icon || '';
-  const weatherEmoji = !weather ? error ? '📍' : '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') ? '🌫️' : (icon.includes('clear') || icon.includes('sun')) && !weather.isDay ? '🌙' : icon.includes('clear') || icon.includes('sun') ? '☀️' : icon.includes('partly-cloudy') ? weather.isDay ? '🌤️' : '☁️🌙' : icon.includes('cloudy') ? '☁️' : weather.isDay ? '🌤️' : '🌙';
+  const weatherEmoji = !weather ? error ? '📍' : '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') || icon.includes('haze') ? '🌫️' : (icon.includes('clear') || icon.includes('sun')) && !weather.isDay ? '🌙' : icon.includes('clear') || icon.includes('sun') ? '☀️' : icon.includes('partly-cloudy') ? weather.isDay ? '🌤️' : '☁️🌙' : icon.includes('cloudy') ? '☁️' : weather.isDay ? '🌤️' : '🌙';
+  const humidityText = weather?.humidity === null || !weather ? '—' : `${weather.humidity}%`;
   const lightIndex = weather?.solarPeak === null || !weather
     ? null
     : weather.solarPeak >= 650
@@ -74,18 +75,24 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
         <span className={styles.weatherIcon} aria-hidden="true">{weatherEmoji}</span>
         <div className={styles.temperature}>
           <div className={styles.temperatureLine}><strong>{weather ? `${weather.temp}°C` : '—°C'}</strong>{!plant && weather?.feelsLike !== null && weather?.feelsLike !== undefined && <small>(Feels {weather.feelsLike}°C)</small>}</div>
-          <span>{condition}{plant && weather ? ` · ${weather.humidity}% Humidity` : ''}</span>
+          <span>{condition}{plant && weather ? ` · ${humidityText} Humidity` : ''}</span>
         </div>
         {plant ? <span className={styles.weatherBased}>Weather-based</span> : <span className={styles.humidity}><Droplets size={14} /> {weather ? weather.humidity : '—'}% {hi ? 'नमी' : 'Humidity'}</span>}
         <button className={styles.refresh} onClick={refresh} disabled={loading} aria-label={hi ? 'मौसम रिफ्रेश करें' : 'Refresh weather'} title={weather?.location || 'Refresh local weather'}><RefreshCw size={18} className={loading ? styles.spinning : ''} /></button>
       </div>
+      {weather && <div className={styles.locationMeta}>
+        <strong>{weather.source === 'station-observation' ? 'Station observation' : 'Forecast estimate'}</strong>
+        <span>{weather.location}</span>
+        {weather.stationDistanceKm !== null && <span>{weather.stationDistanceKm} km away</span>}
+        {weather.updatedAt && <time dateTime={weather.updatedAt}>Updated {formatUpdatedAt(weather.updatedAt)}</time>}
+      </div>}
       {weather?.location.includes('default') && <small className={styles.fallbackLocation}>{weather.location}</small>}
       {!plant ? (
-        <div className={styles.tip}><span aria-hidden="true">🌱</span><p><strong>{hi ? 'आज की देखभाल: ' : "Today's Weather Care Tip: "}</strong>{weather && <>{weather.temp} °C, {weather.humidity}% humidity — </>}{tip}</p></div>
+        <div className={styles.tip}><span aria-hidden="true">🌱</span><p><strong>{hi ? 'आज की देखभाल: ' : "Today's Weather Care Tip: "}</strong>{weather && <>{weather.temp} °C, {humidityText} humidity — </>}{tip}</p></div>
       ) : (
         <>
           <div className={styles.metrics}>
-            {[{ icon: '🌡️', label: 'Temp', value: weather ? `${weather.temp}°` : '—' }, { icon: '💧', label: 'Humidity', value: weather ? `${weather.humidity}%` : '—' }, { icon: '☀️', label: 'Sunlight', value: light }, { icon: '🌦️', label: 'Weather', value: weather ? condition : '—' }].map(({ icon, label, value }) => <div key={label}><span className={styles.metricIcon} aria-hidden="true">{icon}</span><span className={styles.metricLabel}>{label}</span><strong title={value}>{value}</strong></div>)}
+            {[{ icon: '🌡️', label: 'Temp', value: weather ? `${weather.temp}°` : '—' }, { icon: '💧', label: 'Humidity', value: humidityText }, { icon: '☀️', label: 'Sunlight', value: light }, { icon: '🌦️', label: 'Weather', value: weather ? condition : '—' }].map(({ icon, label, value }) => <div key={label}><span className={styles.metricIcon} aria-hidden="true">{icon}</span><span className={styles.metricLabel}>{label}</span><strong title={value}>{value}</strong></div>)}
           </div>
           <div className={styles.verdict}>
             <span className={styles.check}><Check size={24} /></span>
@@ -112,7 +119,13 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
           </div>
         </>
       )}
-      <p className={styles.attribution}><a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Weather data: Open-Meteo</a>{plant && ' · Outdoor solar estimate; indoor light varies by placement.'}</p>
+      <p className={styles.attribution}>{weather?.source === 'station-observation' ? <a href="https://aviationweather.gov/data/api/" target="_blank" rel="noreferrer">Current conditions: Aviation Weather Center station report</a> : <a href="https://open-meteo.com/en/docs" target="_blank" rel="noreferrer">Current conditions: Open-Meteo model estimate</a>}{plant && ' · Outdoor solar estimate; indoor light varies by placement.'}</p>
     </section>
   );
+}
+
+function formatUpdatedAt(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
 }
