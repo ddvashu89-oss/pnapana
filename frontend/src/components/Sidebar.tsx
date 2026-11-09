@@ -70,7 +70,6 @@ export default function Sidebar() {
           <span className={styles.navCaption}>{hi ? 'और जानें' : 'KEEP GROWING'}</span>
           <Link href="/care"><Droplets size={19} />{t('nav.care')}</Link>
           <Link href="/garden-manager"><Bot size={19} />Plant Manager</Link>
-          <Link href="/buddies"><Users size={19} />Plant Buddy</Link>
           <Link href="/vacation"><Plane size={19} />Vacation Mode</Link>
           <Link href="/rituals"><Sparkles size={19} />{t('nav.rituals')}</Link>
           <Link href="/explore"><Compass size={19} />{t('nav.explore')}</Link>

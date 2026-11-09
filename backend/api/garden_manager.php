@@ -56,10 +56,10 @@ foreach ($plants as &$plant) {
 }
 unset($plant);
 
-$vacationStmt = $pdo->prepare("SELECT vm.enabled, vm.starts_on, vm.ends_on, vm.buddy_id, vm.instructions, u.name AS buddy_name
-    FROM vacation_modes vm LEFT JOIN users u ON u.id = vm.buddy_id WHERE vm.user_id = ?");
+$vacationStmt = $pdo->prepare("SELECT vm.enabled, vm.starts_on, vm.ends_on, vm.instructions
+    FROM vacation_modes vm WHERE vm.user_id = ?");
 $vacationStmt->execute([$user['id']]);
-$vacation = $vacationStmt->fetch(PDO::FETCH_ASSOC) ?: ['enabled' => 0, 'starts_on' => null, 'ends_on' => null, 'buddy_id' => null, 'instructions' => null, 'buddy_name' => null];
+$vacation = $vacationStmt->fetch(PDO::FETCH_ASSOC) ?: ['enabled' => 0, 'starts_on' => null, 'ends_on' => null, 'instructions' => null];
 $vacation['enabled'] = (bool)$vacation['enabled'];
 $plan = get_active_plan($pdo, $user['id']);
 $canAskAi = !empty($user['is_admin']) || !empty($plan['ai_chat']);
