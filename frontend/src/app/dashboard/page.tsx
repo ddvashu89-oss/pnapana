@@ -381,44 +381,56 @@ export default function Home() {
         >
           <motion.div
             className={styles.modalContent}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-plant-title"
             onClick={e => e.stopPropagation()}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            <button type="button" className={styles.closeBtn} onClick={closeModal}>
+            <button type="button" className={styles.closeBtn} onClick={closeModal} aria-label="Close add plant form">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
-            <h2>{t('dashboard.modalAddTitle')}</h2>
-            <form onSubmit={handleAddPlant}>
-              <div className={styles.inputGroup}>
-                <label>{t('dashboard.plantNameLabel')}</label>
-                <input type="text" required value={newPlant.name} onChange={e => setNewPlant({...newPlant, name: e.target.value})} placeholder={t('dashboard.plantNamePlaceholder')} />
+            <div className={styles.addPlantHeading}>
+              <span className={styles.addPlantIcon}><Sprout size={21} /></span>
+              <div>
+                <span className={styles.addPlantEyebrow}>YOUR GARDEN</span>
+                <h2 id="add-plant-title">{t('dashboard.modalAddTitle')}</h2>
+                <p>Give your plant a name and a few care details.</p>
               </div>
-              <div className={styles.inputGroup}>
-                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{t('dashboard.speciesLabel')}</span>
-                  <button type="button" onClick={() => startCamera('identify')} className={styles.identifyBtn}>
-                    {t('dashboard.aiIdentify')}
-                  </button>
-                </label>
-                <input type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
-              </div>
-              <div className={styles.inputGroup}>
-                <label htmlFor="plant-purchased-on">Purchase date <span style={{color:'var(--text-muted)'}}>(optional)</span></label>
-                <input id="plant-purchased-on" type="date" max={localDateInputValue()} value={newPlant.purchased_on} onChange={e => setNewPlant({...newPlant, purchased_on: e.target.value})} />
-              </div>
-                <div className={styles.inputGroup}>
-                <label htmlFor="plant-placement">Where does it grow?</label>
-                <select id="plant-placement" value={newPlant.placement} onChange={e => setNewPlant({...newPlant, placement: e.target.value})}>
-                  <option value="">Not set</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option>
-                </select>
-              </div>
-              <div className={styles.inputGroup}>
-                <label htmlFor="plant-light-level">Light exposure</label>
-                <select id="plant-light-level" value={newPlant.light_req} onChange={e => setNewPlant({...newPlant, light_req: e.target.value})}>
-                  <option value="Medium">Not sure / medium</option><option value="Direct sun">Direct sun</option><option value="Full sun">Full sun</option><option value="Bright indirect">Bright, indirect light</option><option value="Low light">Low light</option>
-                </select>
+            </div>
+            <form onSubmit={handleAddPlant} className={styles.addPlantForm}>
+              <div className={styles.addPlantFields}>
+                <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
+                  <label htmlFor="plant-name">{t('dashboard.plantNameLabel')}</label>
+                  <input id="plant-name" type="text" required value={newPlant.name} onChange={e => setNewPlant({...newPlant, name: e.target.value})} placeholder={t('dashboard.plantNamePlaceholder')} />
+                </div>
+                <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
+                  <div className={styles.fieldLabelRow}>
+                    <label htmlFor="plant-species">{t('dashboard.speciesLabel')}</label>
+                    <button type="button" onClick={() => startCamera('identify')} className={styles.identifyBtn}>
+                      <ScanLine size={14} /> {t('dashboard.aiIdentify')}
+                    </button>
+                  </div>
+                  <input id="plant-species" type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
+                </div>
+                <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
+                  <label htmlFor="plant-purchased-on">Purchase date <span className={styles.optionalLabel}>Optional</span></label>
+                  <input id="plant-purchased-on" type="date" max={localDateInputValue()} value={newPlant.purchased_on} onChange={e => setNewPlant({...newPlant, purchased_on: e.target.value})} />
+                </div>
+                <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
+                  <label htmlFor="plant-placement">Where does it grow?</label>
+                  <select id="plant-placement" value={newPlant.placement} onChange={e => setNewPlant({...newPlant, placement: e.target.value})}>
+                    <option value="">Not set</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option>
+                  </select>
+                </div>
+                <div className={`${styles.inputGroup} ${styles.addPlantField} ${styles.addPlantFieldWide}`}>
+                  <label htmlFor="plant-light-level">Light exposure</label>
+                  <select id="plant-light-level" value={newPlant.light_req} onChange={e => setNewPlant({...newPlant, light_req: e.target.value})}>
+                    <option value="Medium">Not sure / medium</option><option value="Direct sun">Direct sun</option><option value="Full sun">Full sun</option><option value="Bright indirect">Bright, indirect light</option><option value="Low light">Low light</option>
+                  </select>
+                </div>
               </div>
 
               {isIdentifying && (
@@ -441,8 +453,11 @@ export default function Home() {
                 </div>
               )}
 
-              <div className={styles.inputGroup}>
-                <label>{t('dashboard.plantPhotoLabel')}</label>
+              <div className={`${styles.inputGroup} ${styles.photoField}`}>
+                <div className={styles.photoFieldHeading}>
+                  <span className={styles.photoFieldIcon}><ScanLine size={17} /></span>
+                  <div><label>{t('dashboard.plantPhotoLabel')}</label><small>Add a photo now or come back to it later.</small></div>
+                </div>
                 {isCapturing && cameraMode !== 'diagnose' ? (
                   <div>
                     <video ref={videoRef} autoPlay playsInline className={styles.cameraView} />
@@ -468,9 +483,12 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <button type="submit" className={styles.submitBtn} disabled={isAdding || isCapturing}>
-                {isAdding ? t('dashboard.adding') : t('dashboard.addPlant')}
-              </button>
+              <div className={styles.addPlantActions}>
+                <span>Name and species are required.</span>
+                <button type="submit" className={styles.submitBtn} disabled={isAdding || isCapturing}>
+                  {isAdding ? t('dashboard.adding') : <><Sprout size={17} /> {t('dashboard.addPlant')}</>}
+                </button>
+              </div>
             </form>
           </motion.div>
         </motion.div>

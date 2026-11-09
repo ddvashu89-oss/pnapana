@@ -896,6 +896,127 @@
  .happinessWidget { flex: initial; }
 }
 
+/* Add plant form */
+.modalContent:has(.addPlantHeading) {
+  width: min(100%, 680px);
+  max-height: min(90dvh, 850px);
+  padding: 30px 34px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(255, 255, 255, .88);
+  border-radius: 28px;
+  box-shadow: 0 28px 90px rgba(16, 39, 26, .24);
+}
+.modalContent:has(.addPlantHeading) .closeBtn {
+  top: 24px;
+  right: 24px;
+  width: 38px;
+  height: 38px;
+  background: #f3f6f0;
+  color: #647267;
+}
+.modalContent:has(.addPlantHeading) .closeBtn:hover { background: #e7efe6; color: #265f3c; }
+.addPlantHeading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 3px 48px 23px 0;
+  margin-bottom: 23px;
+  border-bottom: 1px solid #edf0e9;
+}
+.addPlantIcon, .photoFieldIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #326a45;
+  background: #e8f2e9;
+}
+.addPlantIcon { width: 52px; height: 52px; border-radius: 17px; }
+.addPlantEyebrow { display: block; margin-bottom: 4px; color: #78877b; font-size: 10px; font-weight: 700; letter-spacing: 1.7px; }
+.modalContent .addPlantHeading h2 { margin: 0; color: #1d3023; font-size: 25px; font-weight: 700; line-height: 1.2; letter-spacing: -.55px; }
+.addPlantHeading p { margin-top: 5px; color: #7a857c; font-size: 13px; line-height: 1.4; }
+.addPlantForm { display: flex; flex-direction: column; }
+.addPlantFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+.addPlantField { min-width: 0; margin-bottom: 17px; }
+.addPlantFieldWide { grid-column: 1 / -1; }
+.addPlantFields .inputGroup label, .photoFieldHeading label { margin-bottom: 7px; color: #46554a; font-size: 12px; font-weight: 700; }
+.fieldLabelRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+.fieldLabelRow label { margin: 0 !important; }
+.optionalLabel { margin-left: 6px; color: #98a198; font-size: 10px; font-weight: 500; }
+.addPlantFields .inputGroup input, .addPlantFields .inputGroup select {
+  min-height: 47px;
+  padding: 11px 13px;
+  border: 1px solid #e5eae2;
+  border-radius: 12px;
+  background: #fbfcfa;
+  color: #27382c;
+  font-size: 14px;
+  box-shadow: inset 0 1px 2px rgba(28, 49, 33, .025);
+}
+.addPlantFields .inputGroup input:focus, .addPlantFields .inputGroup select:focus { border-color: #7da788; background: #fff; box-shadow: 0 0 0 3px rgba(66, 126, 81, .11); }
+.identifyBtn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid #dceadd; border-radius: 9px; background: #f1f7f1; color: #326a45; font-size: 10px; white-space: nowrap; }
+.identifyBtn:hover { background: #e5f1e6; }
+.photoField { margin: 0 0 16px; padding: 15px; border: 1px solid #e8ede5; border-radius: 16px; background: #fafcf9; }
+.photoFieldHeading { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.photoFieldIcon { width: 34px; height: 34px; border-radius: 11px; }
+.photoFieldHeading label { display: block; margin: 0 0 2px; }
+.photoFieldHeading small { display: block; color: #89938b; font-size: 11px; }
+.photoField input[type="url"] { min-height: 43px; padding: 10px 12px !important; border: 1px solid #e5eae2; border-radius: 11px; background: white; font-size: 13px; }
+.photoField .cameraBtn { margin-top: 7px; padding: 10px; border: 1px solid #dbe7dc; border-radius: 11px; background: #f0f6f0; color: #346c46; font-size: 12px; }
+.photoField .cameraBtn:hover { background: #e7f1e7; }
+.photoField .imagePreview { height: 190px; margin: 0 0 8px; border: 1px solid #e5eae2; border-radius: 12px; }
+.addPlantActions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 -34px;
+  padding: 14px 34px max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid #edf0e9;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(12px);
+}
+.addPlantActions > span { color: #849087; font-size: 10px; line-height: 1.4; }
+.addPlantActions .submitBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-width: 158px;
+  padding: 12px 19px;
+  border-radius: 12px;
+  background: #28633e;
+  box-shadow: 0 6px 15px rgba(38, 95, 60, .18);
+  font-size: 13px;
+  font-weight: 700;
+}
+.addPlantActions .submitBtn:hover { transform: translateY(-1px); background: #205534; }
+.modalContent:has(.addPlantHeading) .identifyingState, .modalContent:has(.addPlantHeading) .plantInfoCard { border-radius: 12px; }
+@media (max-width: 600px) {
+  .modalOverlay:has(.addPlantHeading) { align-items: flex-end; padding: 0; }
+  .modalContent:has(.addPlantHeading) { align-self: end; width: calc(100% + 20px); max-height: 94dvh; padding: 23px 19px 0; border-radius: 24px 24px 0 0; }
+  .modalContent:has(.addPlantHeading) .closeBtn { top: 18px; right: 17px; width: 35px; height: 35px; }
+  .addPlantHeading { gap: 12px; padding: 0 42px 18px 0; margin-bottom: 18px; }
+  .addPlantIcon { width: 44px; height: 44px; border-radius: 14px; }
+  .modalContent .addPlantHeading h2 { font-size: 21px; }
+  .addPlantHeading p { font-size: 12px; }
+  .addPlantFields { column-gap: 11px; }
+  .addPlantField { margin-bottom: 13px; }
+  .addPlantFields .inputGroup input, .addPlantFields .inputGroup select { min-height: 44px; padding: 10px; font-size: 13px; }
+  .photoField { padding: 12px; margin-bottom: 13px; }
+  .addPlantActions { margin: 0 -19px; padding: 12px 19px max(14px, env(safe-area-inset-bottom)); }
+  .addPlantActions .submitBtn { min-width: 136px; padding: 11px 13px; }
+}
+@media (max-width: 380px) {
+  .addPlantFields { grid-template-columns: 1fr; }
+  .addPlantFieldWide { grid-column: auto; }
+  .addPlantActions > span { max-width: 115px; }
+}
+
 .plantCareForecast { margin: 24px 0 28px; }
 .plantCareHeader, .dashboardCarePlanHeader { display: flex; align-items: end; justify-content: space-between; gap: 14px; }
 .plantCareHeader { margin-bottom: 14px; }
