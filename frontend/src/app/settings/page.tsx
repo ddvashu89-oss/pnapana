@@ -14,6 +14,8 @@ interface UserData {
   name: string;
   email: string;
   token?: string;
+  has_gemini_api_key?: boolean;
+  gemini_api_key?: string;
 }
 
 export default function Settings() {
@@ -38,6 +40,7 @@ export default function Settings() {
 
   // Gemini API Key State
   const [apiKey, setApiKey] = useState('');
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeyLoading, setApiKeyLoading] = useState(false);
   const [apiKeySuccess, setApiKeySuccess] = useState<string | null>(null);
@@ -57,10 +60,12 @@ export default function Settings() {
     }
     try {
       const parsed = JSON.parse(storedUser);
-      setUser(parsed);
-      if (parsed.gemini_api_key) {
-        setApiKey(parsed.gemini_api_key);
-      }
+      const hasSavedKey = Boolean(parsed.has_gemini_api_key || parsed.gemini_api_key);
+      const safeUser: UserData = { ...parsed, has_gemini_api_key: hasSavedKey };
+      delete safeUser.gemini_api_key;
+      localStorage.setItem('user', JSON.stringify(safeUser));
+      setUser(safeUser);
+      setHasApiKey(hasSavedKey);
     } catch {
       router.push('/login');
     }
@@ -146,24 +151,65 @@ export default function Settings() {
     e.preventDefault();
     setApiKeyError(null);
     setApiKeySuccess(null);
+    const newApiKey = apiKey.trim();
+    if (!newApiKey) {
+      setApiKeyError(t('settings.apiKeyRequired'));
+      return;
+    }
     setApiKeyLoading(true);
 
     try {
       const res = await authFetch('update_gemini_key.php', {
         method: 'POST',
-        body: JSON.stringify({ gemini_api_key: apiKey.trim() })
+        body: JSON.stringify({ gemini_api_key: newApiKey })
       });
       const data = await res.json();
 
       if (res.ok && data.status === 'success') {
         setApiKeySuccess(t('settings.apiKeyUpdated'));
+        setApiKey('');
+        setHasApiKey(true);
         if (user) {
-          const updatedUser = { ...user, gemini_api_key: apiKey.trim() || null };
+          const updatedUser = { ...user, has_gemini_api_key: true };
+          delete updatedUser.gemini_api_key;
           localStorage.setItem('user', JSON.stringify(updatedUser));
           setUser(updatedUser);
         }
       } else {
         setApiKeyError(data.message || 'Failed to update Gemini API key.');
+      }
+    } catch {
+      setApiKeyError('Network error. Please try again.');
+    } finally {
+      setApiKeyLoading(false);
+    }
+  };
+
+  const handleClearApiKey = async () => {
+    if (!window.confirm(t('settings.confirmClearApiKey'))) return;
+    setApiKeyError(null);
+    setApiKeySuccess(null);
+    setApiKeyLoading(true);
+
+    try {
+      const res = await authFetch('update_gemini_key.php', {
+        method: 'POST',
+        body: JSON.stringify({ clear_gemini_api_key: true })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.status === 'success') {
+        setApiKey('');
+        setHasApiKey(false);
+        setApiKeySuccess(t('settings.apiKeyRemoved'));
+        if (user) {
+          const updatedUser = { ...user, has_gemini_api_key: false };
+          delete updatedUser.gemini_api_key;
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
+      } else {
+        setApiKeyError(data.message || 'Failed to remove Gemini API key.');
       }
     } catch {
       setApiKeyError('Network error. Please try again.');
@@ -263,6 +309,11 @@ export default function Settings() {
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem', marginBottom: '0.8rem' }}>
               {t('settings.geminiApiKeyHelp')}
             </p>
+            {hasApiKey && (
+              <p style={{ fontSize: '0.82rem', color: 'var(--accent-green)', marginTop: '-0.35rem', marginBottom: '0.8rem' }}>
+                {t('settings.apiKeyConfigured')}
+              </p>
+            )}
 
             {apiKeySuccess && (
               <div className={`${styles.alertBox} ${styles.alertSuccess}`}>
@@ -282,7 +333,7 @@ export default function Settings() {
                   className={styles.passwordInput}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="AIzaSy... (leave blank to clear)"
+                  placeholder={t('settings.geminiApiKeyPlaceholder')}
                   autoComplete="off"
                   spellCheck="false"
                 />
@@ -309,6 +360,17 @@ export default function Settings() {
               </svg>
               {apiKeyLoading ? t('settings.updatingApiKey') : t('settings.updateApiKeyBtn')}
             </button>
+            {hasApiKey && (
+              <button
+                type="button"
+                className={styles.updatePasswordBtn}
+                disabled={apiKeyLoading}
+                onClick={handleClearApiKey}
+                style={{ marginTop: '0.6rem', background: 'var(--surface-alt)', color: 'var(--text-primary)' }}
+              >
+                {t('settings.removeApiKeyBtn')}
+              </button>
+            )}
           </form>
 
           {/* Change Password Section */}

@@ -12,10 +12,16 @@ $user = authenticate($conn);
 $userId = (int)$user['id'];
 
 $data = json_decode(file_get_contents("php://input"), true);
-$geminiApiKey = isset($data['gemini_api_key']) ? trim($data['gemini_api_key']) : null;
-if (empty($geminiApiKey)) {
-    $geminiApiKey = null;
+$clearGeminiApiKey = is_array($data) && ($data['clear_gemini_api_key'] ?? false) === true;
+$providedGeminiApiKey = is_array($data) ? ($data['gemini_api_key'] ?? null) : null;
+
+if (!$clearGeminiApiKey && (!is_string($providedGeminiApiKey) || trim($providedGeminiApiKey) === '')) {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Enter a Gemini API key to save, or choose Remove saved key."]);
+    exit;
 }
+
+$geminiApiKey = $clearGeminiApiKey ? null : trim($providedGeminiApiKey);
 
 try {
     $stmt = $conn->prepare("UPDATE users SET gemini_api_key = :key WHERE id = :id");
@@ -25,8 +31,8 @@ try {
 
     echo json_encode([
         "status" => "success",
-        "message" => "Gemini API key updated successfully.",
-        "gemini_api_key" => $geminiApiKey
+        "message" => $clearGeminiApiKey ? "Gemini API key removed." : "Gemini API key updated successfully.",
+        "has_gemini_api_key" => !empty($geminiApiKey)
     ]);
 } catch (PDOException $e) {
     error_log("Failed to update Gemini API key: " . $e->getMessage());

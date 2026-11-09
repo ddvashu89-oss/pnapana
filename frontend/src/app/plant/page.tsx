@@ -137,6 +137,8 @@ function PlantDetailsInner() {
         authFetch(`get_plant_details.php?id=${plantId}`)
           .then(r => r.json())
           .then(d => { if(d.status === "success") setPlant(d.plant); });
+      } else {
+        alert(data.message || t('plant.aiScanFailed'));
       }
     } catch (e) {
       console.error(e);

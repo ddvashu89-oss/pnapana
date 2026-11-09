@@ -40,6 +40,14 @@ export async function authFetch(endpoint: string, options: RequestInit = {}): Pr
       try {
         const user = JSON.parse(userStr);
         token = user?.token || '';
+
+        // Remove provider keys stored by older versions from browser storage.
+        // The backend keeps the key and uses it server-side for AI requests.
+        if (user && Object.prototype.hasOwnProperty.call(user, 'gemini_api_key')) {
+          user.has_gemini_api_key = Boolean(user.gemini_api_key);
+          delete user.gemini_api_key;
+          localStorage.setItem('user', JSON.stringify(user));
+        }
       } catch {
         // ignore parse errors
       }

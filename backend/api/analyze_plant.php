@@ -3,30 +3,36 @@ require_once __DIR__ . '/../cors.php';
 pnapana_cors('POST, OPTIONS');
 header("Content-Type: application/json");
 
-require_once '../db.php';
-require_once '../config.php';
-require_once '../kindwise_helper.php';
-require_once 'auth.php';
+require_once __DIR__ . '/../db.php';
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../kindwise_helper.php';
+require_once __DIR__ . '/../gemini_helper.php';
+require_once __DIR__ . '/auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
 $user = authenticate($pdo);
-
 $data = json_decode(file_get_contents("php://input"));
 
 if (!isset($data->plant_id) || !isset($data->image_url)) {
+    http_response_code(400);
     echo json_encode(["status" => "error", "message" => "Plant ID and image are required."]);
     exit;
 }
 
 $plant_id = $data->plant_id;
 $image_url = $data->image_url;
+if (!is_string($image_url) || kindwise_image_payload($image_url) === null) {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "A valid plant photo is required."]);
+    exit;
+}
 
 // Only the plant's owner can submit a scan for it — otherwise anyone with a
 // plant_id could write fake scans into another user's history and burn the
-// site's paid Gemini API quota on arbitrary attacker-supplied images.
+// site's paid AI quota on arbitrary attacker-supplied images.
 $ownerCheckStmt = $pdo->prepare("SELECT user_id FROM plants WHERE id = ?");
 $ownerCheckStmt->execute([$plant_id]);
 $ownerId = $ownerCheckStmt->fetchColumn();
@@ -38,81 +44,29 @@ if (!$ownerId || (int)$ownerId !== (int)$user['id']) {
 }
 
 $activeApiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '');
-
-$ai_status = 'healthy';
+$ai_status = null;
 $ai_analysis = '';
 $kindwiseHealth = kindwise_health_assessment($image_url);
 
 if (!empty($kindwiseHealth['ok'])) {
     $summary = kindwise_health_summary($kindwiseHealth['data']);
-    $ai_status = $summary['status'];
-    $ai_analysis = trim($summary['diagnosis'] . '. ' . $summary['analysis']);
+    $ai_status = $summary['status'] ?? null;
+    $ai_analysis = trim((string)($summary['diagnosis'] ?? '') . '. ' . (string)($summary['analysis'] ?? ''));
 } elseif (!empty($activeApiKey)) {
+    $prompt = 'Assess this plant photo for visible health problems. Return only JSON with keys is_healthy (boolean), diagnosis (short string), and treatment (practical short guidance). If the image is not a plant, set is_healthy to false and diagnosis to "Not a plant".';
+    $result = gemini_vision_json_call($image_url, $prompt, $activeApiKey);
 
-    // Strip data:image/jpeg;base64, prefix to get raw base64
-    $base64_data = preg_replace('/^data:image\/\w+;base64,/', '', $image_url);
-    
-    $prompt = "You are an expert botanist and plant care AI. Analyze this plant photo. Answer in exactly two parts separated by a pipe character '|'. Part 1: Status (must be exactly 'healthy' or 'issue'). Part 2: A short 2-3 sentence analysis of what you see and what the user should do.";
-
-    $payload = [
-        "contents" => [
-            [
-                "parts" => [
-                    ["text" => $prompt],
-                    [
-                        "inline_data" => [
-                            "mime_type" => "image/jpeg",
-                            "data" => $base64_data
-                        ]
-                    ]
-                ]
-            ]
-        ]
-    ];
-
-    $model = defined('GEMINI_MODEL') ? GEMINI_MODEL : 'gemini-flash-lite-latest';
-    $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . $activeApiKey);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_TIMEOUT, 45);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    $res_data = json_decode($response, true);
-    if (isset($res_data['candidates'][0]['content']['parts'][0]['text'])) {
-        $text = trim($res_data['candidates'][0]['content']['parts'][0]['text']);
-        $parts = explode('|', $text);
-        if (count($parts) >= 2) {
-            $ai_status = strtolower(trim($parts[0]));
-            if ($ai_status !== 'healthy' && $ai_status !== 'issue') $ai_status = 'issue';
-            $ai_analysis = trim($parts[1]);
-        } else {
-            $ai_analysis = $text;
-            $ai_status = 'issue'; // default to issue if parsing fails somewhat
-        }
-    } else {
-        $ai_analysis = "Failed to parse AI response. Check API Key.";
-        $ai_status = 'issue';
+    if (is_array($result) && array_key_exists('is_healthy', $result) && !empty($result['diagnosis'])) {
+        $ai_status = !empty($result['is_healthy']) ? 'healthy' : 'issue';
+        $ai_analysis = trim((string)$result['diagnosis'] . '. ' . (string)($result['treatment'] ?? ''));
     }
-} else {
-    // Simulated AI Processing time (Fallback if no API key provided)
-    sleep(2);
-    
-    $rand = rand(1, 100);
-    if ($rand <= 70) {
-        $ai_status = 'healthy';
-        $ai_analysis = "All good! Your plant is thriving and looks perfectly healthy. Keep up the great work! (Simulated)";
-    } else {
-        $ai_status = 'issue';
-        $issues = [
-            "The leaves look a bit dry at the tips. Consider increasing humidity around the plant. (Simulated)",
-            "Slight drooping detected. It might be thirsty or need a bit more indirect sunlight. (Simulated)",
-            "Some yellowing observed on the lower leaves. Ensure the soil is draining properly and you aren't overwatering. (Simulated)"
-        ];
-        $ai_analysis = $issues[array_rand($issues)];
-    }
+}
+
+// Never save or report a failed provider call as a successful health result.
+if (!in_array($ai_status, ['healthy', 'issue', 'unhealthy'], true) || $ai_analysis === '') {
+    http_response_code(503);
+    echo json_encode(["status" => "error", "message" => "Plant health scan is unavailable. Check the configured Kindwise or Gemini service and try again."]);
+    exit;
 }
 
 try {
@@ -120,20 +74,13 @@ try {
     $stmt->execute([$plant_id, $image_url, $ai_analysis, $ai_status]);
     $scan_id = $pdo->lastInsertId();
 
-    // Optionally update the plant's overall status based on the scan
     $plant_status_text = ($ai_status === 'healthy') ? 'Thriving' : 'Needs Attention';
     $plant_color = ($ai_status === 'healthy') ? 'green' : 'orange';
-    
     $updateStmt = $pdo->prepare("UPDATE plants SET status = ?, status_color = ? WHERE id = ?");
     $updateStmt->execute([$plant_status_text, $plant_color, $plant_id]);
 
-    $ownerStmt = $pdo->prepare("SELECT user_id FROM plants WHERE id = ?");
-    $ownerStmt->execute([$plant_id]);
-    $owner = $ownerStmt->fetchColumn();
-    if ($owner) {
-        $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'ai_scan')");
-        $eventStmt->execute([$owner, $plant_id]);
-    }
+    $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'ai_scan')");
+    $eventStmt->execute([$user['id'], $plant_id]);
 
     echo json_encode([
         "status" => "success",

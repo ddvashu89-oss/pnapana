@@ -89,7 +89,7 @@ if ($stmt->execute()) {
             "customer_id" => $customer_id,
             "name" => $name,
             "email" => $email,
-            "gemini_api_key" => $gemini_api_key,
+            "has_gemini_api_key" => !empty($gemini_api_key),
             "token" => $jwt,
             "is_admin" => false
         ]

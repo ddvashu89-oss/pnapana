@@ -30,8 +30,10 @@ $stmt->execute();
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($user && password_verify($password, $user['password'])) {
-    unset($user['password']); // don't send password back
+    $hasGeminiApiKey = !empty($user['gemini_api_key']);
+    unset($user['password'], $user['gemini_api_key']); // never send credentials or provider keys to the browser
     $user['is_admin'] = (bool)$user['is_admin'];
+    $user['has_gemini_api_key'] = $hasGeminiApiKey;
 
     if (!$user['is_admin']) {
         $settingsStmt = $conn->query("SELECT maintenance_mode FROM app_settings WHERE id = 1");
