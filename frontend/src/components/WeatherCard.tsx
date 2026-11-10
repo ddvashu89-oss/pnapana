@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Check, Droplets, MapPin, Navigation, RefreshCw, Search, Sprout, Sun, X } from 'lucide-react';
 import { useWeather, describeWeather } from '@/lib/hooks/useWeather';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -25,30 +25,32 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const lastWatered = plant?.last_watered ? new Date(plant.last_watered.replace(' ', 'T')).getTime() : NaN;
   const elapsed = Number.isFinite(lastWatered) ? Math.max(0, Math.floor((now - lastWatered) / 86400000)) : null;
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
-  const condition = weather ? describeWeather(weather.condition) : error || 'Checking the weather…';
-  const city = weather?.city || (weather ? 'Your location' : 'Locating…');
-  const cityRegion = weather?.region && weather.region.toLocaleLowerCase() !== city.toLocaleLowerCase()
+  const approximateLocation = locationMode === 'device' && weather?.locationAccuracyM !== null && weather?.locationAccuracyM !== undefined && weather.locationAccuracyM > 1000;
+  const localWeather = approximateLocation ? null : weather;
+  const condition = approximateLocation ? 'Select your city for accurate weather' : localWeather ? describeWeather(localWeather.condition) : error || 'Checking the weather…';
+  const city = approximateLocation ? 'Choose your city' : weather?.city || (weather ? 'Your location' : 'Locating…');
+  const cityRegion = !approximateLocation && weather?.region && weather.region.toLocaleLowerCase() !== city.toLocaleLowerCase()
     ? `${city}, ${weather.region}`
     : city;
-  const icon = weather?.icon || '';
-  const weatherEmoji = !weather ? error ? '📍' : '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') || icon.includes('haze') ? '🌫️' : (icon.includes('clear') || icon.includes('sun')) && !weather.isDay ? '🌙' : icon.includes('clear') || icon.includes('sun') ? '☀️' : icon.includes('partly-cloudy') ? weather.isDay ? '🌤️' : '☁️🌙' : icon.includes('cloudy') ? '☁️' : weather.isDay ? '🌤️' : '🌙';
-  const humidityText = weather?.humidity === null || !weather ? '—' : `${weather.humidity}%`;
-  const lightIndex = weather?.solarPeak === null || !weather
+  const icon = localWeather?.icon || '';
+  const weatherEmoji = !localWeather ? approximateLocation || error ? '📍' : '🌤️' : icon.includes('thunder') ? '⛈️' : icon.includes('snow') ? '🌨️' : icon.includes('rain') || icon.includes('showers') ? '🌦️' : icon.includes('fog') || icon.includes('haze') ? '🌫️' : (icon.includes('clear') || icon.includes('sun')) && !localWeather.isDay ? '🌙' : icon.includes('clear') || icon.includes('sun') ? '☀️' : icon.includes('partly-cloudy') ? localWeather.isDay ? '🌤️' : '☁️🌙' : icon.includes('cloudy') ? '☁️' : localWeather.isDay ? '🌤️' : '🌙';
+  const humidityText = localWeather?.humidity === null || !localWeather ? '—' : `${localWeather.humidity}%`;
+  const lightIndex = localWeather?.solarPeak === null || !localWeather
     ? null
-    : weather.solarPeak >= 650
+    : localWeather.solarPeak >= 650
       ? 3
-      : weather.solarPeak >= 350
+      : localWeather.solarPeak >= 350
         ? 2
-        : weather.solarPeak >= 120
+        : localWeather.solarPeak >= 120
           ? 1
           : 0;
   const light = lightIndex === null ? '—' : ['Low', 'Soft', 'Bright', 'High'][lightIndex];
   const preferredLight = (plant?.light_req || plan.light?.level || 'Medium').toLowerCase();
   const comfortable = /high|full|direct|sun/.test(preferredLight) ? [2, 3] : /low|shade/.test(preferredLight) ? [0, 1] : [1, 2];
   const lightSuits = lightIndex !== null && comfortable.includes(lightIndex);
-  const lightEvidence = weather?.solarPeak === null || !weather
+  const lightEvidence = localWeather?.solarPeak === null || !localWeather
     ? 'Outdoor sunlight forecast unavailable.'
-    : `Peak outdoor solar forecast: ${Math.round(weather.solarPeak)} W/m²`;
+    : `Peak outdoor solar forecast: ${Math.round(localWeather.solarPeak)} W/m²`;
   const lightAdvice = lightIndex === null
     ? 'There is no solar forecast for today, so check the plant’s actual position and follow its care plan.'
     : lightSuits
@@ -66,19 +68,19 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const maxTemp = celsiusRange ? Number(celsiusRange[2]) : fahrenheitRange
     ? Math.round((Number(fahrenheitRange[2]) - 32) * 5 / 9)
     : genericRange ? Number(genericRange[2]) : null;
-  const growing = weather && minTemp !== null && maxTemp !== null ? weather.temp >= minTemp && weather.temp <= maxTemp : null;
-  const hotterThanPreferred = weather && maxTemp !== null && weather.temp > maxTemp;
-  const coolerThanPreferred = weather && minTemp !== null && weather.temp < minTemp;
+  const growing = localWeather && minTemp !== null && maxTemp !== null ? localWeather.temp >= minTemp && localWeather.temp <= maxTemp : null;
+  const hotterThanPreferred = localWeather && maxTemp !== null && localWeather.temp > maxTemp;
+  const coolerThanPreferred = localWeather && minTemp !== null && localWeather.temp < minTemp;
   const plantLabel = plant?.name || plant?.species || 'this plant';
-  const wateringAdvice = !weather
+  const wateringAdvice = !localWeather
     ? 'Check the soil before watering and follow this plant’s care plan.'
-    : hotterThanPreferred || weather.temp >= 33
+    : hotterThanPreferred || localWeather.temp >= 33
       ? `Warm conditions can dry ${plant?.name ? `${plant.name}’s` : 'the pot’s'} soil faster. Check it more often, but water only when the top layer is dry.`
-      : coolerThanPreferred || weather.temp < 15
+      : coolerThanPreferred || localWeather.temp < 15
         ? 'Cool conditions can keep this plant’s soil wet longer. Check the soil before watering and avoid watering on the calendar alone.'
         : plan.water?.instructions || 'Weather does not change this plant’s usual schedule. Finger-test the soil and water when the top inch is dry.';
-  const temperaturePosition = weather ? Math.max(2, Math.min(96, weather.temp / 50 * 100)) : null;
-  const tip = !weather ? 'Check the soil before watering and follow each plant’s care plan.' : !weather.isDay ? 'a calm evening. Keep to the usual care routine and water only if the soil is dry.' : weather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : weather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a good growing day. Normal watering, and let them have the morning light.';
+  const temperaturePosition = localWeather ? Math.max(2, Math.min(96, localWeather.temp / 50 * 100)) : null;
+  const tip = !localWeather ? approximateLocation ? 'choose your city above before using weather-based care advice.' : 'check the soil before watering and follow each plant’s care plan.' : !localWeather.isDay ? 'a calm evening. Keep to the usual care routine and water only if the soil is dry.' : localWeather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : localWeather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a good growing day. Normal watering, and let them have the morning light.';
   const dateKey = new Date(now).toISOString().slice(0, 10);
   const adviceSeed = `${plant?.id || plant?.species || plant?.name || 'plant'}:${dateKey}`;
   const issues = (plan.common_issues || []).filter(issue => issue.issue || issue.solution);
@@ -101,7 +103,7 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
       kind: 'humidity',
       title: `Humidity for ${plantLabel}`,
       body: humidityNeed,
-      meta: weather ? `Local outdoor humidity: ${humidityText}` : 'Compare with the air around the plant',
+      meta: localWeather ? `Local outdoor humidity: ${humidityText}` : 'Compare with the air around the plant',
     } : null,
     issue ? {
       kind: 'issue',
@@ -117,9 +119,13 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
     } : null,
   ].filter((advice): advice is { kind: string; title: string; body: string; meta: string } => Boolean(advice));
   const rotatingAdvice = plantAdvice[stableIndex(adviceSeed, plantAdvice.length)];
-  const dailyAdvice = hotterThanPreferred || coolerThanPreferred || (weather && (weather.temp >= 33 || weather.temp < 15))
+  const dailyAdvice = hotterThanPreferred || coolerThanPreferred || (localWeather && (localWeather.temp >= 33 || localWeather.temp < 15))
     ? plantAdvice[0]
     : rotatingAdvice;
+
+  useEffect(() => {
+    if (approximateLocation) setLocationOpen(true);
+  }, [approximateLocation]);
 
   const searchLocation = async (event: FormEvent) => {
     event.preventDefault();
@@ -151,15 +157,15 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
       <div className={styles.overview} title={weather?.location}>
         <span className={styles.weatherIcon} aria-hidden="true">{weatherEmoji}</span>
         <div className={styles.temperature}>
-          <div className={styles.temperatureLine}><strong>{weather ? `${weather.temp}°C` : '—°C'}</strong>{!plant && weather?.feelsLike !== null && weather?.feelsLike !== undefined && <small>(Feels {weather.feelsLike}°C)</small>}</div>
+          <div className={styles.temperatureLine}><strong>{localWeather ? `${localWeather.temp}°C` : '—°C'}</strong>{!plant && localWeather?.feelsLike !== null && localWeather?.feelsLike !== undefined && <small>(Feels {localWeather.feelsLike}°C)</small>}</div>
           <button type="button" className={styles.city} onClick={() => setLocationOpen(open => !open)} aria-expanded={locationOpen} aria-label={`Weather location: ${cityRegion}. Change location.`}><MapPin size={13} aria-hidden="true" /> {cityRegion}<span>Change</span></button>
-          <span>{condition}{plant && weather ? ` · ${humidityText} Humidity` : ''}</span>
+          <span>{condition}{plant && localWeather ? ` · ${humidityText} Humidity` : ''}</span>
         </div>
-        {plant ? <span className={styles.weatherBased}>Weather-based</span> : <span className={styles.humidity}><Droplets size={14} /> {weather ? weather.humidity : '—'}% {hi ? 'नमी' : 'Humidity'}</span>}
+        {plant ? <span className={styles.weatherBased}>{localWeather ? 'Weather-based' : 'Location needed'}</span> : <span className={styles.humidity}><Droplets size={14} /> {localWeather ? localWeather.humidity : '—'}% {hi ? 'नमी' : 'Humidity'}</span>}
         <button className={styles.refresh} onClick={refresh} disabled={loading} aria-label={hi ? 'मौसम रिफ्रेश करें' : 'Refresh weather'} title={weather?.location || 'Refresh local weather'}><RefreshCw size={18} className={loading ? styles.spinning : ''} /></button>
       </div>
       {locationOpen && <div className={styles.locationPicker} aria-label="Choose weather location">
-        <div className={styles.locationPickerHeader}><div><strong>Set weather location</strong><span>Choose your city if device location is inaccurate.</span></div><button type="button" onClick={() => setLocationOpen(false)} aria-label="Close location picker"><X size={17} /></button></div>
+        <div className={styles.locationPickerHeader}><div><strong>{approximateLocation ? 'Confirm your city for accurate weather' : 'Set weather location'}</strong><span>{approximateLocation ? 'Your device supplied only an approximate area. Select your actual city below.' : 'Choose your city if device location is inaccurate.'}</span></div><button type="button" onClick={() => setLocationOpen(false)} aria-label="Close location picker"><X size={17} /></button></div>
         <form className={styles.locationSearch} onSubmit={searchLocation}>
           <label htmlFor="weather-city">City or postal code</label>
           <div><input id="weather-city" value={locationQuery} onChange={event => setLocationQuery(event.target.value)} placeholder="e.g. Karnal, Haryana" autoComplete="off" /><button type="submit" disabled={locationSearching}><Search size={16} />{locationSearching ? 'Searching…' : 'Search'}</button></div>
@@ -175,19 +181,18 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
         <button type="button" className={styles.deviceLocation} onClick={async () => { await switchToDeviceLocation(); setLocationOpen(false); }} disabled={loading}><Navigation size={16} /> Use device location{locationMode === 'device' ? ' (current)' : ''}</button>
       </div>}
       {weather && <div className={styles.locationMeta}>
-        <strong>{weather.source === 'station-observation' ? 'Nearby observation' : 'Local forecast'}</strong>
-        <span>{weather.country || weather.location}</span>
+        <strong>{approximateLocation ? 'Location not confirmed' : weather.source === 'station-observation' ? 'Nearby observation' : 'Local forecast'}</strong>
+        <span>{approximateLocation ? 'Choose your city for local conditions' : weather.country || weather.location}</span>
         {weather.stationDistanceKm !== null && <span>{weather.stationDistanceKm} km away</span>}
-        {weather.locationAccuracyM !== null && weather.locationAccuracyM > 1000 && <span>Approximate GPS area</span>}
+        {approximateLocation && <span>Approximate GPS area</span>}
         {weather.updatedAt && <time dateTime={weather.updatedAt}>Updated {formatUpdatedAt(weather.updatedAt)}</time>}
       </div>}
-      {weather?.location.includes('default') && <small className={styles.fallbackLocation}>{weather.location}</small>}
       {!plant ? (
-        <div className={styles.tip}><span aria-hidden="true">🌱</span><p><strong>{hi ? 'आज की देखभाल: ' : "Today's Weather Care Tip: "}</strong>{weather && <>{weather.temp} °C, {humidityText} humidity — </>}{tip}</p></div>
+        <div className={styles.tip}><span aria-hidden="true">🌱</span><p><strong>{hi ? 'आज की देखभाल: ' : "Today's Weather Care Tip: "}</strong>{localWeather && <>{localWeather.temp} °C, {humidityText} humidity — </>}{tip}</p></div>
       ) : (
         <>
           <div className={styles.metrics}>
-            {[{ icon: '🌡️', label: 'Temp', value: weather ? `${weather.temp}°` : '—' }, { icon: '💧', label: 'Humidity', value: humidityText }, { icon: '☀️', label: 'Sunlight', value: light }, { icon: '🌦️', label: 'Weather', value: weather ? condition : '—' }].map(({ icon, label, value }) => <div key={label}><span className={styles.metricIcon} aria-hidden="true">{icon}</span><span className={styles.metricLabel}>{label}</span><strong title={value}>{value}</strong></div>)}
+            {[{ icon: '🌡️', label: 'Temp', value: localWeather ? `${localWeather.temp}°` : '—' }, { icon: '💧', label: 'Humidity', value: humidityText }, { icon: '☀️', label: 'Sunlight', value: light }, { icon: '🌦️', label: 'Weather', value: localWeather ? condition : '—' }].map(({ icon, label, value }) => <div key={label}><span className={styles.metricIcon} aria-hidden="true">{icon}</span><span className={styles.metricLabel}>{label}</span><strong title={value}>{value}</strong></div>)}
           </div>
           <div className={styles.verdict}>
             <span className={styles.check}><Check size={24} /></span>
@@ -207,7 +212,7 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
           </div>
           <div className={styles.detail}>
             <h3><Sprout size={20} /> How it will grow</h3>
-            <div className={styles.growthScale}>{temperaturePosition !== null && <span style={{ left: `${temperaturePosition}%` }}>▲ {weather!.temp}°</span>}</div>
+            <div className={styles.growthScale}>{temperaturePosition !== null && localWeather && <span style={{ left: `${temperaturePosition}%` }}>▲ {localWeather.temp}°</span>}</div>
             <div className={styles.scaleLabels}><span>Cold</span><span>Growing</span><span>Heat</span></div>
             <span className={styles.pill}>{growing === true ? 'Actively growing' : growing === false ? 'Outside its comfort zone' : 'Follow its care plan'}</span>
             <p><strong>{growing === true ? 'Growing weather.' : growing === false ? 'A little extra care.' : 'Every plant has its own pace.'}</strong> {growing === true ? `Active growth at this temperature. ${plan.pruning || 'Keep a steady care routine and watch for fresh growth.'}` : plan.temperature ? `Preferred temperature: ${plan.temperature} ${plan.pruning || ''}` : 'Temperature, light, and soil moisture all shape growth. Follow the care plan below for this plant’s needs.'}</p>

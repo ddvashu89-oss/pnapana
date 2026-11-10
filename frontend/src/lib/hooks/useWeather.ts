@@ -71,6 +71,40 @@ function savedLocation(): Coordinates | null {
   }
 }
 
+function bestDeviceLocation(force = false): Promise<Coordinates> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Location access is unavailable'));
+      return;
+    }
+    let best: Coordinates | null = null;
+    let settled = false;
+    let watchId: number | null = null;
+    const finish = (position?: Coordinates, message = 'Allow location access or choose your city') => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      if (position) resolve(position);
+      else reject(new Error(message));
+    };
+    const timeoutId = window.setTimeout(() => finish(best || undefined), 8000);
+    watchId = navigator.geolocation.watchPosition(
+      current => {
+        const candidate = {
+          lat: current.coords.latitude,
+          lon: current.coords.longitude,
+          accuracy: Number.isFinite(current.coords.accuracy) ? Math.round(current.coords.accuracy) : null,
+        };
+        if (!best || candidate.accuracy !== null && (best.accuracy === null || candidate.accuracy < best.accuracy)) best = candidate;
+        if (candidate.accuracy !== null && candidate.accuracy <= 250) finish(candidate);
+      },
+      () => finish(best || undefined),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: force ? 0 : 60000 },
+    );
+  });
+}
+
 function locationKey({ lat, lon }: Coordinates) {
   return `${lat.toFixed(4)},${lon.toFixed(4)}`;
 }
@@ -171,21 +205,7 @@ export function useWeather() {
     try {
       const stored = savedLocation();
       setLocationMode(stored ? 'manual' : 'device');
-      const position = stored || await new Promise<Coordinates>((resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error('Location access is unavailable'));
-            return;
-          }
-          navigator.geolocation.getCurrentPosition(
-            current => resolve({
-              lat: current.coords.latitude,
-              lon: current.coords.longitude,
-              accuracy: Number.isFinite(current.coords.accuracy) ? Math.round(current.coords.accuracy) : null,
-            }),
-            () => reject(new Error('Allow location access or choose your city')),
-            { enableHighAccuracy: true, timeout: 12000, maximumAge: force ? 0 : 120000 },
-          );
-        });
+      const position = stored || await bestDeviceLocation(force);
       const nextWeather = await fetchWeather(position, force);
       setWeather({
         ...nextWeather,
