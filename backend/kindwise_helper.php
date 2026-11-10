@@ -71,16 +71,13 @@ function kindwise_identify($image, $language = 'en') {
         return ['ok' => false, 'configured' => kindwise_api_key() !== '', 'data' => null];
     }
 
-    $payload = [
-        'images' => [$imageData],
-        'similar_images' => false,
-        'details' => ['common_names', 'url', 'description', 'taxonomy', 'image']
-    ];
+    $payload = ['images' => [$imageData]];
+    $query = ['details' => 'common_names,url,description,taxonomy,image'];
     if (in_array($language, ['en', 'hi', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru', 'uk', 'zh', 'ja', 'ko'], true)) {
-        $payload['preferred_language'] = $language;
+        $query['language'] = $language;
     }
 
-    return kindwise_request('identification', $payload);
+    return kindwise_request('identification?' . http_build_query($query), $payload);
 }
 
 function kindwise_health_assessment($image) {
@@ -89,11 +86,11 @@ function kindwise_health_assessment($image) {
         return ['ok' => false, 'configured' => kindwise_api_key() !== '', 'data' => null];
     }
 
-    return kindwise_request('health_assessment', [
-        'images' => [$imageData],
-        'similar_images' => false,
-        'details' => ['local_name', 'description', 'treatment', 'url']
+    $query = http_build_query([
+        'details' => 'local_name,description,treatment,url',
+        'language' => 'en'
     ]);
+    return kindwise_request('health_assessment?' . $query, ['images' => [$imageData]]);
 }
 
 function kindwise_top_identification($response) {

@@ -19,16 +19,80 @@ export type Weather = {
   updatedAt: string | null;
   stationDistanceKm: number | null;
   observationText: string | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  latitude: number;
+  longitude: number;
+  locationAccuracyM: number | null;
 };
 
-type Coordinates = { lat: number; lon: number };
+export type WeatherLocation = {
+  lat: number;
+  lon: number;
+  city: string;
+  region: string | null;
+  country: string | null;
+};
+type Coordinates = {
+  lat: number;
+  lon: number;
+  accuracy: number | null;
+  city?: string;
+  region?: string | null;
+  country?: string | null;
+};
 type WeatherApiResponse = { status?: string; weather?: Weather; message?: string };
+type ReverseGeocodeResponse = {
+  city?: string;
+  locality?: string;
+  principalSubdivision?: string;
+  countryName?: string;
+};
 
 let cachedWeather: { key: string; value: Weather; expiresAt: number } | null = null;
 let pendingWeather: { key: string; promise: Promise<Weather> } | null = null;
+const WEATHER_LOCATION_KEY = 'pnapana.weatherLocation';
+
+function savedLocation(): Coordinates | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(WEATHER_LOCATION_KEY) || 'null') as Partial<WeatherLocation> | null;
+    if (!value || !Number.isFinite(value.lat) || !Number.isFinite(value.lon) || typeof value.city !== 'string' || !value.city.trim()) return null;
+    return {
+      lat: Number(value.lat),
+      lon: Number(value.lon),
+      accuracy: null,
+      city: value.city.trim(),
+      region: typeof value.region === 'string' ? value.region : null,
+      country: typeof value.country === 'string' ? value.country : null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function locationKey({ lat, lon }: Coordinates) {
-  return `${lat.toFixed(3)},${lon.toFixed(3)}`;
+  return `${lat.toFixed(4)},${lon.toFixed(4)}`;
+}
+
+async function reverseGeocode({ lat, lon }: Coordinates) {
+  const query = new URLSearchParams({
+    latitude: lat.toFixed(5),
+    longitude: lon.toFixed(5),
+    localityLanguage: 'en',
+  });
+  try {
+    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?${query}`, { cache: 'force-cache' });
+    if (!response.ok) return { city: null, region: null, country: null };
+    const data: ReverseGeocodeResponse = await response.json();
+    return {
+      city: data.city?.trim() || data.locality?.trim() || null,
+      region: data.principalSubdivision?.trim() || null,
+      country: data.countryName?.trim() || null,
+    };
+  } catch {
+    return { city: null, region: null, country: null };
+  }
 }
 
 function clockMinutes(value?: string | null) {
@@ -57,17 +121,29 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
   if (pendingWeather?.key === key) return pendingWeather.promise;
   if (!force && cachedWeather?.key === key && cachedWeather.expiresAt > Date.now()) return cachedWeather.value;
 
-  // Send neighborhood-level precision; this is enough to pick a nearby station.
-  const query = new URLSearchParams({ lat: position.lat.toFixed(2), lon: position.lon.toFixed(2) });
+  // Four decimal places preserve roughly street-level coordinates for the
+  // weather grid while avoiding unnecessary raw GPS precision in the URL.
+  const query = new URLSearchParams({ lat: position.lat.toFixed(4), lon: position.lon.toFixed(4) });
   const url = getApiUrl(`weather.php?${query.toString()}`);
   const promise = (async () => {
-    const response = await fetch(url, { cache: force ? 'no-store' : 'default' });
+    const [response, place] = await Promise.all([
+      fetch(url, { cache: force ? 'no-store' : 'default' }),
+      position.city
+        ? Promise.resolve({ city: position.city, region: position.region || null, country: position.country || null })
+        : reverseGeocode(position),
+    ]);
     if (!response.ok) throw new Error('Weather unavailable');
     const data: WeatherApiResponse = await response.json();
     if (data.status !== 'success' || !data.weather || typeof data.weather.temp !== 'number') {
       throw new Error(data.message || 'Weather unavailable');
     }
-    return data.weather;
+    return {
+      ...data.weather,
+      ...place,
+      latitude: position.lat,
+      longitude: position.lon,
+      locationAccuracyM: position.accuracy,
+    };
   })();
 
   pendingWeather = { key, promise };
@@ -88,21 +164,28 @@ export function useWeather() {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationMode, setLocationMode] = useState<'device' | 'manual'>('device');
   const refresh = useCallback(async (force = false) => {
     setLoading(true);
     setError(null);
     try {
-      const position = await new Promise<Coordinates>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error('Location access is unavailable'));
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(
-          current => resolve({ lat: current.coords.latitude, lon: current.coords.longitude }),
-          () => reject(new Error('Allow location access to get local weather')),
-          { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 },
-        );
-      });
+      const stored = savedLocation();
+      setLocationMode(stored ? 'manual' : 'device');
+      const position = stored || await new Promise<Coordinates>((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Location access is unavailable'));
+            return;
+          }
+          navigator.geolocation.getCurrentPosition(
+            current => resolve({
+              lat: current.coords.latitude,
+              lon: current.coords.longitude,
+              accuracy: Number.isFinite(current.coords.accuracy) ? Math.round(current.coords.accuracy) : null,
+            }),
+            () => reject(new Error('Allow location access or choose your city')),
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: force ? 0 : 120000 },
+          );
+        });
       const nextWeather = await fetchWeather(position, force);
       setWeather({
         ...nextWeather,
@@ -115,6 +198,28 @@ export function useWeather() {
       setLoading(false);
     }
   }, []);
+  const chooseLocation = useCallback(async (location: WeatherLocation) => {
+    localStorage.setItem(WEATHER_LOCATION_KEY, JSON.stringify(location));
+    setLocationMode('manual');
+    setLoading(true);
+    setError(null);
+    try {
+      const nextWeather = await fetchWeather({ ...location, accuracy: null }, true);
+      setWeather({
+        ...nextWeather,
+        isDay: isDayAtLocation(nextWeather.timezone, nextWeather.sunrise, nextWeather.sunset, nextWeather.isDay),
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Weather unavailable');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  const switchToDeviceLocation = useCallback(async () => {
+    localStorage.removeItem(WEATHER_LOCATION_KEY);
+    setLocationMode('device');
+    await refresh(true);
+  }, [refresh]);
   useEffect(() => {
     refresh();
     const dayNightTimer = setInterval(() => {
@@ -126,5 +231,5 @@ export function useWeather() {
     }, 60_000);
     return () => clearInterval(dayNightTimer);
   }, [refresh]);
-  return { weather, loading, error, refresh: () => refresh(true) };
+  return { weather, loading, error, locationMode, refresh: () => refresh(true), chooseLocation, switchToDeviceLocation };
 }

@@ -37,6 +37,12 @@ ErrorDocument 404 /404.html
     RewriteEngine On
     RewriteBase /
 
+    # In a local /pnapana subdirectory, an empty per-directory path must map
+    # to this project's index. Without this, the generic rule below resolves
+    # it as /index.html at Apache's document root and returns a 404.
+    RewriteCond %{REQUEST_URI} ^/pnapana/?$ [NC]
+    RewriteRule ^ /pnapana/index.html [END]
+
     # If the request is for backend API, let Apache handle it directly
     RewriteCond %{REQUEST_URI} ^/backend [NC]
     RewriteRule .* - [L]

@@ -119,9 +119,11 @@ function weather_observation(float $lat, float $lon): ?array {
         if (!is_array($report) || !is_numeric($report['temp'] ?? null) || !is_numeric($report['lat'] ?? null) || !is_numeric($report['lon'] ?? null)) continue;
         $obsTime = is_numeric($report['obsTime'] ?? null) ? (int)$report['obsTime'] : 0;
         $ageMinutes = $obsTime > 0 ? max(0, ($now - $obsTime) / 60) : 999;
-        if ($ageMinutes > 120) continue;
+        // Distant airport conditions can differ materially from the user's
+        // location. Use only a recent, genuinely local observation.
+        if ($ageMinutes > 90) continue;
         $distance = weather_distance_km($lat, $lon, (float)$report['lat'], (float)$report['lon']);
-        if ($distance > 80) continue;
+        if ($distance > 25) continue;
         $valid[] = ['report' => $report, 'age' => $ageMinutes, 'distance' => $distance, 'score' => $distance + $ageMinutes * 0.15];
     }
     if (!$valid) return null;
