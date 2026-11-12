@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS plants (
     user_id INT NOT NULL,
     name VARCHAR(255) NOT NULL,
     species VARCHAR(255) NOT NULL,
-    image_url VARCHAR(255),
+    image_url MEDIUMTEXT,
     status VARCHAR(50) DEFAULT 'Thriving',
     status_color VARCHAR(50) DEFAULT 'green',
     native_region VARCHAR(255),
@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS plants (
     purchased_on DATE DEFAULT NULL,
     is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
     placement VARCHAR(20) DEFAULT NULL,
+    setup_completed TINYINT(1) NOT NULL DEFAULT 0,
+    setup_completed_at DATETIME DEFAULT NULL,
+    setup_data LONGTEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

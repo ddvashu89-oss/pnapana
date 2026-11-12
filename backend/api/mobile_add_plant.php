@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/mobile_common.php';
+require_once __DIR__ . '/../plant_setup_helper.php';
 mobile_method(['POST']); $user = mobile_user($pdo); $data = mobile_body();
 $name = trim((string)($data['name'] ?? '')); $species = trim((string)($data['species'] ?? ''));
-$frequency = filter_var($data['water_freq'] ?? 7, FILTER_VALIDATE_INT);
 if ($name === '' || $species === '' || mb_strlen($name) > 255 || mb_strlen($species) > 255) mobile_fail('A plant name and species of at most 255 characters are required.');
-if ($frequency === false || $frequency < 1 || $frequency > 365) mobile_fail('Choose a watering interval between 1 and 365 days.');
+try { $setup = pnapana_normalize_plant_setup($data['setup'] ?? null); }
+catch (InvalidArgumentException $e) { mobile_fail($e->getMessage(), 400, 'SETUP_REQUIRED'); }
 $image = $data['image_url'] ?? '/leaf.png';
 if (!is_string($image) || strlen($image) > 8 * 1024 * 1024) mobile_fail('The plant image is too large.');
 $imageBytes = null; $imageExtension = null; $imageFile = null;
@@ -29,8 +30,7 @@ try {
     if ($plan['max_plants'] !== null && (int)$count->fetchColumn() >= (int)$plan['max_plants']) {
         $pdo->rollBack(); mobile_fail('Your ' . $plan['name'] . ' plan covers ' . $plan['max_plants'] . ' plants. Choose a larger plan to add more.', 402, 'PLAN_LIMIT_REACHED');
     }
-    // plants.image_url is VARCHAR(255) in the existing schema. Store a file path,
-    // not the camera's multi-kilobyte data URI, without altering the shared table.
+    // Store uploaded camera data as a file path to keep database rows compact.
     if ($imageBytes !== null) {
         $dir = __DIR__ . '/../uploads/plants';
         if (!is_dir($dir) && !mkdir($dir, 0770, true)) throw new RuntimeException('Plant upload directory unavailable');
@@ -38,9 +38,9 @@ try {
         if (file_put_contents($imageFile, $imageBytes, LOCK_EX) === false) throw new RuntimeException('Plant upload failed');
         $image = rtrim(dirname(dirname($_SERVER['SCRIPT_NAME'])), '/') . '/uploads/plants/' . $filename;
     }
-    $stmt = $pdo->prepare('INSERT INTO plants (user_id, name, species, image_url, water_freq, light_req, native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $stmt = $pdo->prepare('INSERT INTO plants (user_id, name, species, image_url, water_freq, light_req, native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan, placement, setup_completed, setup_completed_at, setup_data, last_watered) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, COALESCE(?, CURRENT_TIMESTAMP))');
     // PDO array binding turns PHP false into an empty string on strict MySQL. Bind 0/1 explicitly.
-    $stmt->execute([$user['id'], $name, $species, $image ?: '/leaf.png', $frequency, $data['light_req'] ?? 'Medium', $data['native_region'] ?? null, $data['light_requirement'] ?? null, $data['water_requirement'] ?? null, $data['humidity'] ?? null, !empty($data['pet_friendly']) ? 1 : 0, $planJson]);
+    $stmt->execute([$user['id'], $name, $species, $image ?: '/leaf.png', $setup['soil_check_days'], $setup['light'], $data['native_region'] ?? null, $data['light_requirement'] ?? null, $data['water_requirement'] ?? null, $data['humidity'] ?? null, !empty($data['pet_friendly']) ? 1 : 0, $planJson, $setup['placement'], json_encode($setup), pnapana_setup_last_watered_at($setup['last_watered'])]);
     $id = $pdo->lastInsertId();
     $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'add_plant')")->execute([$user['id'], $id]);
     $pdo->commit();

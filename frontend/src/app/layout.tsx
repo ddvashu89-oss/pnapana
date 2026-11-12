@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 import Sidebar from "@/components/Sidebar";
 import Footer from "@/components/Footer";
 import MaintenanceGate from "@/components/MaintenanceGate";
+import PlantSetupGate from "@/components/PlantSetupGate";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 export default function RootLayout({
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body>
         <LanguageProvider>
           <MaintenanceGate>
+            <PlantSetupGate />
             <div className="app-layout">
               <Sidebar />
               <main className="main-content">

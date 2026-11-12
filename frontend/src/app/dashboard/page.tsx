@@ -7,6 +7,7 @@ import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpR
 import WeatherCard from '@/components/WeatherCard';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
+import PlantSetupWizard, { PlantSetupValues, SetupPlant } from '@/components/PlantSetupWizard';
 import { authFetch } from '@/lib/api';
 import styles from './Home.module.css';
 
@@ -16,8 +17,9 @@ export default function Home() {
   const [user, setUser] = useState<{ id: number, name: string, token?: string } | null>(null);
   const [plants, setPlants] = useState<any[]>([]);
   const [thirstyPlants, setThirstyPlants] = useState<number[]>([]);
+  const [careReminders, setCareReminders] = useState<any[]>([]);
   const [wateringStatus, setWateringStatus] = useState<'checking' | 'ready' | 'unavailable'>('checking');
-  const notifiedIds = useRef<Set<number>>(new Set());
+  const notifiedIds = useRef<Set<string>>(new Set());
   
   // Add Plant Modal state
   const [isAddPlantModalOpen, setIsAddPlantModalOpen] = useState(false);
@@ -33,6 +35,8 @@ export default function Home() {
     water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: '', placement: ''
   });
   const [isAdding, setIsAdding] = useState(false);
+  const [setupDraft, setSetupDraft] = useState<SetupPlant | null>(null);
+  const [setupError, setSetupError] = useState('');
   
   // Camera state
   const [isCapturing, setIsCapturing] = useState(false);
@@ -66,28 +70,34 @@ export default function Home() {
     setUser(parsedUser);
 
     fetchPlants(parsedUser.id);
-    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-      Notification.requestPermission();
-    }
-
     const checkWateringNeeds = async () => {
       try {
         const res = await authFetch(`get_notifications.php?user_id=${parsedUser.id}`);
         const data = await res.json();
         if (data.status === 'success') {
           const tPlants = data.notifications;
+          const routineReminders = Array.isArray(data.care_reminders) ? data.care_reminders : [];
           setThirstyPlants(tPlants.map((p: any) => Number(p.id)));
+          setCareReminders(routineReminders);
           setWateringStatus('ready');
           
           tPlants.forEach((plant: any) => {
-            if (!notifiedIds.current.has(plant.id)) {
+            const key = `soil:${plant.id}`;
+            if (!notifiedIds.current.has(key)) {
               if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification(`Time to water ${plant.name}! 💧`, {
-                  body: `${plant.name} (${plant.species}) needs watering.`,
+                new Notification(`Check ${plant.name}'s soil 💧`, {
+                  body: `Check the soil moisture before deciding whether ${plant.name} needs water.`,
                 });
               }
-              notifiedIds.current.add(plant.id);
+              notifiedIds.current.add(key);
             }
+          });
+          routineReminders.forEach((reminder: any) => {
+            const key = `${reminder.type}:${reminder.plant_id}:${new Date().toDateString()}`;
+            if (reminder.notification_mode === 'browser' && !notifiedIds.current.has(key) && 'Notification' in window && Notification.permission === 'granted') {
+              new Notification(`${reminder.title}: ${reminder.name}`, { body: reminder.message });
+            }
+            notifiedIds.current.add(key);
           });
         } else {
           setWateringStatus('unavailable');
@@ -102,6 +112,13 @@ export default function Home() {
     const interval = setInterval(checkWateringNeeds, 30000);
     return () => clearInterval(interval);
   }, [router]);
+
+  useEffect(() => {
+    if (!user) return;
+    const refresh = () => fetchPlants(user.id);
+    window.addEventListener('pnapana:plants-changed', refresh);
+    return () => window.removeEventListener('pnapana:plants-changed', refresh);
+  }, [user]);
 
   useEffect(() => {
     const syncNavigation = () => {
@@ -131,19 +148,27 @@ export default function Home() {
       .catch(() => {});
   }
 
-  const handleAddPlant = async (e: React.FormEvent) => {
+  const handleAddPlant = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !newPlant.name || !newPlant.species) return;
+    setSetupError('');
+    setSetupDraft({ ...newPlant });
+    setIsAddPlantModalOpen(false);
+    stopCamera();
+  };
+
+  const completeNewPlantSetup = async ({ name, setup }: { name: string; setup: PlantSetupValues }) => {
+    if (!user) return;
     setIsAdding(true);
-    
+    setSetupError('');
     try {
       const res = await authFetch('add_plant.php', {
         method: 'POST',
-        body: JSON.stringify({ ...newPlant, user_id: user.id })
+        body: JSON.stringify({ ...newPlant, name, setup, user_id: user.id })
       });
       const data = await res.json();
       if (data.status === 'success') {
-        setIsAddPlantModalOpen(false);
+        setSetupDraft(null);
         setNewPlant({
           name: '', species: '', image_url: '',
           native_region: '', light_requirement: '', water_requirement: '',
@@ -151,19 +176,21 @@ export default function Home() {
           water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: '', placement: ''
         });
         fetchPlants(user.id);
+        window.dispatchEvent(new Event('pnapana:plant-setup-refresh'));
       } else {
         if (data.code === 'PLAN_LIMIT_REACHED') {
           if (confirm(`${data.message}\n\nWould you like to upgrade your plan now?`)) {
-            setIsAddPlantModalOpen(false);
+            setSetupDraft(null);
             router.push('/subscription');
             return;
           }
         } else {
-          alert(data.message);
+          setSetupError(data.message || 'Could not add this plant. Please try again.');
         }
       }
     } catch (err) {
       console.error(err);
+      setSetupError('Could not add this plant. Please try again.');
     } finally {
       setIsAdding(false);
     }
@@ -252,6 +279,7 @@ export default function Home() {
         const { identification: id, care_plan: cp } = data;
         setNewPlant(prev => ({
           ...prev,
+          name: prev.name || id.common_name || id.species || '',
           species: id.species,
           image_url: imageUrl,
           native_region: cp.native_region || '',
@@ -328,7 +356,7 @@ export default function Home() {
       });
       const data = await res.json();
       if (data.status === 'success') {
-        notifiedIds.current.delete(id);
+        notifiedIds.current.delete(`soil:${id}`);
         setThirstyPlants(prev => prev.filter(pId => pId !== id));
         fetchPlants(user!.id);
         window.dispatchEvent(new Event('pnapana:rewards'));
@@ -362,6 +390,15 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
+      {setupDraft && (
+        <PlantSetupWizard
+          plant={setupDraft}
+          busy={isAdding}
+          serverError={setupError}
+          onBack={() => { setSetupDraft(null); setSetupError(''); setIsAddPlantModalOpen(true); }}
+          onComplete={completeNewPlantSetup}
+        />
+      )}
       
       {/* Animated Mesh Background for Premium Feel */}
       <div className={styles.meshBg}>
@@ -397,7 +434,7 @@ export default function Home() {
               <div>
                 <span className={styles.addPlantEyebrow}>YOUR GARDEN</span>
                 <h2 id="add-plant-title">{t('dashboard.modalAddTitle')}</h2>
-                <p>Give your plant a name and a few care details.</p>
+                <p>Confirm the plant first, then complete its required 3-step care setup.</p>
               </div>
             </div>
             <form onSubmit={handleAddPlant} className={styles.addPlantForm}>
@@ -484,9 +521,9 @@ export default function Home() {
                 )}
               </div>
               <div className={styles.addPlantActions}>
-                <span>Name and species are required.</span>
+                <span>Name and species are required. Setup has 3 steps.</span>
                 <button type="submit" className={styles.submitBtn} disabled={isAdding || isCapturing}>
-                  {isAdding ? t('dashboard.adding') : <><Sprout size={17} /> {t('dashboard.addPlant')}</>}
+                  <><Sprout size={17} /> Continue to setup</>
                 </button>
               </div>
             </form>
@@ -588,17 +625,20 @@ export default function Home() {
           const statusNeedsAttention = /(?:needs? attention|urgent|pest|disease|unhealthy|extra care|check today)/i.test(statusText);
           const needsExtraCare = (['red', 'orange', 'urgent', 'danger', 'needs_attention'].includes(statusColor) || statusNeedsAttention) && !isWaterOnlyStatus;
           const needsWaterToday = thirstyPlants.includes(Number(plant.id)) || isWaterOnlyStatus;
+          const routineReminder = careReminders.find(reminder => Number(reminder.plant_id) === Number(plant.id));
           const careMessage = needsExtraCare
             ? (language === 'hi' ? 'आज विशेष देखभाल चाहिए' : 'Needs attention today')
             : isWaterOnlyStatus
-              ? (language === 'hi' ? 'आज पानी दें' : 'Water today')
+              ? (language === 'hi' ? 'आज मिट्टी की नमी जाँचें' : 'Check soil moisture today')
               : wateringStatus === 'checking'
               ? (language === 'hi' ? 'आज की देखभाल देख रहे हैं…' : 'Checking today’s care…')
               : wateringStatus === 'unavailable'
                 ? (language === 'hi' ? 'देखभाल की जानकारी उपलब्ध नहीं' : 'Care status unavailable')
                 : needsWaterToday
-                  ? (language === 'hi' ? 'आज पानी दें' : 'Water today')
-                  : (language === 'hi' ? 'आज कुछ करने की ज़रूरत नहीं' : 'Nothing needed today');
+                  ? (language === 'hi' ? 'आज मिट्टी की नमी जाँचें' : 'Check soil moisture today')
+                  : routineReminder
+                    ? `${routineReminder.title}: ${routineReminder.message}`
+                    : (language === 'hi' ? 'आज कुछ करने की ज़रूरत नहीं' : 'Nothing needed today');
 
           return (
             <div key={plant.id} className={styles.todayPlant}>
@@ -612,7 +652,7 @@ export default function Home() {
                     {careMessage}
                   </span>
                   {needsExtraCare && needsWaterToday && wateringStatus === 'ready' && (
-                    <span className={styles.todayCareSecondary}>{language === 'hi' ? '· आज पानी दें' : '· Water today'}</span>
+                    <span className={styles.todayCareSecondary}>{language === 'hi' ? '· मिट्टी की नमी जाँचें' : '· Check soil moisture'}</span>
                   )}
                 </div>
               </Link>

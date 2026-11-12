@@ -5,6 +5,7 @@ header('Content-Type: application/json');
 
 require_once '../db.php';
 require_once '../account_helper.php';
+require_once '../plant_setup_helper.php';
 require_once 'auth.php';
 
 // Authenticate user using token
@@ -16,6 +17,14 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 if (!isset($data['name']) || !isset($data['species'])) {
     echo json_encode(["status" => "error", "message" => "Missing required fields"]);
+    exit();
+}
+
+try {
+    $setup = pnapana_normalize_plant_setup($data['setup'] ?? null);
+} catch (InvalidArgumentException $e) {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "code" => "SETUP_REQUIRED", "message" => $e->getMessage()]);
     exit();
 }
 
@@ -44,8 +53,8 @@ if ($maxPlants !== null) {
 $name = $data['name'];
 $species = $data['species'];
 $image_url = isset($data['image_url']) && !empty($data['image_url']) ? $data['image_url'] : 'https://images.unsplash.com/photo-1485955900006-10f4d324d411';
-$water_freq = isset($data['water_freq']) ? $data['water_freq'] : 7;
-$light_req = isset($data['light_req']) ? $data['light_req'] : 'Medium';
+$water_freq = $setup['soil_check_days'];
+$light_req = $setup['light'];
 
 $native_region = $data['native_region'] ?? null;
 $light_requirement = $data['light_requirement'] ?? null;
@@ -54,7 +63,7 @@ $humidity = $data['humidity'] ?? null;
 $pet_friendly = isset($data['pet_friendly']) ? (bool)$data['pet_friendly'] : false;
 $care_plan = isset($data['care_plan']) ? json_encode($data['care_plan']) : null;
 $purchased_on = isset($data['purchased_on']) && $data['purchased_on'] !== '' ? $data['purchased_on'] : null;
-$placement = isset($data['placement']) && in_array($data['placement'], ['indoor', 'outdoor'], true) ? $data['placement'] : null;
+$placement = $setup['placement'];
 $parsedPurchaseDate = $purchased_on === null ? null : DateTime::createFromFormat('!Y-m-d', $purchased_on);
 if ($purchased_on !== null && (!$parsedPurchaseDate || $parsedPurchaseDate->format('Y-m-d') !== $purchased_on || $purchased_on > date('Y-m-d'))) {
     echo json_encode(["status" => "error", "message" => "Choose a valid purchase date."]);
@@ -66,10 +75,13 @@ if ($care_plan === false) {
 
 try {
     $stmt = $pdo->prepare("INSERT INTO plants (user_id, name, species, image_url, water_freq, light_req,
-        native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan, purchased_on, placement)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan, purchased_on, placement,
+        setup_completed, setup_completed_at, setup_data, last_watered)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, COALESCE(?, CURRENT_TIMESTAMP))");
+    $lastWatered = pnapana_setup_last_watered_at($setup['last_watered']);
     $stmt->execute([$user_id, $name, $species, $image_url, $water_freq, $light_req,
-        $native_region, $light_requirement, $water_requirement, $humidity, $pet_friendly, $care_plan, $purchased_on, $placement]);
+        $native_region, $light_requirement, $water_requirement, $humidity, $pet_friendly, $care_plan, $purchased_on, $placement,
+        json_encode($setup), $lastWatered]);
 
     $plant_id = $pdo->lastInsertId();
     $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'add_plant')");
