@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS `app_settings` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `upi_id` varchar(255) NOT NULL DEFAULT '',
   `upi_payee_name` varchar(255) NOT NULL DEFAULT 'Pnapana',
+  `gemini_api_key` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -212,7 +213,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `coins` int(11) NOT NULL DEFAULT 0,
   `is_admin` tinyint(1) NOT NULL DEFAULT 0,
-  `gemini_api_key` varchar(255) DEFAULT NULL,
   `customer_id` varchar(20) DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'ACTIVE',
   PRIMARY KEY (`id`),

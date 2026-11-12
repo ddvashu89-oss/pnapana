@@ -23,17 +23,15 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT id, name, email, password, is_admin, gemini_api_key FROM users WHERE email = :email");
+$stmt = $conn->prepare("SELECT id, name, email, password, is_admin FROM users WHERE email = :email");
 $stmt->bindParam(':email', $email);
 $stmt->execute();
 
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($user && password_verify($password, $user['password'])) {
-    $hasGeminiApiKey = !empty($user['gemini_api_key']);
-    unset($user['password'], $user['gemini_api_key']); // never send credentials or provider keys to the browser
+    unset($user['password']);
     $user['is_admin'] = (bool)$user['is_admin'];
-    $user['has_gemini_api_key'] = $hasGeminiApiKey;
 
     if (!$user['is_admin']) {
         $settingsStmt = $conn->query("SELECT maintenance_mode FROM app_settings WHERE id = 1");

@@ -74,9 +74,7 @@ $prompt = "You are an expert botanist. Identify the plant in this photo and prov
     . '"common_issues": [{"issue": string, "solution": string}]}}. '
     . "If the image does not clearly show a plant, set is_plant to false and leave other fields as best-effort or empty strings.";
 
-$userApiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : null;
-$systemApiKey = defined('GEMINI_API_KEY') ? GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: '');
-$activeKey = $userApiKey ?: $systemApiKey;
+$activeKey = pnapana_shared_gemini_key($pdo);
 
 $result = null;
 

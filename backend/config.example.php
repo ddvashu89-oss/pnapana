@@ -29,6 +29,8 @@ define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : 'CHANGE_ME')
 define('ALLOWED_ORIGINS', getenv('ALLOWED_ORIGINS') ?: 'https://your-domain.com,https://www.your-domain.com');
 
 // --- Gemini AI --------------------------------------------------------------
+// This is the server fallback. An admin can override it for every customer
+// from Admin Dashboard > Settings without exposing the key to customer browsers.
 define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: 'YOUR_KEY_HERE');
 define('GEMINI_MODEL', getenv('GEMINI_MODEL') ?: 'gemini-flash-lite-latest');
 

@@ -34,9 +34,7 @@ if (!empty($healthResponse['ok'])) {
     exit;
 }
 
-$userApiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : null;
-$systemApiKey = defined('GEMINI_API_KEY') ? GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: '');
-$activeKey = $userApiKey ?: $systemApiKey;
+$activeKey = pnapana_shared_gemini_key($pdo);
 if ($activeKey !== '') {
     $prompt = 'Assess this plant photo for visible health problems. Return only JSON with keys is_healthy (boolean), diagnosis (short string), and treatment (practical short guidance). If the image is not a plant, set is_healthy to false and diagnosis to "Not a plant".';
     $result = gemini_vision_json_call($image, $prompt, $activeKey);

@@ -12,10 +12,6 @@ $data = json_decode(file_get_contents("php://input"));
 $name = isset($data->name) ? strip_tags(trim($data->name)) : '';
 $email = isset($data->email) ? strtolower(trim($data->email)) : '';
 $password = isset($data->password) ? (string)$data->password : '';
-$gemini_api_key = isset($data->gemini_api_key) ? trim($data->gemini_api_key) : null;
-if (empty($gemini_api_key)) {
-    $gemini_api_key = null;
-}
 
 if (empty($name) || empty($email) || empty($password)) {
     http_response_code(400);
@@ -63,12 +59,11 @@ if ($stmt->fetch()) {
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 $sessionId = bin2hex(random_bytes(32));
 
-$stmt = $conn->prepare("INSERT INTO users (name, email, password, token, gemini_api_key) VALUES (:name, :email, :password, :token, :gemini_api_key)");
+$stmt = $conn->prepare("INSERT INTO users (name, email, password, token) VALUES (:name, :email, :password, :token)");
 $stmt->bindParam(':name', $name);
 $stmt->bindParam(':email', $email);
 $stmt->bindParam(':password', $hashed_password);
 $stmt->bindParam(':token', $sessionId);
-$stmt->bindParam(':gemini_api_key', $gemini_api_key);
 
 if ($stmt->execute()) {
     $user_id = $conn->lastInsertId();
@@ -89,7 +84,6 @@ if ($stmt->execute()) {
             "customer_id" => $customer_id,
             "name" => $name,
             "email" => $email,
-            "has_gemini_api_key" => !empty($gemini_api_key),
             "token" => $jwt,
             "is_admin" => false
         ]

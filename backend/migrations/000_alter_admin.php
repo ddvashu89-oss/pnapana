@@ -15,13 +15,6 @@ try {
 }
 
 try {
-    $conn->exec("ALTER TABLE users ADD COLUMN gemini_api_key VARCHAR(255) DEFAULT NULL");
-    echo "Column 'gemini_api_key' added to users successfully.\n";
-} catch(PDOException $e) {
-    echo "Note (gemini_api_key column): " . $e->getMessage() . "\n";
-}
-
-try {
     // Seed admin accounts: the original demo user, and whichever real account is testing this.
     $conn->exec("UPDATE users SET is_admin = 1 WHERE id = 1 OR email = 'ddvashu89@gmail.com'");
     echo "Granted admin to seed accounts.\n";
@@ -38,11 +31,19 @@ try {
         ai_scanning_enabled TINYINT(1) NOT NULL DEFAULT 1,
         community_enabled TINYINT(1) NOT NULL DEFAULT 1,
         maintenance_mode TINYINT(1) NOT NULL DEFAULT 0,
+        gemini_api_key VARCHAR(255) DEFAULT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )");
     echo "Table 'app_settings' created successfully.\n";
 } catch(PDOException $e) {
     echo "Error creating app_settings: " . $e->getMessage() . "\n";
+}
+
+try {
+    $conn->exec("ALTER TABLE app_settings ADD COLUMN gemini_api_key VARCHAR(255) DEFAULT NULL");
+    echo "Shared Gemini API key setting added successfully.\n";
+} catch(PDOException $e) {
+    echo "Note (shared Gemini API key setting): " . $e->getMessage() . "\n";
 }
 
 try {

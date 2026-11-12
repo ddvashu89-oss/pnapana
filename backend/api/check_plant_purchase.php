@@ -68,7 +68,7 @@ $prompt = "You are Pnapana's practical nursery purchase advisor. Assess whether 
     . "Their recent watering consistency across existing plants: " . ($careConsistency === null ? 'unknown / no plants yet' : $careConsistency . '%') . "\n"
     . "Return ONLY valid JSON with: is_plant (boolean), plant_name (string), verdict (one of buy, conditional, skip, unknown), fit_score (integer 0-100), summary (one short sentence), good_fit (array of up to 3 short strings), watch_out (array of up to 3 short strings), nursery_checks (array of 3 short things to inspect or ask the seller), care_level (easy, moderate, demanding). Do not claim exact prices or guarantees. If pets are present or pet-safe was requested, clearly flag toxicity uncertainty or risk.";
 
-$apiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : null;
+$apiKey = pnapana_shared_gemini_key($pdo);
 $result = null;
 if ($image !== '') {
     $result = gemini_vision_json_call($image, $prompt, $apiKey);

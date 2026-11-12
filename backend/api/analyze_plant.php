@@ -43,7 +43,7 @@ if (!$ownerId || (int)$ownerId !== (int)$user['id']) {
     exit;
 }
 
-$activeApiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '');
+$activeApiKey = pnapana_shared_gemini_key($pdo);
 $ai_status = null;
 $ai_analysis = '';
 $kindwiseHealth = kindwise_health_assessment($image_url);

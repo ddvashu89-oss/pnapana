@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['status' => 'error', 'code' => 'PLAN_REQUIRED', 'message' => 'Personal AI chat is included with Premium. Your garden overview is available here.']);
         exit;
     }
-    $apiKey = !empty($user['gemini_api_key']) ? $user['gemini_api_key'] : null;
+    $apiKey = pnapana_shared_gemini_key($pdo);
     $prompt = "You are Pnapana's personal plant-care manager. Answer in the language used by the user. Use only this garden data when making claims about their own plants. If a detail is unknown, say so. Give practical, concise guidance.\n\nGarden data:\n" . json_encode($plants, JSON_UNESCAPED_UNICODE) . "\n\nQuestion: " . $question;
     $answer = gemini_text_response($prompt, $apiKey);
     if ($answer === null) {

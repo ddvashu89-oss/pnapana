@@ -1,0 +1,3 @@
+[2026-11-10T04:36:54.759Z] [INIT] Deep Copilot debug log started. file=/opt/lampp/htdocs/pnapana/.deep-copilot/logs/session-2026-11-10T04-36-54-759Z.log
+[2026-11-10T04:36:54.760Z] [ACTIVATE] {"version":"0.32.7"}
+[2026-11-10T04:36:54.760Z] [STATUSBAR_REGISTERED] {"id":"deepseekAgent.statusBar"}

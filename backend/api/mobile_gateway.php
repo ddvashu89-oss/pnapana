@@ -2,7 +2,7 @@
 require_once __DIR__ . '/mobile_common.php';
 // Explicit route/method whitelist: never include a caller-supplied filesystem path.
 $read = ['get_plants.php', 'get_plant_details.php', 'get_plant_scans.php', 'get_notifications.php', 'get_gamification.php', 'get_all_plants.php', 'get_community_posts.php', 'get_subscription.php', 'admin_get_users.php', 'admin_get_plants.php', 'admin_get_posts.php', 'admin_get_messages.php', 'admin_get_payments.php', 'admin_get_stats.php', 'admin_get_analytics.php', 'admin_get_settings.php'];
-$write = ['add_plant.php', 'remove_plant.php', 'water_plant.php', 'identify_plant.php', 'diagnose_plant.php', 'analyze_plant.php', 'validate_plant_name.php', 'create_post.php', 'like_post.php', 'submit_payment.php', 'change_password.php', 'update_gemini_key.php', 'delete_account.php', 'admin_create_user.php', 'admin_update_user.php', 'admin_delete_user.php', 'admin_delete_plant.php', 'admin_delete_post.php', 'admin_delete_message.php', 'admin_review_payment.php', 'admin_update_settings.php'];
+$write = ['add_plant.php', 'remove_plant.php', 'water_plant.php', 'identify_plant.php', 'diagnose_plant.php', 'analyze_plant.php', 'validate_plant_name.php', 'create_post.php', 'like_post.php', 'submit_payment.php', 'change_password.php', 'delete_account.php', 'admin_create_user.php', 'admin_update_user.php', 'admin_delete_user.php', 'admin_delete_plant.php', 'admin_delete_post.php', 'admin_delete_message.php', 'admin_review_payment.php', 'admin_update_settings.php'];
 $endpoint = $_GET['endpoint'] ?? '';
 if (!is_string($endpoint) || !in_array($endpoint, array_merge($read, $write), true)) mobile_fail('Unknown mobile operation.', 404);
 mobile_method(in_array($endpoint, $read, true) ? ['GET'] : ['POST']);
@@ -56,6 +56,9 @@ if ($endpoint === 'water_plant.php') {
     exit;
 }
 if ($endpoint === 'analyze_plant.php') { require __DIR__ . '/mobile_analyze_plant.php'; exit; }
+if ($endpoint === 'identify_plant.php') { require __DIR__ . '/mobile_identify_plant.php'; exit; }
+if ($endpoint === 'diagnose_plant.php') { require __DIR__ . '/mobile_diagnose_plant.php'; exit; }
+if ($endpoint === 'delete_account.php') { require __DIR__ . '/mobile_delete_account.php'; exit; }
 // Endpoints retain their existing validation, ownership checks and response contracts.
 chdir(__DIR__);
 require __DIR__ . '/' . $endpoint;

@@ -13,7 +13,6 @@ export default function Login() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [geminiApiKey, setGeminiApiKey] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,7 +25,7 @@ export default function Login() {
     
     const body = isLogin 
       ? { email, password } 
-      : { name, email, password, gemini_api_key: geminiApiKey.trim() };
+      : { name, email, password };
 
     try {
       const res = await fetch(url, {
@@ -100,33 +99,6 @@ export default function Login() {
               required
             />
           </div>
-
-          {!isLogin && (
-            <div className={styles.inputGroup}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label>{t('login.geminiApiKey')}</label>
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ fontSize: '0.78rem', color: 'var(--accent-green)', textDecoration: 'none', fontWeight: 600 }}
-                >
-                  Get Free Key ↗
-                </a>
-              </div>
-              <input
-                type="text"
-                value={geminiApiKey}
-                onChange={(e) => setGeminiApiKey(e.target.value)}
-                placeholder={t('login.geminiApiKeyPlaceholder')}
-                autoComplete="off"
-                spellCheck="false"
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '-0.2rem', lineHeight: '1.3' }}>
-                {t('login.geminiApiKeyHelp')}
-              </span>
-            </div>
-          )}
 
           <button type="submit" className={styles.submitBtn}>
             {isLogin ? t('login.signIn') : t('login.signUp')}

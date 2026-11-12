@@ -1,8 +1,22 @@
 <?php
 // Shared helper for calling Gemini's vision API with structured JSON output.
 // Returns the decoded response array (Gemini's candidate text, json_decode'd), or null on any failure.
+function pnapana_shared_gemini_key($pdo = null) {
+    if ($pdo instanceof PDO) {
+        try {
+            $value = $pdo->query("SELECT gemini_api_key FROM app_settings WHERE id = 1")->fetchColumn();
+            if (is_string($value) && trim($value) !== '') return trim($value);
+        } catch (Throwable $e) {
+            // Older installations use the server environment until migrated.
+        }
+    }
+
+    $key = defined('GEMINI_API_KEY') ? GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: '');
+    return is_string($key) ? trim($key) : '';
+}
+
 function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
-    $activeKey = !empty($apiKey) ? $apiKey : (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: ''));
+    $activeKey = !empty($apiKey) ? $apiKey : pnapana_shared_gemini_key();
     if (empty($activeKey)) {
         return null;
     }
@@ -85,7 +99,7 @@ function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
 
 /** Calls Gemini for plain-text garden guidance. Returns null when unavailable. */
 function gemini_text_response($prompt, $apiKey = null) {
-    $activeKey = !empty($apiKey) ? $apiKey : (defined('GEMINI_API_KEY') ? GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: ''));
+    $activeKey = !empty($apiKey) ? $apiKey : pnapana_shared_gemini_key();
     if ($activeKey === '') return null;
     $configuredModel = defined('GEMINI_MODEL') ? GEMINI_MODEL : (getenv('GEMINI_MODEL') ?: null);
     $models = array_values(array_unique(array_filter([$configuredModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-lite-latest'])));
