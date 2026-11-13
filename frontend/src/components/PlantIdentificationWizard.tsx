@@ -160,7 +160,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
                   <div className={styles.slotCopy}><strong>{slot.title}{!slot.required && <em>Optional</em>}</strong><p>{slot.detail}</p></div>
                   <div className={styles.photoActions}>
                     <label><Camera size={15} /> Take photo<input type="file" accept="image/*" capture="environment" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
-                    <label><ImagePlus size={15} /> Upload<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
+                    <label><ImagePlus size={15} /> Upload from gallery<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
                     {photos[slot.id] ? <button type="button" onClick={() => setPhotos(current => { const next = { ...current }; delete next[slot.id]; return next; })} aria-label={`Remove ${slot.title} photo`}><X size={15} /></button> : null}
                   </div>
                 </article>
