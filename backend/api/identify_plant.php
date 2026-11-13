@@ -1,4 +1,7 @@
 <?php
+require __DIR__ . '/identify_plant_v2.php';
+exit;
+
 require_once __DIR__ . '/../cors.php';
 pnapana_cors('POST, OPTIONS');
 header("Content-Type: application/json; charset=UTF-8");
@@ -10,9 +13,13 @@ if (file_exists(__DIR__ . '/../config.php')) {
 require_once __DIR__ . '/../gemini_helper.php';
 require_once __DIR__ . '/../kindwise_helper.php';
 require_once __DIR__ . '/../botanical_catalog.php';
+require_once __DIR__ . '/../growth_schema.php';
+require_once __DIR__ . '/../rate_limiter.php';
 require_once __DIR__ . '/auth.php';
 
 $user = authenticate($pdo);
+pnapana_ensure_growth_schema($pdo);
+check_rate_limit('plant_identification', 60, 3600);
 
 $rawInput = file_get_contents('php://input');
 if (empty($rawInput) && php_sapi_name() === 'cli') {
@@ -41,6 +48,10 @@ if (empty($imageBase64)) {
     echo json_encode(["status" => "error", "message" => "Image is required."]);
     exit;
 }
+
+try {
+    $pdo->prepare("INSERT INTO analytics_events (user_id, event_name) VALUES (?, 'plant_scan_attempted')")->execute([$user['id']]);
+} catch (Throwable $ignored) {}
 
 $hint = trim($data['hint'] ?? $data['name'] ?? '');
 $lang = strtolower(trim($data['lang'] ?? 'en'));
@@ -118,6 +129,14 @@ if ($kindwiseMatch !== null) {
 try {
     $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, NULL, 'ai_scan')");
     $eventStmt->execute([$user['id']]);
+    $provider = $kindwiseMatch !== null && !empty($activeKey) ? 'kindwise+gemini' : ($kindwiseMatch !== null ? 'kindwise' : (!empty($activeKey) ? 'gemini' : 'fallback'));
+    $confidenceMap = ['high' => 0.9, 'medium' => 0.65, 'low' => 0.35];
+    $confidenceValue = is_numeric($result['confidence'] ?? null) ? (float)$result['confidence'] : ($confidenceMap[$result['confidence'] ?? ''] ?? null);
+    $kindwiseCost = (float)(getenv('KINDWISE_COST_PER_SCAN_USD') ?: 0);
+    $geminiCost = (float)(getenv('GEMINI_COST_PER_SCAN_USD') ?: 0);
+    $estimatedCost = ($kindwiseMatch !== null ? $kindwiseCost : 0) + (!empty($activeKey) ? $geminiCost : 0);
+    $pdo->prepare("INSERT INTO ai_usage_events (user_id, operation, provider, success, confidence, estimated_cost_usd) VALUES (?, 'identify', ?, 1, ?, ?)")->execute([$user['id'], $provider, $confidenceValue, $estimatedCost]);
+    $pdo->prepare("INSERT INTO analytics_events (user_id, event_name, metadata) VALUES (?, 'plant_scan_succeeded', ?)")->execute([$user['id'], json_encode(['provider' => $provider])]);
 } catch (Exception $e) {
     // Continue even if logging fails
 }

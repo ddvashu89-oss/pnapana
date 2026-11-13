@@ -41,6 +41,7 @@ export default function Settings() {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletionRequest, setDeletionRequest] = useState<{ status: string; scheduled_for: string } | null>(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -55,6 +56,9 @@ export default function Settings() {
       delete (safeUser as unknown as Record<string, unknown>).has_gemini_api_key;
       localStorage.setItem('user', JSON.stringify(safeUser));
       setUser(safeUser);
+      authFetch('account_privacy.php').then(r => r.json()).then(data => {
+        if (data.status === 'success') setDeletionRequest(data.deletion_request);
+      }).catch(() => {});
     } catch {
       router.push('/login');
     }
@@ -146,17 +150,18 @@ export default function Settings() {
     setDeleteError(null);
 
     try {
-      const res = await authFetch('delete_account.php', {
+      const res = await authFetch('account_privacy.php', {
         method: 'POST',
-        body: JSON.stringify({ password: deletePassword })
+        body: JSON.stringify({ action: 'request_deletion', password: deletePassword })
       });
 
       const data = await res.json();
 
       if (res.ok && data.status === 'success') {
-        localStorage.removeItem('user');
-        alert(t('settings.deleteRaised'));
-        router.push('/login');
+        setDeletionRequest({ status: 'pending', scheduled_for: data.scheduled_for });
+        setShowDeleteModal(false);
+        setDeletePassword('');
+        alert(data.message);
       } else {
         setDeleteError(data.message || 'Failed to delete account.');
       }
@@ -165,6 +170,31 @@ export default function Settings() {
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  const handleExportData = async () => {
+    const password = window.prompt('Confirm your password to download your Pnapana data.');
+    if (!password) return;
+    try {
+      const res = await authFetch('account_privacy.php', { method: 'POST', body: JSON.stringify({ action: 'export', password }) });
+      if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'Export failed.'); }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = `pnapana-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+    } catch (error) { alert(error instanceof Error ? error.message : 'Data export failed.'); }
+  };
+
+  const handleCancelDeletion = async () => {
+    const password = window.prompt('Confirm your password to cancel account deletion.');
+    if (!password) return;
+    try {
+      const res = await authFetch('account_privacy.php', { method: 'POST', body: JSON.stringify({ action: 'cancel_deletion', password }) });
+      const data = await res.json();
+      if (!res.ok || data.status !== 'success') throw new Error(data.message || 'Cancellation failed.');
+      setDeletionRequest(null); alert(data.message);
+    } catch (error) { alert(error instanceof Error ? error.message : 'Cancellation failed.'); }
   };
 
   if (!user) return <Loader fullScreen label={t('common.loading')} />;
@@ -370,14 +400,20 @@ export default function Settings() {
           <h3 className={styles.cardTitle}>{t('settings.accountActions')}</h3>
 
           <div className={styles.actionGrid}>
+            <button className={styles.logoutBtn} onClick={handleExportData}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download my data
+            </button>
             <button className={styles.logoutBtn} onClick={handleLogout}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
               {t('settings.logOut')}
             </button>
-            <button className={styles.deleteBtn} onClick={() => { setDeleteError(null); setDeletePassword(''); setShowDeleteModal(true); }}>
+            {deletionRequest?.status === 'pending' ? <button className={styles.logoutBtn} onClick={handleCancelDeletion}>
+              Cancel deletion ({new Date(deletionRequest.scheduled_for.replace(' ', 'T')).toLocaleDateString('en-IN')})
+            </button> : <button className={styles.deleteBtn} onClick={() => { setDeleteError(null); setDeletePassword(''); setShowDeleteModal(true); }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-              {t('settings.requestDeletion')}
-            </button>
+              Request account deletion
+            </button>}
           </div>
         </motion.section>
 
@@ -389,8 +425,8 @@ export default function Settings() {
       {showDeleteModal && (
         <div className={styles.modalBackdrop} onClick={() => !deleteLoading && setShowDeleteModal(false)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <h3>{t('settings.deleteAccountModalTitle')}</h3>
-            <p>{t('settings.deleteAccountWarning')}</p>
+            <h3>Schedule account deletion</h3>
+            <p>Your account remains recoverable for 30 days. You can cancel the request from Settings before the scheduled deletion date.</p>
 
             {deleteError && (
               <div className={`${styles.alertBox} ${styles.alertError}`}>
@@ -426,7 +462,7 @@ export default function Settings() {
                 onClick={handleConfirmDeleteAccount}
                 disabled={deleteLoading || !deletePassword}
               >
-                {deleteLoading ? t('settings.deletingAccount') : t('settings.confirmDelete')}
+                {deleteLoading ? 'Scheduling...' : 'Schedule deletion'}
               </button>
             </div>
           </div>

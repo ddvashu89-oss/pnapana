@@ -3,11 +3,12 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight, Globe, Sun, Heart, Sparkles, Plane } from 'lucide-react';
+import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight, Globe, Sun, Heart, Sparkles, Plane, BookOpen } from 'lucide-react';
 import WeatherCard from '@/components/WeatherCard';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import PlantSetupWizard, { PlantSetupValues, SetupPlant } from '@/components/PlantSetupWizard';
+import PlantIdentificationWizard, { ConfirmedPlantIdentification } from '@/components/PlantIdentificationWizard';
 import { authFetch } from '@/lib/api';
 import styles from './Home.module.css';
 
@@ -50,6 +51,7 @@ export default function Home() {
   const [cameraMode, setCameraMode] = useState<'capture' | 'identify' | 'diagnose'>('capture');
   const [healthStatus, setHealthStatus] = useState<{ diagnosis: string, treatment: string } | null>(null);
   const [isDiagnosingModalOpen, setIsDiagnosingModalOpen] = useState(false);
+  const [isIdentificationOpen, setIsIdentificationOpen] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -334,7 +336,29 @@ export default function Home() {
     setHealthStatus(null);
     setIsIdentifying(false);
     setAiError(null);
+    setIsIdentificationOpen(false);
     stopCamera();
+  };
+
+  const applyConfirmedIdentification = (identified: ConfirmedPlantIdentification) => {
+    const cp = identified.care_plan || {};
+    setNewPlant(prev => ({
+      ...prev,
+      name: prev.name || identified.common_name || identified.species,
+      species: identified.species,
+      image_url: identified.primary_image,
+      native_region: cp.native_region || '',
+      light_requirement: cp.light?.detail || '',
+      water_requirement: cp.water?.instructions || '',
+      humidity: cp.humidity?.level || '',
+      pet_friendly: !!cp.toxicity?.pet_friendly,
+      water_freq: cp.water?.frequency_days || 7,
+      light_req: cp.light?.level || 'Medium',
+      care_plan: cp,
+    }));
+    setPlantInfo({ species: identified.species, description: identified.description });
+    setCameraMode('identify');
+    setIsIdentificationOpen(false);
   };
 
   const removePlant = (id: number) => {
@@ -399,6 +423,10 @@ export default function Home() {
           onComplete={completeNewPlantSetup}
         />
       )}
+
+      {isIdentificationOpen && (
+        <PlantIdentificationWizard onClose={() => setIsIdentificationOpen(false)} onConfirmed={applyConfirmedIdentification} />
+      )}
       
       {/* Animated Mesh Background for Premium Feel */}
       <div className={styles.meshBg}>
@@ -446,8 +474,8 @@ export default function Home() {
                 <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor="plant-species">{t('dashboard.speciesLabel')}</label>
-                    <button type="button" onClick={() => startCamera('identify')} className={styles.identifyBtn}>
-                      <ScanLine size={14} /> {t('dashboard.aiIdentify')}
+                    <button type="button" onClick={() => setIsIdentificationOpen(true)} className={styles.identifyBtn}>
+                      <ScanLine size={14} /> Identify from 3 angles
                     </button>
                   </div>
                   <input id="plant-species" type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
@@ -613,6 +641,7 @@ export default function Home() {
         <button onClick={() => plants[0] ? router.push(`/plant?id=${plants[0].id}&tab=scan`) : startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'Plant SOS' : 'Plant SOS'}</strong></button>
         <Link href="/remedies"><span className={styles.shortcutPeach}><FlaskConical size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'घरेलू उपाय' : 'Remedies'}</strong></Link>
         <Link href="/garden-manager"><span className={styles.shortcutGreen}><Sparkles size={25} strokeWidth={1.6} /></span><strong>Plant Manager</strong></Link>
+        <Link href="/journal"><span className={styles.shortcutBlue}><BookOpen size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'ग्रोथ जर्नल' : 'Growth Journal'}</strong></Link>
         <Link href="/vacation"><span className={styles.shortcutPeach}><Plane size={25} strokeWidth={1.6} /></span><strong>Vacation Mode</strong></Link>
       </div>
 

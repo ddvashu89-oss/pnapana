@@ -66,18 +66,45 @@ function kindwise_request($endpoint, $payload) {
 }
 
 function kindwise_identify($image, $language = 'en') {
-    $imageData = kindwise_image_payload($image);
-    if ($imageData === null) {
+    $images = is_array($image) ? array_slice($image, 0, 4) : [$image];
+    $imageData = [];
+    foreach ($images as $candidate) {
+        $encoded = kindwise_image_payload($candidate);
+        if ($encoded !== null) $imageData[] = $encoded;
+    }
+    if (!$imageData) {
         return ['ok' => false, 'configured' => kindwise_api_key() !== '', 'data' => null];
     }
 
-    $payload = ['images' => [$imageData]];
+    $payload = ['images' => $imageData];
     $query = ['details' => 'common_names,url,description,taxonomy,image'];
     if (in_array($language, ['en', 'hi', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru', 'uk', 'zh', 'ja', 'ko'], true)) {
         $query['language'] = $language;
     }
 
     return kindwise_request('identification?' . http_build_query($query), $payload);
+}
+
+function kindwise_identification_candidates($response, $limit = 3) {
+    $suggestions = $response['result']['classification']['suggestions'] ?? [];
+    if (!is_array($suggestions)) return [];
+    $candidates = [];
+    foreach (array_slice($suggestions, 0, max(1, (int)$limit)) as $suggestion) {
+        if (!is_array($suggestion) || empty($suggestion['name'])) continue;
+        $details = $suggestion['details'] ?? [];
+        $names = $details['common_names'] ?? [];
+        if (is_string($names)) $names = [$names];
+        $description = $details['description'] ?? '';
+        if (is_array($description)) $description = $description['value'] ?? '';
+        $candidates[] = [
+            'species' => (string)$suggestion['name'],
+            'common_name' => (string)($names[0] ?? $suggestion['name']),
+            'probability' => max(0, min(1, (float)($suggestion['probability'] ?? 0))),
+            'description' => is_string($description) ? $description : '',
+            'source' => 'kindwise'
+        ];
+    }
+    return $candidates;
 }
 
 function kindwise_health_assessment($image) {

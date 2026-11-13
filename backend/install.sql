@@ -222,6 +222,93 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `uniq_customer_id` (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `plant_journal_entries` (
+  `id` int NOT NULL AUTO_INCREMENT, `user_id` int NOT NULL, `plant_id` int NOT NULL,
+  `entry_type` varchar(30) NOT NULL DEFAULT 'growth', `title` varchar(120) NOT NULL,
+  `notes` text DEFAULT NULL, `image_url` varchar(500) DEFAULT NULL, `height_cm` decimal(7,2) DEFAULT NULL,
+  `compared_entry_id` int DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`), KEY `idx_journal_user_plant` (`user_id`,`plant_id`,`created_at`),
+  CONSTRAINT `fk_journal_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_journal_plant` FOREIGN KEY (`plant_id`) REFERENCES `plants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_journal_compare` FOREIGN KEY (`compared_entry_id`) REFERENCES `plant_journal_entries` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `disease_cases` (
+  `id` int NOT NULL AUTO_INCREMENT, `user_id` int NOT NULL, `plant_id` int NOT NULL,
+  `diagnosis` varchar(255) NOT NULL, `treatment` text DEFAULT NULL, `initial_image_url` varchar(500) DEFAULT NULL,
+  `follow_up_due_at` datetime NOT NULL, `follow_up_image_url` varchar(500) DEFAULT NULL,
+  `follow_up_notes` text DEFAULT NULL, `followed_up_at` datetime DEFAULT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'monitoring', `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`), KEY `idx_disease_due` (`user_id`,`status`,`follow_up_due_at`),
+  CONSTRAINT `fk_disease_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_disease_plant` FOREIGN KEY (`plant_id`) REFERENCES `plants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `plant_care_profiles` (
+  `plant_id` int NOT NULL, `user_id` int NOT NULL, `soil_type` varchar(120) DEFAULT NULL,
+  `pot_size_cm` decimal(6,2) DEFAULT NULL, `pot_material` varchar(40) DEFAULT NULL, `has_drainage` tinyint(1) NOT NULL DEFAULT 1,
+  `last_repotted_on` date DEFAULT NULL, `repot_interval_months` smallint DEFAULT 12, `next_repot_on` date DEFAULT NULL,
+  `fertilizer_name` varchar(120) DEFAULT NULL, `fertilizer_interval_days` smallint DEFAULT 30,
+  `last_fertilized_on` date DEFAULT NULL, `next_fertilizer_on` date DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`plant_id`), KEY `idx_care_profile_due` (`user_id`,`next_repot_on`,`next_fertilizer_on`),
+  CONSTRAINT `fk_care_profile_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_care_profile_plant` FOREIGN KEY (`plant_id`) REFERENCES `plants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `caregiver_invites` (
+  `id` int NOT NULL AUTO_INCREMENT, `owner_user_id` int NOT NULL, `caregiver_user_id` int NOT NULL,
+  `starts_on` date NOT NULL, `ends_on` date NOT NULL, `status` varchar(20) NOT NULL DEFAULT 'pending',
+  `message` varchar(500) DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT current_timestamp(), `responded_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`), UNIQUE KEY `uniq_caregiver_trip` (`owner_user_id`,`caregiver_user_id`,`starts_on`,`ends_on`), KEY `idx_caregiver_inbox` (`caregiver_user_id`,`status`),
+  CONSTRAINT `fk_caregiver_owner` FOREIGN KEY (`owner_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_caregiver_user` FOREIGN KEY (`caregiver_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `caregiver_tasks` (
+  `id` int NOT NULL AUTO_INCREMENT, `invite_id` int NOT NULL, `plant_id` int NOT NULL, `task_type` varchar(40) NOT NULL,
+  `instructions` varchar(500) DEFAULT NULL, `due_on` date NOT NULL, `completed_at` datetime DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`), KEY `idx_caregiver_tasks_due` (`invite_id`,`due_on`,`completed_at`),
+  CONSTRAINT `fk_caregiver_task_invite` FOREIGN KEY (`invite_id`) REFERENCES `caregiver_invites` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_caregiver_task_plant` FOREIGN KEY (`plant_id`) REFERENCES `plants` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `analytics_events` (
+  `id` bigint NOT NULL AUTO_INCREMENT, `user_id` int DEFAULT NULL, `event_name` varchar(80) NOT NULL,
+  `metadata` text DEFAULT NULL, `created_at` datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (`id`),
+  KEY `idx_analytics_name_date` (`event_name`,`created_at`), KEY `idx_analytics_user_date` (`user_id`,`created_at`),
+  CONSTRAINT `fk_analytics_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `ai_usage_events` (
+  `id` bigint NOT NULL AUTO_INCREMENT, `user_id` int DEFAULT NULL, `operation` varchar(50) NOT NULL, `provider` varchar(30) NOT NULL,
+  `success` tinyint(1) NOT NULL DEFAULT 1, `confidence` decimal(5,4) DEFAULT NULL, `estimated_cost_usd` decimal(12,6) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (`id`), KEY `idx_ai_usage_date` (`created_at`,`operation`,`provider`),
+  CONSTRAINT `fk_ai_usage_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `account_deletion_requests` (
+  `id` int NOT NULL AUTO_INCREMENT, `user_id` int NOT NULL, `requested_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `scheduled_for` datetime NOT NULL, `cancelled_at` datetime DEFAULT NULL, `completed_at` datetime DEFAULT NULL, `status` varchar(20) NOT NULL DEFAULT 'pending',
+  PRIMARY KEY (`id`), UNIQUE KEY `uniq_active_deletion_user` (`user_id`), KEY `idx_deletion_schedule` (`status`,`scheduled_for`),
+  CONSTRAINT `fk_deletion_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `plant_identification_events` (
+  `id` char(32) NOT NULL, `user_id` int NOT NULL, `image_count` tinyint unsigned NOT NULL,
+  `kindwise_top_species` varchar(180) DEFAULT NULL, `kindwise_probability` decimal(7,6) DEFAULT NULL,
+  `kindwise_candidates` longtext DEFAULT NULL, `gemini_species` varchar(180) DEFAULT NULL,
+  `gemini_confidence` decimal(7,6) DEFAULT NULL, `providers_agree` tinyint(1) NOT NULL DEFAULT 0,
+  `auto_accepted` tinyint(1) NOT NULL DEFAULT 0, `selected_species` varchar(180) DEFAULT NULL,
+  `selected_common_name` varchar(180) DEFAULT NULL, `selected_probability` decimal(7,6) DEFAULT NULL,
+  `corrected` tinyint(1) DEFAULT NULL, `confirmed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(), PRIMARY KEY (`id`),
+  KEY `idx_identification_user_date` (`user_id`,`created_at`),
+  KEY `idx_identification_corrections` (`corrected`,`created_at`),
+  CONSTRAINT `fk_identification_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ---------------------------------------------------------------------

@@ -35,8 +35,7 @@ if (!empty($kindwiseResponse['ok'])) {
     $kindwiseMatch = $parsed['suggestion'] ?? null;
 }
 
-$prompt = "You are an expert botanist. Identify the plant in this photo and provide a complete care plan. "
-    . (!empty($kindwiseMatch['species']) ? "Kindwise identified this as '{$kindwiseMatch['species']}' (common name '{$kindwiseMatch['common_name']}'). Treat that identity as authoritative. " : '')
+$prompt = "You are an expert botanist. Independently identify the plant in this photo and provide a complete care plan. Do not assume another provider is correct. "
     . ($hint !== '' ? "The user suggests this plant may be '{$hint}'. Verify it. " : '')
     . 'Return only JSON with: is_plant (boolean), species (string), common_name (string), confidence (high, medium, or low), description (string), and care_plan containing native_region, light {level, detail}, water {frequency_days, instructions}, humidity {level, detail}, soil, temperature, fertilizing, pruning, toxicity {pet_friendly, detail}, and common_issues [{issue, solution}].';
 
@@ -68,20 +67,30 @@ if (!is_array($result) || empty($result['species']) || !isset($result['care_plan
 }
 
 if ($kindwiseMatch !== null) {
-    $provider = 'kindwise';
+    $provider = $provider === 'gemini' ? 'kindwise+gemini' : 'kindwise';
     $numericConfidence = isset($kindwiseMatch['probability']) ? (float)$kindwiseMatch['probability'] : null;
-    $result['is_plant'] = true;
-    $result['species'] = $kindwiseMatch['species'];
-    $result['common_name'] = $kindwiseMatch['common_name'];
-    $result['confidence'] = $kindwiseMatch['confidence'];
-    if (empty($result['description'])) $result['description'] = $kindwiseMatch['description'];
-    $result['alternatives'] = [];
+    $geminiSpecies = strtolower(trim((string)($result['species'] ?? '')));
+    $kindwiseSpecies = strtolower(trim((string)$kindwiseMatch['species']));
+    $geminiGenus = explode(' ', preg_replace('/[^a-z0-9 ]+/', '', $geminiSpecies))[0] ?? '';
+    $kindwiseGenus = explode(' ', preg_replace('/[^a-z0-9 ]+/', '', $kindwiseSpecies))[0] ?? '';
+    $providersAgree = $geminiSpecies !== '' && ($geminiSpecies === $kindwiseSpecies || (strlen($geminiGenus) >= 4 && $geminiGenus === $kindwiseGenus));
+    $strongAgreement = $providersAgree && $numericConfidence !== null && $numericConfidence >= 0.75;
+    if ($strongAgreement || empty($result['species'])) {
+        $result['is_plant'] = true;
+        $result['species'] = $kindwiseMatch['species'];
+        $result['common_name'] = $kindwiseMatch['common_name'];
+        $result['confidence'] = $strongAgreement ? $kindwiseMatch['confidence'] : 'low';
+        if (empty($result['description'])) $result['description'] = $kindwiseMatch['description'];
+    }
+    $result['uncertain'] = !$strongAgreement;
+    $result['alternatives'] = $result['alternatives'] ?? [];
     foreach (($kindwiseResponse['data']['result']['classification']['suggestions'] ?? []) as $alternative) {
-        if (!is_array($alternative) || empty($alternative['name']) || $alternative['name'] === $kindwiseMatch['species']) continue;
+        if (!is_array($alternative) || empty($alternative['name']) || strtolower($alternative['name']) === strtolower((string)($result['species'] ?? ''))) continue;
         $names = $alternative['details']['common_names'] ?? [];
         $result['alternatives'][] = [
             'species' => $alternative['name'],
-            'common_name' => is_array($names) ? ($names[0] ?? $alternative['name']) : $alternative['name']
+            'common_name' => is_array($names) ? ($names[0] ?? $alternative['name']) : $alternative['name'],
+            'probability' => isset($alternative['probability']) ? (float)$alternative['probability'] : null
         ];
         if (count($result['alternatives']) >= 3) break;
     }

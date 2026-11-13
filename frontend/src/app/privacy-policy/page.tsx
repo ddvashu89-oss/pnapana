@@ -22,7 +22,7 @@ export default function PrivacyPolicy() {
         >
           <h1 className={styles.title} style={{ fontSize: '3.5rem' }}>Privacy <span className={styles.highlight}>Policy</span></h1>
           <p className={styles.subtitle} style={{ marginBottom: '1rem' }}>
-            Last updated: August 14, 2026
+            Last updated: November 13, 2026
           </p>
         </motion.div>
       </header>
@@ -44,6 +44,7 @@ export default function PrivacyPolicy() {
               <li><strong>Contact Data</strong> includes email address.</li>
               <li><strong>Technical Data</strong> includes internet protocol (IP) address, your login data, browser type and version, time zone setting and location.</li>
               <li><strong>Usage Data</strong> includes information about how you use our website, app, and services (such as your plant logs and watering schedules).</li>
+              <li><strong>Plant Media</strong> includes photos and notes you choose to add to plant scans, journals, and disease follow-ups.</li>
             </ul>
           </div>
 
@@ -55,6 +56,16 @@ export default function PrivacyPolicy() {
           <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '2rem', marginBottom: '1rem' }}>4. Data Security</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
             We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used or accessed in an unauthorised way, altered or disclosed.
+          </p>
+
+          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '2rem', marginBottom: '1rem' }}>5. AI Processing and Service Providers</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
+            When you request plant identification or health analysis, the selected plant image may be sent securely to our configured AI providers, including Kindwise Plant.id and Google Gemini. We send only the information required to provide the requested analysis and do not ask customers to supply provider API keys.
+          </p>
+
+          <h2 style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '2rem', marginBottom: '1rem' }}>6. Export, Retention and Deletion</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', lineHeight: '1.8', marginBottom: '2rem' }}>
+            You can download a machine-readable copy of your account, plants, journal, care, and recovery data from Settings. Account deletion has a 30-day recovery period. You may cancel during that period; after it ends, the scheduled deletion process removes your account and associated application data, subject to records we must retain for security, fraud prevention, or legal obligations.
           </p>
         </div>
       </main>

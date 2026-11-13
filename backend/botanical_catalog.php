@@ -568,11 +568,13 @@ function identify_plant_fallback($imageBase64, $hint = '', $lang = 'en', $metric
         'is_plant' => true,
         'species' => $topPlant['species'],
         'common_name' => $topPlant['common_name'],
-        'confidence' => $hintApplied ? 'high' : 'high',
+        // A color heuristic is never evidence for a high-confidence species.
+        // Callers must surface this as an uncertain suggestion, not a result.
+        'confidence' => $hintApplied ? 'medium' : 'low',
         'description' => $topPlant['description'],
         'care_plan' => $topPlant['care_plan'],
         'alternatives' => $alternatives,
-        'uncertain' => false,
+        'uncertain' => true,
         'hint_applied' => $hintApplied
     ];
 }

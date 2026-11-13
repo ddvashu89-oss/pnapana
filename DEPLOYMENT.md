@@ -187,6 +187,22 @@ move — do not leave it on a live site.
 
 ## 7. Post-deploy verification
 
+For an existing installation, import `backend/migrations/010_growth_care_platform.sql`
+and then `backend/migrations/011_verified_plant_identification.sql` through
+phpMyAdmin before opening the new Growth, Journal, or plant identification flows. Fresh installs
+can import the updated `backend/install.sql` as usual.
+
+Add a daily cPanel cron job so accounts whose 30-day recovery period has ended
+are actually removed:
+
+```bash
+php /absolute/path/to/pnapana/backend/process_account_deletions.php
+```
+
+Set `KINDWISE_COST_PER_SCAN_USD` and `GEMINI_COST_PER_SCAN_USD` in the server
+environment when Admin Analytics should show estimated spend. A flat-rate plan
+may leave either value at `0`.
+
 Run these against the live domain. The first five **must** fail.
 
 ```bash
@@ -224,9 +240,10 @@ curl -sD- -o /dev/null https://your-domain.com/backend/api/get_site_status.php -
 Known gaps, not oversights:
 
 - **No email verification.** Anyone can register with any address.
-- **One shared Gemini key.** Every AI call bills your key. There is no per-user
-  quota or spend cap, so a heavy user (or an abusive one) runs up your bill.
+- **One shared Gemini key.** Every AI call bills your key. API routes are rate
+  limited and usage is tracked, but there is not yet a hard monthly spend cap.
 - **Backups.** Set up `mysqldump` on a schedule. Also back up
-  `backend/storage/payment_screenshots/` — those files exist nowhere else.
+  `backend/storage/payment_screenshots/` and `backend/uploads/` — those files
+  exist nowhere else.
 - **Rate limiting is per-server, file-based.** Fine for one host; it does not
   coordinate across multiple web servers.
