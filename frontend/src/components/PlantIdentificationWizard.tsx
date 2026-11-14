@@ -64,6 +64,13 @@ async function prepareImage(file: File): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.86);
 }
 
+function formatPlantNetProbability(probability: number): string {
+  if (!Number.isFinite(probability)) return '—';
+  // Keep the provider's numeric score meaningful rather than rounding a
+  // 63.127% result down to a misleading 63%.
+  return `${(probability * 100).toFixed(3).replace(/\.?0+$/, '')}%`;
+}
+
 export default function PlantIdentificationWizard({ onClose, onConfirmed }: Props) {
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [scan, setScan] = useState<ScanResult | null>(null);
@@ -151,10 +158,10 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
         {!scan ? (
           <>
             <div className={styles.intro}>
-              <strong>Use 2–3 photos for better accuracy</strong>
+              <strong>Use 2–4 photos for better accuracy</strong>
               <p>PlantNet compares these views of the same plant. Good light and varied details improve the result.</p>
               <div className={styles.progress}><span style={{ width: `${requiredCount * 100 / 2}%` }} /></div>
-              <small>{requiredCount}/2 required views ready · third view recommended</small>
+              <small>{requiredCount}/2 required views ready · extra stem/flower and angle views recommended</small>
             </div>
             <div className={styles.photoGrid}>
               {PHOTO_SLOTS.map((slot, index) => (
@@ -185,7 +192,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
                   <input type="radio" name="plant-candidate" checked={selectedSpecies === candidate.species && !showCustom} onChange={() => { setSelectedSpecies(candidate.species); setShowCustom(false); }} />
                   <span className={styles.radioMark} />
                   <span className={styles.candidateCopy}><strong>{candidate.common_name || candidate.species}</strong><em>{candidate.species}</em>{candidate.description ? <small>{candidate.description}</small> : null}</span>
-                  <span className={styles.confidence}>{Math.round(candidate.probability * 100)}%<small>{candidate.providers_agree ? 'Both agree' : 'Model score'}</small></span>
+                  <span className={styles.confidence}>{formatPlantNetProbability(candidate.probability)}<small>{candidate.providers_agree ? 'Both agree' : 'PlantNet score'}</small></span>
                 </label>
               ))}
               <button type="button" className={`${styles.notListed} ${showCustom ? styles.notListedActive : ''}`} onClick={() => { setShowCustom(true); setSelectedSpecies(''); }}>My plant isn’t listed</button>

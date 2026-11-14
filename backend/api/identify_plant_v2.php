@@ -15,13 +15,13 @@ check_rate_limit('plant_identification', 40, 3600);
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $rawImages = is_array($data['images'] ?? null) ? $data['images'] : [($data['image_base64'] ?? $data['image'] ?? null)];
 $images = [];
-foreach (array_slice($rawImages, 0, 3) as $image) {
+foreach (array_slice($rawImages, 0, 4) as $image) {
     $value = is_array($image) ? ($image['image_base64'] ?? null) : $image;
     if (is_string($value) && plantnet_decode_image($value)) $images[] = $value;
 }
-if (!$images) {
-    pnapana_write_application_log($pdo, 'warning', 'plantnet_identification_rejected', 'No valid PlantNet images supplied.', (int)$user['id'], ['image_count' => 0], 400);
-    http_response_code(400); echo json_encode(['status' => 'error', 'message' => 'Add 1–3 clear JPG or PNG plant photos.']); exit;
+if (count($images) < 2) {
+    pnapana_write_application_log($pdo, 'warning', 'plantnet_identification_rejected', 'Fewer than two valid PlantNet images supplied.', (int)$user['id'], ['image_count' => count($images)], 400);
+    http_response_code(400); echo json_encode(['status' => 'error', 'message' => 'Add at least 2 clear JPG or PNG plant photos: a whole-plant view and a close leaf view.']); exit;
 }
 
 pnapana_log_user_activity($pdo, (int)$user['id'], 'plantnet_identification_requested', ['image_count' => count($images)]);

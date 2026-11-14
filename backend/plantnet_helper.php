@@ -16,7 +16,10 @@ function plantnet_identify(array $images, string $language = 'en'): array {
     $key = plantnet_api_key();
     if ($key === '') return ['ok' => false, 'configured' => false, 'http_status' => null, 'error_code' => 'not_configured', 'data' => null];
     $parts = [];
-    foreach (array_slice($images, 0, 3) as $image) {
+    // The scan UI collects up to four complementary views. Sending each one
+    // (whole plant, leaf, stem/flower, alternate angle) materially improves
+    // PlantNet's ability to distinguish visually similar species.
+    foreach (array_slice($images, 0, 4) as $image) {
         if (!is_string($image) || !($decoded = plantnet_decode_image($image))) continue;
         $parts[] = $decoded;
     }
