@@ -342,6 +342,19 @@ export default function Home() {
     stopCamera();
   };
 
+  // Keep only one full-screen dialog active at a time. The identification
+  // wizard is a required step inside Add Plant, but rendering both overlays
+  // together causes one modal to visually cover the other on mobile.
+  const openPlantIdentification = () => {
+    setIsAddPlantModalOpen(false);
+    setIsIdentificationOpen(true);
+  };
+
+  const returnToAddPlant = () => {
+    setIsIdentificationOpen(false);
+    setIsAddPlantModalOpen(true);
+  };
+
   const applyConfirmedIdentification = (identified: ConfirmedPlantIdentification) => {
     const cp = identified.care_plan || {};
     setNewPlant(prev => ({
@@ -361,6 +374,7 @@ export default function Home() {
     setPlantInfo({ species: identified.species, description: identified.description });
     setCameraMode('identify');
     setIsIdentificationOpen(false);
+    setIsAddPlantModalOpen(true);
   };
 
   const removePlant = (id: number) => {
@@ -427,7 +441,7 @@ export default function Home() {
       )}
 
       {isIdentificationOpen && (
-        <PlantIdentificationWizard onClose={() => setIsIdentificationOpen(false)} onConfirmed={applyConfirmedIdentification} />
+        <PlantIdentificationWizard onClose={returnToAddPlant} onConfirmed={applyConfirmedIdentification} />
       )}
       
       {/* Animated Mesh Background for Premium Feel */}
@@ -476,7 +490,7 @@ export default function Home() {
                 <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor="plant-species">{t('dashboard.speciesLabel')}</label>
-                    <button type="button" onClick={() => setIsIdentificationOpen(true)} className={styles.identifyBtn}>
+                    <button type="button" onClick={openPlantIdentification} className={styles.identifyBtn}>
                       <ScanLine size={14} /> Identify with 2–4 photos
                     </button>
                   </div>
@@ -544,7 +558,7 @@ export default function Home() {
                     ) : (
                       <div>
                         <input type="url" value={newPlant.image_url} onChange={e => setNewPlant({...newPlant, image_url: e.target.value})} placeholder={t('dashboard.urlPlaceholder')} style={{marginBottom: '0.5rem'}} />
-                        <button type="button" onClick={() => setIsIdentificationOpen(true)} className={styles.cameraBtn}>Identify with 2–4 photos</button>
+                        <button type="button" onClick={openPlantIdentification} className={styles.cameraBtn}>Identify with 2–4 photos</button>
                       </div>
                     )}
                   </div>
