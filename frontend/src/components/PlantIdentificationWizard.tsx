@@ -38,7 +38,7 @@ type Props = {
 const PHOTO_SLOTS = [
   { id: 'whole', title: 'Whole plant', detail: 'Include the pot and full growth shape.', required: true },
   { id: 'leaf', title: 'Clear leaf', detail: 'Fill the frame with one healthy leaf.', required: true },
-  { id: 'stem', title: 'Stem or flower', detail: 'Show nodes, stem texture, or a flower.', required: true },
+  { id: 'stem', title: 'Stem or flower', detail: 'Recommended: show nodes, stem texture, or a flower.', required: false },
   { id: 'angle', title: 'Another angle', detail: 'Optional: back of leaf or side view.', required: false },
 ] as const;
 
@@ -89,7 +89,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
   };
 
   const identify = async () => {
-    if (requiredCount < 3) return;
+    if (requiredCount < 2) return;
     setBusy(true);
     setError('');
     try {
@@ -151,10 +151,10 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
         {!scan ? (
           <>
             <div className={styles.intro}>
-              <strong>Take 3–4 photos from different angles</strong>
-              <p>Good light and varied views help the models separate similar plants and cultivars.</p>
-              <div className={styles.progress}><span style={{ width: `${requiredCount * 100 / 3}%` }} /></div>
-              <small>{requiredCount}/3 required views ready</small>
+              <strong>Use 2–3 photos for better accuracy</strong>
+              <p>PlantNet compares these views of the same plant. Good light and varied details improve the result.</p>
+              <div className={styles.progress}><span style={{ width: `${requiredCount * 100 / 2}%` }} /></div>
+              <small>{requiredCount}/2 required views ready · third view recommended</small>
             </div>
             <div className={styles.photoGrid}>
               {PHOTO_SLOTS.map((slot, index) => (
@@ -171,13 +171,13 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
             </div>
             <div className={styles.tip}><Sparkles size={17} /><span>Avoid zoom, filters, harsh shadows, and multiple plants in one frame.</span></div>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
-            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={onClose}>Cancel</button><button type="button" className={styles.primary} disabled={requiredCount < 3 || busy} onClick={identify}>{busy ? 'Comparing photos…' : 'Identify my plant'}</button></footer>
+            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={onClose}>Cancel</button><button type="button" className={styles.primary} disabled={requiredCount < 2 || busy} onClick={identify}>{busy ? 'Identifying…' : 'Identify my plant'}</button></footer>
           </>
         ) : (
           <>
             <div className={`${styles.resultBanner} ${scan.strong_match ? styles.strong : styles.uncertain}`}>
               {scan.strong_match ? <Check size={21} /> : <Leaf size={21} />}
-              <div><strong>{scan.strong_match ? 'Strong match — please confirm' : "We’re not fully sure"}</strong><p>{scan.strong_match ? 'Both identification systems agree. Check the plant name before we create its care plan.' : 'Compare these possibilities with your plant, then choose the closest match.'}</p></div>
+              <div><strong>{scan.strong_match ? 'PlantNet’s top match — please confirm' : "We’re not fully sure"}</strong><p>{scan.strong_match ? 'Check the plant name before continuing to your care setup.' : 'Compare these PlantNet possibilities with your plant, then choose the closest match.'}</p></div>
             </div>
             <div className={styles.candidates} role="radiogroup" aria-label="Plant identification choices">
               {scan.candidates.map(candidate => (
@@ -191,7 +191,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
               <button type="button" className={`${styles.notListed} ${showCustom ? styles.notListedActive : ''}`} onClick={() => { setShowCustom(true); setSelectedSpecies(''); }}>My plant isn’t listed</button>
               {showCustom ? <div className={styles.customFields}><label>Correct species or plant name<input value={customSpecies} onChange={event => setCustomSpecies(event.target.value)} placeholder="e.g. Calathea orbifolia" /></label><label>Common name <small>Optional</small><input value={customCommonName} onChange={event => setCustomCommonName(event.target.value)} placeholder="e.g. Prayer plant" /></label></div> : null}
             </div>
-            <p className={styles.confirmNote}>Your confirmation is required. The care plan is generated only after you approve the identity.</p>
+            <p className={styles.confirmNote}>Your confirmation is required. Your weather-aware care plan is created after you finish the required setup.</p>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
             <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={() => { setScan(null); setError(''); }}><RotateCcw size={16} /> Retake</button><button type="button" className={styles.primary} disabled={busy || (!showCustom && !selectedSpecies)} onClick={confirmPlant}>{busy ? 'Creating care plan…' : 'Confirm plant & create care plan'}</button></footer>
           </>

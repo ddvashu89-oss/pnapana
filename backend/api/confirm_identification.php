@@ -4,7 +4,6 @@ pnapana_cors('POST, OPTIONS');
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../db.php';
 if (file_exists(__DIR__ . '/../config.php')) require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../gemini_helper.php';
 require_once __DIR__ . '/../growth_schema.php';
 require_once __DIR__ . '/../rate_limiter.php';
 require_once __DIR__ . '/auth.php';
@@ -53,19 +52,6 @@ if (!$knownSelection && !$customCorrection) {
     exit;
 }
 
-$prompt = "The customer explicitly confirmed '{$species}' (common name '{$commonName}'). Do not change the species. "
-    . 'Return only JSON: {"description":string,"care_plan":{"native_region":string,"light":{"level":"High"|"Medium"|"Low","detail":string},'
-    . '"water":{"frequency_days":number,"instructions":string},"humidity":{"level":"High"|"Medium"|"Low","detail":string},'
-    . '"soil":string,"temperature":string,"fertilizing":string,"pruning":string,"toxicity":{"pet_friendly":boolean,"detail":string},'
-    . '"common_issues":[{"issue":string,"solution":string}]}}. Make guidance conservative and tell the customer to check soil moisture.';
-$key = pnapana_shared_gemini_key($pdo);
-$result = $key !== '' ? gemini_text_json_call($prompt, $key) : null;
-if (!is_array($result) || !is_array($result['care_plan'] ?? null)) {
-    http_response_code(503);
-    echo json_encode(['status' => 'error', 'message' => 'Your choice is safe, but the care plan could not be generated. Please retry.']);
-    exit;
-}
-
 $recommended = (string)($scan['kindwise_top_species'] ?: $scan['gemini_species']);
 $corrected = confirmation_normalize($recommended) !== confirmation_normalize($species);
 $pdo->beginTransaction();
@@ -82,5 +68,5 @@ try {
 }
 
 echo json_encode(['status' => 'success', 'identification' => ['species' => $species, 'common_name' => $commonName ?: $species,
-    'confidence_score' => $selectedProbability, 'description' => (string)($result['description'] ?? '')],
-    'care_plan' => $result['care_plan'], 'correction_recorded' => $corrected]);
+    'confidence_score' => $selectedProbability, 'description' => ''],
+    'care_plan' => null, 'correction_recorded' => $corrected]);

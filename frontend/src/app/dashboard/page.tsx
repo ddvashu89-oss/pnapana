@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Droplets, Compass, HeartPulse, FlaskConical, ScanLine, Sprout, ArrowUpRight, Globe, Sun, Heart, Sparkles, Plane, BookOpen } from 'lucide-react';
 import WeatherCard from '@/components/WeatherCard';
+import type { WeatherLocation } from '@/lib/hooks/useWeather';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import PlantSetupWizard, { PlantSetupValues, SetupPlant } from '@/components/PlantSetupWizard';
@@ -38,6 +39,7 @@ export default function Home() {
   const [isAdding, setIsAdding] = useState(false);
   const [setupDraft, setSetupDraft] = useState<SetupPlant | null>(null);
   const [setupError, setSetupError] = useState('');
+  const [weatherLocation, setWeatherLocation] = useState<WeatherLocation | null>(null);
   
   // Camera state
   const [isCapturing, setIsCapturing] = useState(false);
@@ -161,12 +163,16 @@ export default function Home() {
 
   const completeNewPlantSetup = async ({ name, setup }: { name: string; setup: PlantSetupValues }) => {
     if (!user) return;
+    if (!weatherLocation) {
+      setSetupError('Allow GPS or choose your city from the weather card before creating a weather-aware care plan.');
+      return;
+    }
     setIsAdding(true);
     setSetupError('');
     try {
       const res = await authFetch('add_plant.php', {
         method: 'POST',
-        body: JSON.stringify({ ...newPlant, name, setup, user_id: user.id })
+        body: JSON.stringify({ ...newPlant, name, setup, user_id: user.id, weather_location: weatherLocation })
       });
       const data = await res.json();
       if (data.status === 'success') {
@@ -475,7 +481,7 @@ export default function Home() {
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor="plant-species">{t('dashboard.speciesLabel')}</label>
                     <button type="button" onClick={() => setIsIdentificationOpen(true)} className={styles.identifyBtn}>
-                      <ScanLine size={14} /> Identify from 3 angles
+                      <ScanLine size={14} /> Identify with 2–3 photos
                     </button>
                   </div>
                   <input id="plant-species" type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
@@ -634,7 +640,7 @@ export default function Home() {
         <Link href="/explore" className={styles.discoverLink}>{language === 'hi' ? 'कुछ नया उगाएँ' : 'A little inspiration'} <ArrowUpRight size={17} /></Link>
       </header>
 
-      <WeatherCard />
+      <WeatherCard onLocationChange={setWeatherLocation} />
 
       <div className={styles.shortcuts}>
         <Link href="/space"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'नर्सरी और बालकनी' : <>Nursery &<br />Balcony</>}</strong></Link>

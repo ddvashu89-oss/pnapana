@@ -121,7 +121,7 @@ export default function PlantSetupWizard({
               <p className={styles.intro}>Confirm where it will live so every care recommendation fits this plant’s real environment.</p>
               <div className={styles.identity}>
                 <img src={image} alt={plant.name || plant.species} />
-                <div><strong>{plant.species}</strong><span><Sprout size={15} /> Species-specific plan ready</span></div>
+                <div><strong>{plant.species}</strong><span><Sprout size={15} /> Weather-aware plan after setup</span></div>
               </div>
               <label className={styles.field}><span>Plant nickname</span><input value={name} maxLength={255} onChange={event => { setName(event.target.value); setError(''); }} placeholder="Give your plant a name" /></label>
               <div className={styles.fieldGrid}>

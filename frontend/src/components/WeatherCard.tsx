@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Check, Droplets, MapPin, Navigation, RefreshCw, Search, Sprout, Sun, X } from 'lucide-react';
-import { useWeather, describeWeather } from '@/lib/hooks/useWeather';
+import { useWeather, describeWeather, type WeatherLocation } from '@/lib/hooks/useWeather';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import styles from './WeatherCard.module.css';
 
@@ -9,7 +9,7 @@ type CarePlan = { temperature?: string; pruning?: string; light?: { level?: stri
 type CarePlant = { id?: number | string; name?: string; species?: string; water_freq?: number; last_watered?: string; light_req?: string; light_requirement?: string; water_requirement?: string; humidity?: string; care_plan?: string | CarePlan };
 type LocationResult = { id: number; name: string; latitude: number; longitude: number; admin1?: string; country?: string };
 
-export default function WeatherCard({ plant }: { plant?: CarePlant }) {
+export default function WeatherCard({ plant, onLocationChange }: { plant?: CarePlant; onLocationChange?: (location: WeatherLocation | null) => void }) {
   const { weather, loading, error, locationMode, refresh, chooseLocation, switchToDeviceLocation } = useWeather();
   const { language } = useLanguage();
   const hi = language === 'hi';
@@ -19,6 +19,11 @@ export default function WeatherCard({ plant }: { plant?: CarePlant }) {
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [locationSearching, setLocationSearching] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  useEffect(() => {
+    onLocationChange?.(weather?.latitude !== undefined && weather?.longitude !== undefined
+      ? { lat: weather.latitude, lon: weather.longitude, city: weather.city || 'Your area', region: weather.region || null, country: weather.country || null }
+      : null);
+  }, [weather, onLocationChange]);
   let plan: CarePlan = {};
   try { plan = typeof plant?.care_plan === 'string' ? JSON.parse(plant.care_plan) : plant?.care_plan || {}; } catch { /* Older plants may have no structured care plan. */ }
   const frequency = Math.max(1, Number(plant?.water_freq || plan.water?.frequency_days) || 7);

@@ -38,6 +38,10 @@ define('GEMINI_MODEL', getenv('GEMINI_MODEL') ?: 'gemini-flash-lite-latest');
 // Create a key in the Kindwise admin panel, or set KINDWISE_API_KEY in env.
 define('KINDWISE_API_KEY', getenv('KINDWISE_API_KEY') ?: '');
 
+// Pl@ntNet is used only for plant identification. Set this only in the
+// server environment or private .env file, never in frontend code.
+define('PLANTNET_API_KEY', getenv('PLANTNET_API_KEY') ?: '');
+
 // Optional per-request estimates used by Admin > Analytics. Set these to the
 // effective cost from your provider plan; leave at 0 if the plan is flat-rate.
 define('KINDWISE_COST_PER_SCAN_USD', (float)(getenv('KINDWISE_COST_PER_SCAN_USD') ?: 0));
