@@ -32,8 +32,9 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
   const approximateLocation = locationMode === 'device' && weather?.locationAccuracyM !== null && weather?.locationAccuracyM !== undefined && weather.locationAccuracyM > 1000;
   const localWeather = approximateLocation ? null : weather;
+  const locationNeedsAttention = !weather && !loading;
   const condition = approximateLocation ? 'Select your city for accurate weather' : localWeather ? describeWeather(localWeather.condition) : error || 'Checking the weather…';
-  const city = approximateLocation ? 'Choose your city' : weather?.city || (weather ? 'Your location' : 'Locating…');
+  const city = approximateLocation || locationNeedsAttention ? 'Choose your city' : weather?.city || (weather ? 'Your location' : 'Locating…');
   const cityRegion = !approximateLocation && weather?.region && weather.region.toLocaleLowerCase() !== city.toLocaleLowerCase()
     ? `${city}, ${weather.region}`
     : city;
@@ -129,8 +130,11 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
     : rotatingAdvice;
 
   useEffect(() => {
-    if (approximateLocation) setLocationOpen(true);
-  }, [approximateLocation]);
+    // A website cannot obtain precise GPS without browser permission. Never
+    // leave the card on “Locating…” after that request fails or times out:
+    // reveal the city search immediately, while still offering a one-tap GPS retry.
+    if (approximateLocation || locationNeedsAttention) setLocationOpen(true);
+  }, [approximateLocation, locationNeedsAttention]);
 
   const searchLocation = async (event: FormEvent) => {
     event.preventDefault();
@@ -170,7 +174,7 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
         <button className={styles.refresh} onClick={refresh} disabled={loading} aria-label={hi ? 'मौसम रिफ्रेश करें' : 'Refresh weather'} title={weather?.location || 'Refresh local weather'}><RefreshCw size={18} className={loading ? styles.spinning : ''} /></button>
       </div>
       {locationOpen && <div className={styles.locationPicker} aria-label="Choose weather location">
-        <div className={styles.locationPickerHeader}><div><strong>{approximateLocation ? 'Confirm your city for accurate weather' : 'Set weather location'}</strong><span>{approximateLocation ? 'Your device supplied only an approximate area. Select your actual city below.' : 'Choose your city if device location is inaccurate.'}</span></div><button type="button" onClick={() => setLocationOpen(false)} aria-label="Close location picker"><X size={17} /></button></div>
+        <div className={styles.locationPickerHeader}><div><strong>{approximateLocation || locationNeedsAttention ? 'Set your city for accurate weather' : 'Set weather location'}</strong><span>{approximateLocation ? 'Your device supplied only an approximate area. Select your actual city below.' : locationNeedsAttention ? 'Location permission was not available. Search for your city, or retry using your device location.' : 'Choose your city if device location is inaccurate.'}</span></div><button type="button" onClick={() => setLocationOpen(false)} aria-label="Close location picker"><X size={17} /></button></div>
         <form className={styles.locationSearch} onSubmit={searchLocation}>
           <label htmlFor="weather-city">City or postal code</label>
           <div><input id="weather-city" value={locationQuery} onChange={event => setLocationQuery(event.target.value)} placeholder="e.g. Karnal, Haryana" autoComplete="off" /><button type="submit" disabled={locationSearching}><Search size={16} />{locationSearching ? 'Searching…' : 'Search'}</button></div>
@@ -183,7 +187,7 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
             setLocationResults([]);
           }}><MapPin size={15} /><span><strong>{result.name}</strong><small>{[result.admin1, result.country].filter(Boolean).join(', ')}</small></span></button></li>)}
         </ul>}
-        <button type="button" className={styles.deviceLocation} onClick={async () => { await switchToDeviceLocation(); setLocationOpen(false); }} disabled={loading}><Navigation size={16} /> Use device location{locationMode === 'device' ? ' (current)' : ''}</button>
+        <button type="button" className={styles.deviceLocation} onClick={async () => { await switchToDeviceLocation(); }} disabled={loading}><Navigation size={16} /> Use my current location{locationMode === 'device' && !locationNeedsAttention ? ' (current)' : ''}</button>
       </div>}
       {weather && <div className={styles.locationMeta}>
         <strong>{approximateLocation ? 'Location not confirmed' : weather.source === 'station-observation' ? 'Nearby observation' : 'Local forecast'}</strong>
