@@ -29,7 +29,7 @@ function kindwise_image_payload($image) {
 function kindwise_request($endpoint, $payload) {
     $apiKey = kindwise_api_key();
     if ($apiKey === '') {
-        return ['ok' => false, 'configured' => false, 'data' => null];
+        return ['ok' => false, 'configured' => false, 'data' => null, 'http_status' => null, 'error_code' => 'not_configured'];
     }
 
     $ch = curl_init('https://api.plant.id/v3/' . ltrim($endpoint, '/'));
@@ -53,16 +53,17 @@ function kindwise_request($endpoint, $payload) {
 
     if ($body === false || $curlError !== '' || $status < 200 || $status >= 300) {
         error_log('Kindwise request failed: endpoint=' . $endpoint . ' status=' . $status . ($curlError !== '' ? ' transport_error' : ''));
-        return ['ok' => false, 'configured' => true, 'data' => null];
+        return ['ok' => false, 'configured' => true, 'data' => null, 'http_status' => $status ?: null,
+            'error_code' => $curlError !== '' ? 'transport_error' : ($status === 401 || $status === 403 ? 'authorization_failed' : ($status === 429 ? 'rate_limited' : 'provider_error'))];
     }
 
     $decoded = json_decode($body, true);
     if (!is_array($decoded)) {
         error_log('Kindwise returned invalid JSON for endpoint=' . $endpoint);
-        return ['ok' => false, 'configured' => true, 'data' => null];
+        return ['ok' => false, 'configured' => true, 'data' => null, 'http_status' => $status, 'error_code' => 'invalid_response'];
     }
 
-    return ['ok' => true, 'configured' => true, 'data' => $decoded];
+    return ['ok' => true, 'configured' => true, 'data' => $decoded, 'http_status' => $status, 'error_code' => null];
 }
 
 function kindwise_identify($image, $language = 'en') {
@@ -73,7 +74,7 @@ function kindwise_identify($image, $language = 'en') {
         if ($encoded !== null) $imageData[] = $encoded;
     }
     if (!$imageData) {
-        return ['ok' => false, 'configured' => kindwise_api_key() !== '', 'data' => null];
+        return ['ok' => false, 'configured' => kindwise_api_key() !== '', 'data' => null, 'http_status' => null, 'error_code' => 'invalid_image'];
     }
 
     $payload = ['images' => $imageData];
@@ -110,7 +111,7 @@ function kindwise_identification_candidates($response, $limit = 3) {
 function kindwise_health_assessment($image) {
     $imageData = kindwise_image_payload($image);
     if ($imageData === null) {
-        return ['ok' => false, 'configured' => kindwise_api_key() !== '', 'data' => null];
+        return ['ok' => false, 'configured' => kindwise_api_key() !== '', 'data' => null, 'http_status' => null, 'error_code' => 'invalid_image'];
     }
 
     $query = http_build_query([

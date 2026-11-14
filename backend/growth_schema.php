@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/activity_logger.php';
 
 /**
  * Idempotent schema bootstrap for the growth, recovery, caregiver, analytics,
@@ -16,7 +17,11 @@ function pnapana_ensure_growth_schema(PDO $pdo): void {
         $placeholders = implode(',', array_fill(0, count($required), '?'));
         $check = $pdo->prepare("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ($placeholders)");
         $check->execute($required);
-        if ((int)$check->fetchColumn() === count($required)) { $ready = true; return; }
+        if ((int)$check->fetchColumn() === count($required)) {
+            pnapana_ensure_observability_schema($pdo);
+            $ready = true;
+            return;
+        }
     } catch (Throwable $ignored) {
         // Shared hosts sometimes restrict information_schema; fall through to
         // the idempotent bootstrap for installations whose DB user can create.
@@ -170,5 +175,6 @@ function pnapana_ensure_growth_schema(PDO $pdo): void {
     ];
 
     foreach ($statements as $sql) $pdo->exec($sql);
+    pnapana_ensure_observability_schema($pdo);
     $ready = true;
 }

@@ -33,10 +33,10 @@ function pnapana_decode_gemini_json($response) {
     return is_array($parsed) ? $parsed : null;
 }
 
-function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
+function gemini_vision_json_call_detailed($base64Image, $prompt, $apiKey = null): array {
     $activeKey = !empty($apiKey) ? $apiKey : pnapana_shared_gemini_key();
     if (empty($activeKey)) {
-        return null;
+        return ['data' => null, 'configured' => false, 'http_status' => null, 'duration_ms' => 0, 'error_code' => 'not_configured', 'model' => null];
     }
 
     $images = is_array($base64Image) ? array_slice($base64Image, 0, 4) : [$base64Image];
@@ -49,7 +49,7 @@ function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
         $base64Data = str_replace(["\r", "\n", ' '], '', $base64Data);
         if ($base64Data !== '') $imageParts[] = ["inline_data" => ["mime_type" => $mimeType, "data" => $base64Data]];
     }
-    if (!$imageParts) return null;
+    if (!$imageParts) return ['data' => null, 'configured' => true, 'http_status' => null, 'duration_ms' => 0, 'error_code' => 'invalid_image', 'model' => null];
 
     $payload = [
         "contents" => [[
@@ -70,7 +70,12 @@ function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
 
     $jsonPayload = json_encode($payload);
 
+    $started = microtime(true);
+    $lastStatus = null;
+    $lastError = 'provider_error';
+    $lastModel = null;
     foreach ($modelsToTry as $model) {
+        $lastModel = $model;
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . $activeKey;
 
         $ch = curl_init($url);
@@ -85,16 +90,26 @@ function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
         curl_close($ch);
 
         if ($response === false || !empty($curlError) || $httpCode < 200 || $httpCode >= 300) {
+            $lastStatus = $httpCode ?: null;
+            $lastError = !empty($curlError) ? 'transport_error' : ($httpCode === 401 || $httpCode === 403 ? 'authorization_failed' : ($httpCode === 429 ? 'rate_limited' : 'provider_error'));
             continue;
         }
 
         $parsed = pnapana_decode_gemini_json($response);
         if (is_array($parsed) && (isset($parsed['is_plant']) || isset($parsed['species']) || isset($parsed['diagnosis']))) {
-            return $parsed;
+            return ['data' => $parsed, 'configured' => true, 'http_status' => $httpCode,
+                'duration_ms' => (int)round((microtime(true) - $started) * 1000), 'error_code' => null, 'model' => $model];
         }
+        $lastStatus = $httpCode;
+        $lastError = 'invalid_response';
     }
 
-    return null;
+    return ['data' => null, 'configured' => true, 'http_status' => $lastStatus,
+        'duration_ms' => (int)round((microtime(true) - $started) * 1000), 'error_code' => $lastError, 'model' => $lastModel];
+}
+
+function gemini_vision_json_call($base64Image, $prompt, $apiKey = null) {
+    return gemini_vision_json_call_detailed($base64Image, $prompt, $apiKey)['data'];
 }
 
 /** Calls Gemini for structured JSON without an image. */

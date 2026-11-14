@@ -1,6 +1,7 @@
 <?php
 require_once '../config.php';
 require_once '../jwt_helper.php';
+require_once __DIR__ . '/../activity_logger.php';
 
 function authenticate($conn) {
     // HTTP header names are case-insensitive (RFC 7230), and clients differ:
@@ -60,6 +61,11 @@ function authenticate($conn) {
         exit;
     }
 
+    // Every authenticated API call is a customer activity event. Metadata is
+    // deliberately limited to method + route; request bodies and tokens stay out of the DB.
+    pnapana_log_user_activity($conn, (int)$user['id'], 'api_request', [
+        'method' => (string)($_SERVER['REQUEST_METHOD'] ?? 'CLI')
+    ]);
     return $user;
 }
 

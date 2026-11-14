@@ -95,7 +95,10 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
     try {
       const response = await authFetch('identify_plant.php', { method: 'POST', body: JSON.stringify({ images }) });
       const data = await response.json();
-      if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Identification failed.');
+      if (!response.ok || data.status !== 'success') {
+        const reference = typeof data.reference_id === 'string' && data.reference_id ? ` Reference: ${data.reference_id}.` : '';
+        throw new Error(`${data.message || 'Identification failed.'}${reference}`);
+      }
       setScan(data);
       setSelectedSpecies(data.strong_match ? data.candidates[0]?.species || '' : '');
       setShowCustom(false);
