@@ -17,8 +17,17 @@ type Tab = 'journal' | 'recovery' | 'care' | 'caregivers';
 
 const today = new Date().toISOString().slice(0, 10);
 const plusThree = new Date(Date.now() + 259200000).toISOString().slice(0, 10);
-const fmt = (value?: string) => value ? new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value.replace(' ', 'T'))) : 'Not set';
-async function result(response: Response) { const data = await response.json(); if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Request failed.'); return data; }
+const fmt = (value?: string) => {
+  if (!value) return 'Not set';
+  const date = new Date(value.replace(' ', 'T'));
+  return Number.isNaN(date.getTime()) ? 'Not set' : new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+};
+async function result(response: Response) {
+  let data: any;
+  try { data = await response.json(); } catch { throw new Error('The server returned an unexpected response. Please refresh and try again.'); }
+  if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Request failed.');
+  return data;
+}
 
 export default function JournalPage() {
   const router = useRouter();
@@ -34,10 +43,17 @@ export default function JournalPage() {
   const load = useCallback(async () => {
     if (!localStorage.getItem('user')) { router.replace('/login'); return; }
     try {
-      const [p, j, d, c, h] = await Promise.all(['get_plants.php', 'plant_journal.php', 'disease_followups.php', 'plant_care_profile.php', 'caregiver_tasks.php'].map(url => authFetch(url).then(result)));
+      const [plantsResult, journalResult, diseaseResult, careResult, caregiverResult] = await Promise.allSettled(['get_plants.php', 'plant_journal.php', 'disease_followups.php', 'plant_care_profile.php', 'caregiver_tasks.php'].map(url => authFetch(url).then(result)));
+      if (plantsResult.status === 'rejected') throw plantsResult.reason;
+      const p = plantsResult.value;
+      const j = journalResult.status === 'fulfilled' ? journalResult.value : { entries: [] };
+      const d = diseaseResult.status === 'fulfilled' ? diseaseResult.value : { cases: [] };
+      const c = careResult.status === 'fulfilled' ? careResult.value : { profiles: [], season: { label: 'Seasonal', message: 'Review light, water, and humidity as the season changes.' } };
+      const h = caregiverResult.status === 'fulfilled' ? caregiverResult.value : { sent_invites: [], assigned_tasks: [] };
       const ps: Plant[] = p.plants || []; const first = ps[0] ? String(ps[0].id) : '';
       setPlants(ps); setEntries(j.entries || []); setCases(d.cases || []); setProfiles(c.profiles || []); setSeason(c.season || { label: 'Seasonal', message: 'Review light, water, and humidity as the season changes.' }); setInvites(h.sent_invites || []); setTasks(h.assigned_tasks || []);
       setJournal(v => ({ ...v, plant_id: v.plant_id || first })); setRecovery(v => ({ ...v, plant_id: v.plant_id || first })); setCarePlant(v => v || first); setHelper(v => ({ ...v, plant_id: v.plant_id || first }));
+      if ([journalResult, diseaseResult, careResult, caregiverResult].some(item => item.status === 'rejected')) setNotice({ ok: false, text: 'Some Journal details are temporarily unavailable. You can still use the sections that loaded.' });
     } catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'Could not load the growth workspace.' }); } finally { setLoading(false); }
   }, [router]);
   useEffect(() => { load(); }, [load]);
@@ -69,10 +85,10 @@ export default function JournalPage() {
 }
 
 function Layout({ title, icon, form, content }: { title: string; icon: React.ReactNode; form: React.ReactNode; content: React.ReactNode }) { return <div className={styles.columns}><section className={styles.panel}><header><div><span>Plant care</span><h2>{title}</h2></div>{icon}</header>{form}</section><section className={styles.timeline}>{content}</section></div>; }
-function Field({ label, value, onChange, type = 'text', required = false, placeholder = '' }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; placeholder?: string }) { return <label>{label}<input type={type} value={value} required={required} placeholder={placeholder} onChange={e => onChange(e.target.value)} /></label>; }
-function Area({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) { return <label>{label}<textarea rows={4} value={value} onChange={e => onChange(e.target.value)} /></label>; }
+function Field({ label, value, onChange, type = 'text', required = false, placeholder = '' }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; placeholder?: string }) { return <label>{label}<input type={type} value={value} required={required} placeholder={placeholder} maxLength={type === 'text' ? 120 : type === 'email' ? 254 : undefined} onChange={e => onChange(e.target.value)} /></label>; }
+function Area({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) { return <label>{label}<textarea rows={4} value={value} maxLength={3000} onChange={e => onChange(e.target.value)} /></label>; }
 function Select({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) { return <label>{label}<select value={value} onChange={e => onChange(e.target.value)}>{children}</select></label>; }
-function Upload({ file, onChange, text, small = false }: { file: File | null; onChange: (f: File | null) => void; text: string; small?: boolean }) { return <label className={`${styles.upload} ${small ? styles.uploadSmall : ''}`}><ImagePlus size={small ? 17 : 21} />{file?.name || text}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => onChange(e.target.files?.[0] || null)} /></label>; }
+function Upload({ file, onChange, text, small = false }: { file: File | null; onChange: (f: File | null) => void; text: string; small?: boolean }) { return <label className={`${styles.upload} ${small ? styles.uploadSmall : ''}`}><ImagePlus size={small ? 17 : 21} />{file?.name || text}<input type="file" accept="image/jpeg,image/png,image/webp" onClick={e => { e.currentTarget.value = ''; }} onChange={e => onChange(e.target.files?.[0] || null)} /></label>; }
 function Submit({ busy, text }: { busy: boolean; text: string }) { return <button className={styles.primary} disabled={busy}><Plus size={17} />{busy ? 'Saving...' : text}</button>; }
 function Photo({ src, label }: { src: string; label: string }) { return <figure><img src={src} alt={label} /><figcaption>{label}</figcaption></figure>; }
 function MiniEmpty({ text }: { text: string }) { return <div className={styles.miniEmpty}><Sprout size={32} /><p>{text}</p></div>; }
