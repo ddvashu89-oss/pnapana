@@ -1,18 +1,18 @@
 .overlay { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 24px; background: rgba(20, 35, 25, .58); backdrop-filter: blur(5px); }
-.wizard { width: min(760px, 100%); max-height: 92dvh; overflow: auto; border: 1px solid #e5ebe2; border-radius: 26px; background: #fffefa; box-shadow: 0 24px 70px rgba(23, 52, 31, .25); color: #1d3023; }
-.header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 13px; padding: 22px 24px 18px; border-bottom: 1px solid #edf0eb; background: rgba(255, 254, 250, .96); }
+.wizard { width: min(760px, 100%); max-height: 92dvh; overflow: auto; scroll-padding-bottom: 92px; border: 1px solid #e5ebe2; border-radius: 26px; background: #fffefa; box-shadow: 0 24px 70px rgba(23, 52, 31, .25); color: #1d3023; }
+.header { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 13px; padding: 20px 24px 17px; border-bottom: 1px solid #edf0eb; background: rgba(255, 254, 250, .96); }
 .brandMark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: #e8f2e7; color: #2d6742; }
 .eyebrow { display: block; margin-bottom: 3px; color: #718076; font-size: 10px; font-weight: 800; letter-spacing: .16em; }
 .header h2 { margin: 0; font-size: 24px; letter-spacing: -.45px; }
 .close { display: grid; width: 38px; height: 38px; place-items: center; border: 0; border-radius: 50%; background: #f0f3ed; color: #425348; cursor: pointer; }
-.intro { padding: 20px 24px 14px; }
+.intro { padding: 20px 24px 16px; }
 .intro strong { font-size: 17px; }
 .intro p { margin: 5px 0 13px; color: #66736a; font-size: 13px; line-height: 1.5; }
 .intro small { display: block; margin-top: 6px; color: #6f7b72; font-size: 11px; font-weight: 700; }
 .progress { height: 7px; overflow: hidden; border-radius: 99px; background: #e8ede6; }
 .progress span { display: block; height: 100%; border-radius: inherit; background: #34744b; transition: width .25s ease; }
-.photoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 24px 16px; }
-.photoSlot { position: relative; min-height: 186px; overflow: hidden; padding: 16px; border: 1px dashed #cfd9ce; border-radius: 17px; background: #f8faf6; }
+.photoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 4px 24px 104px; }
+.photoSlot { position: relative; min-height: 190px; overflow: hidden; padding: 16px; border: 1px dashed #cfd9ce; border-radius: 17px; background: #f8faf6; }
 .photoSlot > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .24; }
 .photoReady { border-style: solid; border-color: #9bbca3; background: #eef6ed; }
 .slotNumber { display: grid; width: 32px; height: 32px; place-items: center; margin-bottom: 22px; border-radius: 10px; background: #e5eee4; color: #316544; font-weight: 800; }
@@ -25,9 +25,9 @@
 .photoActions label, .photoActions button { position: relative; display: inline-flex; min-height: 36px; overflow: hidden; align-items: center; justify-content: center; gap: 5px; padding: 8px 9px; border: 1px solid #d2dfd2; border-radius: 10px; background: rgba(255,255,255,.92); color: #315f41; font-size: 10px; font-weight: 800; cursor: pointer; }
 .photoActions label input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .photoActions button { width: 36px; padding: 0; color: #8b493f; }
-.tip { display: flex; align-items: flex-start; gap: 9px; margin: 0 24px 16px; padding: 11px 13px; border-radius: 12px; background: #f3f0e4; color: #665f45; font-size: 12px; line-height: 1.45; }
+.tip { display: flex; align-items: flex-start; gap: 9px; margin: 0 24px 20px; padding: 11px 13px; border-radius: 12px; background: #f3f0e4; color: #665f45; font-size: 12px; line-height: 1.45; }
 .tip svg { flex: 0 0 auto; margin-top: 1px; }
-.footer { position: sticky; bottom: 0; z-index: 2; display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px 20px; border-top: 1px solid #e9eee7; background: rgba(255, 254, 250, .97); }
+.footer { position: sticky; bottom: 0; z-index: 2; display: flex; justify-content: flex-end; gap: 10px; padding: 15px 24px 18px; border-top: 1px solid #e9eee7; background: rgba(255, 254, 250, .97); box-shadow: 0 -8px 18px rgba(27, 48, 33, .05); }
 .primary, .secondary { display: inline-flex; min-height: 46px; align-items: center; justify-content: center; gap: 7px; padding: 11px 18px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; }
 .primary { border: 1px solid #2f6944; background: #2f6944; color: white; }
 .primary:disabled { border-color: #aeb9b0; background: #aeb9b0; cursor: not-allowed; }
@@ -61,14 +61,14 @@
 @media (max-width: 640px) {
   .overlay { align-items: end; padding: 0; }
   .wizard { max-height: 96dvh; border-radius: 24px 24px 0 0; }
-  .header { padding: 18px; }
+  .header { padding: 17px 18px; }
   .header h2 { font-size: 21px; }
   .intro { padding: 17px 18px 12px; }
-  .photoGrid { grid-template-columns: 1fr; padding: 3px 18px 14px; }
-  .photoSlot { min-height: 162px; }
+  .photoGrid { grid-template-columns: 1fr; gap: 12px; padding: 3px 18px 96px; }
+  .photoSlot { min-height: 166px; }
   .tip, .resultBanner, .error, .confirmNote { margin-left: 18px; margin-right: 18px; }
   .candidates { padding-left: 18px; padding-right: 18px; }
   .customFields { grid-template-columns: 1fr; }
-  .footer { padding: 14px 18px 18px; }
+  .footer { padding: 13px 18px 17px; }
   .primary { flex: 1; }
 }
