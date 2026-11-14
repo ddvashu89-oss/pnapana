@@ -30,7 +30,10 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
   const lastWatered = plant?.last_watered ? new Date(plant.last_watered.replace(' ', 'T')).getTime() : NaN;
   const elapsed = Number.isFinite(lastWatered) ? Math.max(0, Math.floor((now - lastWatered) / 86400000)) : null;
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
-  const approximateLocation = locationMode === 'device' && weather?.locationAccuracyM !== null && weather?.locationAccuracyM !== undefined && weather.locationAccuracyM > 1000;
+  // A few kilometres is still a meaningful weather-grid location. Require a
+  // city confirmation only when GPS is broad enough to plausibly be another
+  // town, rather than rejecting a usable indoor/mobile reading.
+  const approximateLocation = locationMode === 'device' && weather?.locationAccuracyM !== null && weather?.locationAccuracyM !== undefined && weather.locationAccuracyM > 5000;
   const localWeather = approximateLocation ? null : weather;
   const locationNeedsAttention = !weather && !loading;
   const condition = approximateLocation ? 'Select your city for accurate weather' : localWeather ? describeWeather(localWeather.condition) : error || 'Checking the weather…';

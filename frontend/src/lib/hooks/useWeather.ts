@@ -71,38 +71,45 @@ function savedLocation(): Coordinates | null {
   }
 }
 
-function bestDeviceLocation(force = false): Promise<Coordinates> {
+function requestDeviceLocation(options: PositionOptions): Promise<Coordinates> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
-      reject(new Error('Location access is unavailable'));
+      reject(new Error('Location access is unavailable on this device. Search for your city instead.'));
       return;
     }
-    let best: Coordinates | null = null;
-    let settled = false;
-    let watchId: number | null = null;
-    const finish = (position?: Coordinates, message = 'Allow location access or choose your city') => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timeoutId);
-      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-      if (position) resolve(position);
-      else reject(new Error(message));
-    };
-    const timeoutId = window.setTimeout(() => finish(best || undefined), 8000);
-    watchId = navigator.geolocation.watchPosition(
-      current => {
-        const candidate = {
-          lat: current.coords.latitude,
-          lon: current.coords.longitude,
-          accuracy: Number.isFinite(current.coords.accuracy) ? Math.round(current.coords.accuracy) : null,
-        };
-        if (!best || candidate.accuracy !== null && (best.accuracy === null || candidate.accuracy < best.accuracy)) best = candidate;
-        if (candidate.accuracy !== null && candidate.accuracy <= 250) finish(candidate);
+    navigator.geolocation.getCurrentPosition(
+      position => resolve({
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+        accuracy: Number.isFinite(position.coords.accuracy) ? Math.round(position.coords.accuracy) : null,
+      }),
+      error => {
+        const message = error.code === error.PERMISSION_DENIED
+          ? 'Location permission is blocked. Allow location for pnapana.live in your browser settings, then try again.'
+          : error.code === error.POSITION_UNAVAILABLE
+            ? 'Your device could not determine a location. Turn on Location Services, then try again.'
+            : 'Location request timed out. Try again outdoors or search for your city.';
+        reject(new Error(message));
       },
-      () => finish(best || undefined),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: force ? 0 : 60000 },
+      options,
     );
   });
+}
+
+async function bestDeviceLocation(force = false): Promise<Coordinates> {
+  // A single getCurrentPosition call is reliably tied to the customer’s tap
+  // on “Use my current location”. The previous watchPosition flow could wait
+  // indefinitely for a sub-250 m reading even when a usable weather location
+  // was already available.
+  try {
+    return await requestDeviceLocation({ enableHighAccuracy: true, timeout: 12_000, maximumAge: force ? 0 : 60_000 });
+  } catch (error) {
+    // GPS can be slow indoors. Once permission is granted, a short network-
+    // assisted fallback still gives a city-level result for weather rather
+    // than leaving the customer on a loading state.
+    if (!(error instanceof Error) || !error.message.startsWith('Location request timed out')) throw error;
+    return requestDeviceLocation({ enableHighAccuracy: false, timeout: 7_000, maximumAge: force ? 0 : 300_000 });
+  }
 }
 
 function locationKey({ lat, lon }: Coordinates) {
