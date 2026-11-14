@@ -42,7 +42,27 @@ const PHOTO_SLOTS = [
   { id: 'angle', title: 'Another angle', detail: 'Optional: back of leaf or side view.', required: false },
 ] as const;
 
-async function prepareImage(file: File): Promise<string> {
+type PreparedPhoto = { dataUrl: string; qualityNote: string | null };
+
+function photoQualityNote(image: HTMLImageElement): string | null {
+  const sample = document.createElement('canvas');
+  sample.width = 64;
+  sample.height = 64;
+  const context = sample.getContext('2d', { willReadFrequently: true });
+  if (!context) return null;
+  context.drawImage(image, 0, 0, sample.width, sample.height);
+  const pixels = context.getImageData(0, 0, sample.width, sample.height).data;
+  let total = 0;
+  for (let index = 0; index < pixels.length; index += 4) {
+    total += pixels[index] * 0.2126 + pixels[index + 1] * 0.7152 + pixels[index + 2] * 0.0722;
+  }
+  const brightness = total / (pixels.length / 4);
+  if (brightness < 45) return 'This photo looks very dark. Retake it in brighter, indirect daylight for a clearer result.';
+  if (brightness > 235) return 'This photo looks overexposed. Avoid direct glare and retake it so leaf detail is visible.';
+  return null;
+}
+
+async function prepareImage(file: File): Promise<PreparedPhoto> {
   if (file.size > 12 * 1024 * 1024) throw new Error('Choose a photo smaller than 12 MB.');
   const source = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -61,7 +81,7 @@ async function prepareImage(file: File): Promise<string> {
   canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
   canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
   canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.86);
+  return { dataUrl: canvas.toDataURL('image/jpeg', 0.86), qualityNote: photoQualityNote(image) };
 }
 
 function formatPlantNetProbability(probability: number): string {
@@ -73,6 +93,7 @@ function formatPlantNetProbability(probability: number): string {
 
 export default function PlantIdentificationWizard({ onClose, onConfirmed }: Props) {
   const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [qualityNotes, setQualityNotes] = useState<Record<string, string>>({});
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [selectedSpecies, setSelectedSpecies] = useState('');
   const [customSpecies, setCustomSpecies] = useState('');
@@ -87,8 +108,14 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
     if (!file) return;
     setError('');
     try {
-      const image = await prepareImage(file);
-      setPhotos(current => ({ ...current, [slotId]: image }));
+      const prepared = await prepareImage(file);
+      setPhotos(current => ({ ...current, [slotId]: prepared.dataUrl }));
+      setQualityNotes(current => {
+        const next = { ...current };
+        if (prepared.qualityNote) next[slotId] = prepared.qualityNote;
+        else delete next[slotId];
+        return next;
+      });
       setScan(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not prepare this photo.');
@@ -167,11 +194,11 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
               {PHOTO_SLOTS.map((slot, index) => (
                 <article className={`${styles.photoSlot} ${photos[slot.id] ? styles.photoReady : ''}`} key={slot.id}>
                   {photos[slot.id] ? <img src={photos[slot.id]} alt={`${slot.title} preview`} /> : <span className={styles.slotNumber}>{index + 1}</span>}
-                  <div className={styles.slotCopy}><strong>{slot.title}{!slot.required && <em>Optional</em>}</strong><p>{slot.detail}</p></div>
+                  <div className={styles.slotCopy}><strong>{slot.title}{!slot.required && <em>Optional</em>}</strong><p>{slot.detail}</p>{qualityNotes[slot.id] ? <p className={styles.qualityWarning}>{qualityNotes[slot.id]}</p> : null}</div>
                   <div className={styles.photoActions}>
                     <label><Camera size={15} /> Take photo<input type="file" accept="image/*" capture="environment" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
                     <label><ImagePlus size={15} /> Upload from gallery<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
-                    {photos[slot.id] ? <button type="button" onClick={() => setPhotos(current => { const next = { ...current }; delete next[slot.id]; return next; })} aria-label={`Remove ${slot.title} photo`}><X size={15} /></button> : null}
+                    {photos[slot.id] ? <button type="button" onClick={() => { setPhotos(current => { const next = { ...current }; delete next[slot.id]; return next; }); setQualityNotes(current => { const next = { ...current }; delete next[slot.id]; return next; }); }} aria-label={`Remove ${slot.title} photo`}><X size={15} /></button> : null}
                   </div>
                 </article>
               ))}

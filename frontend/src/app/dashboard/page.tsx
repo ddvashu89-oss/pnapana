@@ -163,10 +163,6 @@ export default function Home() {
 
   const completeNewPlantSetup = async ({ name, setup }: { name: string; setup: PlantSetupValues }) => {
     if (!user) return;
-    if (!weatherLocation) {
-      setSetupError('Allow GPS or choose your city from the weather card before creating a weather-aware care plan.');
-      return;
-    }
     setIsAdding(true);
     setSetupError('');
     try {
@@ -481,7 +477,7 @@ export default function Home() {
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor="plant-species">{t('dashboard.speciesLabel')}</label>
                     <button type="button" onClick={() => setIsIdentificationOpen(true)} className={styles.identifyBtn}>
-                      <ScanLine size={14} /> Identify with 2–3 photos
+                      <ScanLine size={14} /> Identify with 2–4 photos
                     </button>
                   </div>
                   <input id="plant-species" type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
@@ -548,7 +544,7 @@ export default function Home() {
                     ) : (
                       <div>
                         <input type="url" value={newPlant.image_url} onChange={e => setNewPlant({...newPlant, image_url: e.target.value})} placeholder={t('dashboard.urlPlaceholder')} style={{marginBottom: '0.5rem'}} />
-                        <button type="button" onClick={() => startCamera('capture')} className={styles.cameraBtn}>{t('dashboard.capturePhoto')}</button>
+                        <button type="button" onClick={() => setIsIdentificationOpen(true)} className={styles.cameraBtn}>Identify with 2–4 photos</button>
                       </div>
                     )}
                   </div>

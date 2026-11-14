@@ -62,26 +62,24 @@ $light_req = $setup['light'];
 $location = is_array($data['weather_location'] ?? null) ? $data['weather_location'] : [];
 $latitude = filter_var($location['lat'] ?? null, FILTER_VALIDATE_FLOAT);
 $longitude = filter_var($location['lon'] ?? null, FILTER_VALIDATE_FLOAT);
-if ($latitude === false || $longitude === false || $latitude === null || $longitude === null) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'code' => 'WEATHER_LOCATION_REQUIRED', 'message' => 'Allow location access or choose your city before creating a weather-aware care plan.']);
-    exit;
-}
-$weather = pnapana_care_weather_context((float)$latitude, (float)$longitude);
-if (!$weather) {
-    http_response_code(503);
-    echo json_encode(['status' => 'error', 'message' => 'Current local weather is unavailable. Please try again shortly.']);
-    exit;
-}
+$weather = null;
+$weatherAvailable = false;
 $city = mb_substr(trim((string)($location['city'] ?? 'your area')), 0, 100);
-$prompt = "Create a careful, specific plant care plan. The confirmed PlantNet identification is '{$species}'. The customer reports: placement {$setup['placement']}, area {$setup['room']}, available light {$setup['light']}, pot {$setup['pot_size']}, drainage " . ($setup['has_drainage'] ? 'yes' : 'no') . ", soil {$setup['soil_condition']}, current moisture {$setup['moisture_level']}, last watered {$setup['last_watered']}. Current weather near {$city}: " . json_encode($weather) . ". Recommend care according to this exact plant, its setup, and weather. Never tell them to water by calendar alone; require a soil check. Return only JSON: {\"description\":string,\"care_plan\":{\"native_region\":string,\"light\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"water\":{\"frequency_days\":number,\"instructions\":string},\"humidity\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"soil\":string,\"temperature\":string,\"fertilizing\":string,\"pruning\":string,\"toxicity\":{\"pet_friendly\":boolean,\"detail\":string},\"common_issues\":[{\"issue\":string,\"solution\":string}],\"weather_note\":string}}.";
+if ($latitude !== false && $longitude !== false && $latitude !== null && $longitude !== null) {
+    $weather = pnapana_care_weather_context((float)$latitude, (float)$longitude);
+    $weatherAvailable = is_array($weather);
+}
+$weatherInstruction = $weatherAvailable
+    ? 'Current weather near ' . $city . ': ' . json_encode($weather) . '. Adjust today\'s guidance to these conditions.'
+    : 'Current weather is temporarily unavailable or the customer did not share a location. Create a safe species-specific baseline plan from the confirmed plant and setup. State in weather_note that weather adjustments will appear when local weather becomes available.';
+$prompt = "Create a careful, specific plant care plan. The confirmed PlantNet identification is '{$species}'. The customer reports: placement {$setup['placement']}, area {$setup['room']}, available light {$setup['light']}, pot {$setup['pot_size']}, drainage " . ($setup['has_drainage'] ? 'yes' : 'no') . ", soil {$setup['soil_condition']}, current moisture {$setup['moisture_level']}, last watered {$setup['last_watered']}. {$weatherInstruction} Recommend care according to this exact plant and setup. Never tell them to water by calendar alone; require a soil check. Return only JSON: {\"description\":string,\"care_plan\":{\"native_region\":string,\"light\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"water\":{\"frequency_days\":number,\"instructions\":string},\"humidity\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"soil\":string,\"temperature\":string,\"fertilizing\":string,\"pruning\":string,\"toxicity\":{\"pet_friendly\":boolean,\"detail\":string},\"common_issues\":[{\"issue\":string,\"solution\":string}],\"weather_note\":string}}.";
 $started = microtime(true);
 $geminiKey = pnapana_shared_gemini_key($pdo);
 $generated = $geminiKey !== '' ? gemini_text_json_call($prompt, $geminiKey) : null;
 $duration = (int)round((microtime(true) - $started) * 1000);
-pnapana_log_api_request($pdo, (int)$user_id, 'gemini', 'weather_aware_care_plan', null, $duration, is_array($generated), is_array($generated) ? null : ($geminiKey === '' ? 'not_configured' : 'provider_error'), ['weather_available' => true]);
+pnapana_log_api_request($pdo, (int)$user_id, 'gemini', $weatherAvailable ? 'weather_aware_care_plan' : 'baseline_care_plan', null, $duration, is_array($generated), is_array($generated) ? null : ($geminiKey === '' ? 'not_configured' : 'provider_error'), ['weather_available' => $weatherAvailable]);
 if (!is_array($generated) || !is_array($generated['care_plan'] ?? null)) {
-    pnapana_write_application_log($pdo, 'error', 'care_plan_generation_failed', 'Weather-aware care plan could not be generated.', (int)$user_id, ['weather_available' => true], 503);
+    pnapana_write_application_log($pdo, 'error', 'care_plan_generation_failed', 'Plant care plan could not be generated.', (int)$user_id, ['weather_available' => $weatherAvailable], 503);
     http_response_code(503);
     echo json_encode(['status' => 'error', 'message' => 'Your plant is confirmed, but its weather-aware care plan could not be created. Please try again shortly.', 'reference_id' => pnapana_log_request_id()]);
     exit;
@@ -119,12 +117,13 @@ try {
     $plant_id = $pdo->lastInsertId();
     $eventStmt = $pdo->prepare("INSERT INTO care_events (user_id, plant_id, event_type) VALUES (?, ?, 'add_plant')");
     $eventStmt->execute([$user_id, $plant_id]);
-    pnapana_log_user_activity($pdo, (int)$user_id, 'weather_aware_care_plan_created', ['plant_id' => (int)$plant_id, 'weather_city' => $city]);
+    pnapana_log_user_activity($pdo, (int)$user_id, $weatherAvailable ? 'weather_aware_care_plan_created' : 'baseline_care_plan_created', ['plant_id' => (int)$plant_id, 'weather_city' => $city]);
 
     echo json_encode([
         "status" => "success", 
         "message" => "Plant added successfully",
-        "plant_id" => $plant_id
+        "plant_id" => $plant_id,
+        "weather_available" => $weatherAvailable
     ]);
 } catch(PDOException $e) {
     // Log the detail for the operator; never expose schema internals to the client.
