@@ -34,18 +34,21 @@ define('ALLOWED_ORIGINS', getenv('ALLOWED_ORIGINS') ?: 'https://your-domain.com,
 define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: 'YOUR_KEY_HERE');
 define('GEMINI_MODEL', getenv('GEMINI_MODEL') ?: 'gemini-flash-lite-latest');
 
-// --- Kindwise plant identification and health diagnosis --------------------
+// --- OpenAI vision identification and Kindwise health diagnosis ------------
+// Used only on the server for the 2–4 photo plant identifier. Customers never
+// provide this key. gpt-4.1-mini is the lower-cost default vision model.
+define('OPENAI_API_KEY', getenv('OPENAI_API_KEY') ?: '');
+define('OPENAI_IDENTIFICATION_MODEL', getenv('OPENAI_IDENTIFICATION_MODEL') ?: 'gpt-4.1-mini');
+
+// Kindwise is retained only for health / disease assessment.
 // Create a key in the Kindwise admin panel, or set KINDWISE_API_KEY in env.
 define('KINDWISE_API_KEY', getenv('KINDWISE_API_KEY') ?: '');
-
-// Pl@ntNet is used only for plant identification. Set this only in the
-// server environment or private .env file, never in frontend code.
-define('PLANTNET_API_KEY', getenv('PLANTNET_API_KEY') ?: '');
 
 // Optional per-request estimates used by Admin > Analytics. Set these to the
 // effective cost from your provider plan; leave at 0 if the plan is flat-rate.
 define('KINDWISE_COST_PER_SCAN_USD', (float)(getenv('KINDWISE_COST_PER_SCAN_USD') ?: 0));
 define('GEMINI_COST_PER_SCAN_USD', (float)(getenv('GEMINI_COST_PER_SCAN_USD') ?: 0));
+define('OPENAI_IDENTIFICATION_COST_USD', (float)(getenv('OPENAI_IDENTIFICATION_COST_USD') ?: 0));
 
 // --- Auth -------------------------------------------------------------------
 // Generate your own with: php -r "echo bin2hex(random_bytes(32));"
