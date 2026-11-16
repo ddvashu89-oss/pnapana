@@ -60,6 +60,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [carePlantId, setCarePlantId] = useState<number | null>(null);
+  const [careFeedback, setCareFeedback] = useState('');
   const carePlant = plants.find(plant => Number(plant.id) === carePlantId) || plants[0] || null;
   
 
@@ -432,6 +433,10 @@ export default function Home() {
         notifiedIds.current.delete(`soil:${id}`);
         setThirstyPlants(prev => prev.filter(pId => pId !== id));
         fetchPlants(user!.id);
+        const plant = plants.find(item => Number(item.id) === id);
+        setCareFeedback(language === 'hi'
+          ? `${plant?.name || 'पौधे'} की देखभाल दर्ज हो गई। अगली बार पानी देने से पहले मिट्टी जाँचें।`
+          : `${plant?.name || 'Your plant'}’s watering is recorded. Check the soil again before the next watering.`);
         window.dispatchEvent(new Event('pnapana:rewards'));
       }
     } catch(e) {
@@ -679,12 +684,16 @@ export default function Home() {
         <div className={styles.greeting}>
           <p className={styles.eyebrow}>{language === 'hi' ? 'आपका दिन शुभ हो' : new Date().getHours() < 12 ? 'GOOD MORNING' : new Date().getHours() < 17 ? 'GOOD AFTERNOON' : 'GOOD EVENING'}</p>
           <h1>{user.name.split(' ')[0]}</h1>
+          <p className={styles.affirmation}>{plants.length === 0
+            ? (language === 'hi' ? 'एक पौधे से आपका अपना हरा सफर शुरू होता है।' : 'Your green story starts with one plant.')
+            : (language === 'hi' ? `आज ${plants.length === 1 ? `${plants[0].name} को` : `${plants.length} पौधों को`} आपका ध्यान चाहिए।` : `A small moment of care keeps ${plants.length === 1 ? plants[0].name : 'your green family'} growing.`)}</p>
         </div>
         <Link href="/explore" className={styles.discoverLink}>{language === 'hi' ? 'कुछ नया उगाएँ' : 'A little inspiration'} <ArrowUpRight size={17} /></Link>
       </header>
 
       <section className={styles.todaySection}>
         <div className={styles.sectionHeader}><div><h2>{language === 'hi' ? 'आज अपने पौधों के लिए क्या करें?' : 'What do my plants need today?'}</h2><p>{language === 'hi' ? 'हर पौधे के लिए एक साफ अगला कदम।' : 'One clear next step for each plant.'}</p></div><Link href="/care">{language === 'hi' ? 'सभी देखें' : 'View schedule'} <ArrowUpRight size={14} /></Link></div>
+        {careFeedback && <p className={styles.careFeedback} role="status">{careFeedback}</p>}
         {welcomePlant && <div className={styles.welcomeTask} role="status"><Sprout size={24} /><div><strong>{language === 'hi' ? `${welcomePlant.name} आपके बगीचे में है` : `${welcomePlant.name} is in your garden`}</strong><p>{language === 'hi' ? 'इसका देखभाल प्लान देखें और आज इसकी मिट्टी जाँचें।' : 'Meet your plant, review its care plan, and check its soil today.'}</p></div><Link href={`/plant?id=${welcomePlant.id}`}>{language === 'hi' ? 'पौधा देखें' : 'Meet your plant'} <ArrowUpRight size={15} /></Link></div>}
         {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा जोड़ें।' : 'Your green family starts with one plant.'}</p><button onClick={() => setIsAddPlantModalOpen(true)}>{t('dashboard.addPlant')}</button></div> : plants.map(plant => {
           const statusText = String(plant.status || '').trim();

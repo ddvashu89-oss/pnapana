@@ -73,6 +73,7 @@
   font-weight: 500;
   opacity: 0.9;
 }
+.careFeedback { margin: -2px 0 13px; padding: 12px 15px; border-radius: 14px; background: #e9f5e8; color: #245b35; border: 1px solid #b9d8bd; font-size: 14px; line-height: 1.45; }
 
 .actions {
   display: flex;
