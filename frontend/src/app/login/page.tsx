@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -8,16 +8,22 @@ import styles from './Login.module.css';
 
 export default function Login() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('mode') === 'signup') setIsLogin(false);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setBusy(true);
 
     const url = isLogin 
       ? getApiUrl('login.php') 
@@ -45,6 +51,8 @@ export default function Login() {
     } catch (err) {
       console.error(err);
       setError(t('login.connectionError'));
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -65,59 +73,65 @@ export default function Login() {
           <p>{isLogin ? t('login.subtitleSignIn') : t('login.subtitleSignUp')}</p>
         </div>
         
-        {error && <div className={styles.error}>{error}</div>}
+        {error && <div className={styles.error} role="alert">{error}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {!isLogin && (
             <div className={styles.inputGroup}>
-              <label>{t('login.name')}</label>
+              <label htmlFor="signup-name">{t('login.name')}</label>
               <input
+                id="signup-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
                 required
               />
             </div>
           )}
 
           <div className={styles.inputGroup}>
-            <label>{t('login.email')}</label>
+              <label htmlFor="login-email">{t('login.email')}</label>
             <input
+                id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               required
             />
           </div>
 
           <div className={styles.inputGroup}>
-            <label>{t('login.password')}</label>
+              <label htmlFor="login-password">{t('login.password')}</label>
             <input
+                id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
               required
             />
           </div>
 
-          <button type="submit" className={styles.submitBtn}>
-            {isLogin ? t('login.signIn') : t('login.signUp')}
+          <button type="submit" className={styles.submitBtn} disabled={busy}>
+            {busy ? (language === 'hi' ? 'कृपया रुकें…' : 'Please wait…') : isLogin ? t('login.signIn') : t('login.signUp')}
           </button>
         </form>
 
         {isLogin && (
           <div className={styles.toggleText}>
             <Link href="/forgot-password" className={styles.toggleLink} style={{ marginLeft: 0 }}>
-              Forgot your password?
+              {language === 'hi' ? 'पासवर्ड भूल गए?' : 'Forgot your password?'}
             </Link>
           </div>
         )}
 
         <div className={styles.toggleText}>
           {isLogin ? t('login.noAccount') : t('login.hasAccount')}
-          <span onClick={() => setIsLogin(!isLogin)} className={styles.toggleLink}>
+          <button type="button" onClick={() => { setIsLogin(!isLogin); setError(''); }} className={styles.toggleLink}>
             {isLogin ? t('login.toggleToSignUp') : t('login.toggleToSignIn')}
-          </span>
+          </button>
         </div>
       </div>
       </div>

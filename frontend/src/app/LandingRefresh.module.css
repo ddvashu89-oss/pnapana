@@ -1,0 +1,32 @@
+.page { min-height: 100vh; background: #f8f8f0; color: #294637; }
+.hero { padding-top: 88px; background: #f8f8f0 url('/landing/first-plant-backdrop.webp') center top / cover no-repeat; overflow: hidden; }
+.heroInner { width: min(1320px, 100%); min-height: 610px; margin: auto; padding: 72px clamp(24px, 5vw, 72px) 50px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, .9fr); align-items: center; gap: 20px; }
+.heroCopy { position: relative; z-index: 1; max-width: 680px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border: 1px solid #d7e7d3; background: #f5f9f0d9; border-radius: 999px; color: #2d7048; font-size: 11px; font-weight: 800; letter-spacing: .09em; }
+.hero h1 { margin: 35px 0 23px; color: #2c4638; font: 700 clamp(47px, 5.5vw, 78px)/1.08 var(--font-sans); letter-spacing: -.055em; }
+.hero h1 em { color: #2c794e; font-style: italic; }
+.heroCopy > p { max-width: 530px; margin: 0 0 30px; color: #62776c; font-size: clamp(17px, 1.5vw, 21px); line-height: 1.6; }
+.primaryCta { display: inline-flex; align-items: center; justify-content: center; gap: 14px; min-height: 58px; padding: 12px 31px; border-radius: 999px; background: #286b45; color: white; font-size: 16px; font-weight: 700; box-shadow: 0 10px 24px #215b3a24; }
+.primaryCta:hover, .promise a:hover { background: #185b38; }
+.textLink { display: inline-block; margin-left: 20px; padding: 12px 3px; color: #2a6541; font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 5px; }
+.heroArt { align-self: stretch; display: flex; align-items: end; justify-content: center; min-height: 480px; }
+.heroArt img { width: min(100%, 500px); max-height: 560px; object-fit: contain; filter: drop-shadow(0 24px 22px #344e331f); }
+.steps { padding: 66px clamp(24px, 5vw, 72px) 86px; background: linear-gradient(180deg, #f8f8f0, #f0f5ec); }
+.stepsHeading { max-width: 850px; margin: 0 auto 42px; text-align: center; }
+.stepsHeading span, .promise span { color: #4c8560; font-size: 12px; font-weight: 800; letter-spacing: .13em; }
+.stepsHeading h2, .promise h2 { margin: 10px 0 8px; color: #254535; font: 600 clamp(29px, 3.3vw, 44px)/1.18 var(--font-sans); letter-spacing: -.035em; }
+.stepsHeading p, .promise p { color: #6c8175; font-size: 16px; line-height: 1.55; }
+.stepGrid { width: min(1160px, 100%); margin: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.step { min-height: 235px; padding: 30px 28px; background: #fffef9; border: 1px solid #dfe9dc; border-radius: 23px; box-shadow: 0 16px 38px #274b2b09; }
+.stepIcon { width: 52px; height: 52px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 50%; background: #e6f0e2; color: #286b45; }
+.step small { color: #72a27d; font-weight: 800; letter-spacing: .1em; }
+.step h3 { margin: 7px 0 8px; color: #254535; font-size: 19px; font-weight: 700; }
+.step p { color: #6d8174; font-size: 15px; line-height: 1.5; }
+.promise { width: min(1160px, calc(100% - 48px)); margin: 70px auto; padding: 38px 42px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 25px; border: 1px solid #d9e6d7; border-radius: 26px; background: #edf5e9; }
+.promiseMark { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 18px; background: #dcecdc; color: #286b45; }
+.promise h2 { font-size: clamp(25px, 2.4vw, 33px); }
+.promise p { max-width: 650px; font-size: 15px; }
+.promise a { display: inline-flex; align-items: center; gap: 9px; min-height: 48px; padding: 10px 18px; border-radius: 999px; background: #286b45; color: white; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.page a:focus-visible { outline: 3px solid #256b45; outline-offset: 4px; }
+@media (max-width: 900px) { .heroInner { grid-template-columns: 1fr 42%; min-height: 560px; padding-top: 45px; } .hero h1 { font-size: clamp(42px, 6vw, 62px); } .heroArt { min-height: 400px; } .promise { grid-template-columns: auto 1fr; } .promise a { grid-column: 2; justify-self: start; } }
+@media (max-width: 680px) { .hero { padding-top: 74px; background-size: auto 100%; } .heroInner { display: flex; flex-direction: column; align-items: stretch; min-height: 0; padding: 56px 22px 0; gap: 0; } .hero h1 { margin-top: 25px; font-size: clamp(42px, 10vw, 58px); } .heroCopy > p { font-size: 17px; } .heroArt { min-height: 280px; max-height: 310px; overflow: hidden; } .heroArt img { width: 75%; max-height: 340px; } .textLink { margin-left: 12px; } .steps { padding: 48px 22px 55px; } .stepsHeading { text-align: left; margin-bottom: 25px; } .stepGrid { grid-template-columns: 1fr; gap: 12px; } .step { min-height: 0; padding: 20px; } .stepIcon { margin-bottom: 10px; } .promise { width: calc(100% - 36px); margin: 40px auto; padding: 24px; display: block; } .promiseMark { margin-bottom: 16px; } .promise a { margin-top: 20px; } }

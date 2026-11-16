@@ -33,11 +33,6 @@ export default function Footer() {
             <Link href="/privacy-policy">{t('footer.privacyPolicy')}</Link>
             <Link href="/terms-of-service">{t('footer.termsOfService')}</Link>
           </div>
-          <div className={styles.linkColumn}>
-            <h4>{t('footer.social')}</h4>
-            <Link href="#">Twitter</Link>
-            <Link href="#">Instagram</Link>
-          </div>
         </div>
       </div>
       <div className={styles.footerBottom}>

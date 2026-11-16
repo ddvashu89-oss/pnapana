@@ -29,16 +29,17 @@ export default function Home() {
     name: string, species: string, image_url: string,
     native_region: string, light_requirement: string, water_requirement: string,
     humidity: string, pet_friendly: boolean,
-    water_freq: number, light_req: string, care_plan: any, purchased_on: string, placement: string
+    water_freq: number, light_req: string, care_plan: any, purchased_on: string, placement: string, room: string
   }>({
     name: '', species: '', image_url: '',
     native_region: '', light_requirement: '', water_requirement: '',
     humidity: '', pet_friendly: false,
-    water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: '', placement: ''
+    water_freq: 7, light_req: 'Not sure', care_plan: null, purchased_on: '', placement: '', room: ''
   });
   const [isAdding, setIsAdding] = useState(false);
   const [setupDraft, setSetupDraft] = useState<SetupPlant | null>(null);
   const [setupError, setSetupError] = useState('');
+  const [welcomePlant, setWelcomePlant] = useState<{ id: number; name: string } | null>(null);
   const [weatherLocation, setWeatherLocation] = useState<WeatherLocation | null>(null);
   
   // Camera state
@@ -154,7 +155,7 @@ export default function Home() {
 
   const handleAddPlant = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newPlant.name || !newPlant.species) return;
+    if (!user || !newPlant.name || !newPlant.species || !newPlant.placement || !newPlant.room) return;
     setSetupError('');
     setSetupDraft({ ...newPlant });
     setIsAddPlantModalOpen(false);
@@ -177,8 +178,9 @@ export default function Home() {
           name: '', species: '', image_url: '',
           native_region: '', light_requirement: '', water_requirement: '',
           humidity: '', pet_friendly: false,
-          water_freq: 7, light_req: 'Medium', care_plan: null, purchased_on: '', placement: ''
+          water_freq: 7, light_req: 'Not sure', care_plan: null, purchased_on: '', placement: '', room: ''
         });
+        setWelcomePlant({ id: Number(data.plant_id), name });
         fetchPlants(user.id);
         window.dispatchEvent(new Event('pnapana:plant-setup-refresh'));
       } else {
@@ -350,6 +352,37 @@ export default function Home() {
     setIsIdentificationOpen(true);
   };
 
+  const uploadPlantPhoto = async (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 12 * 1024 * 1024) {
+      setAiError('Choose a JPG, PNG, or WebP photo smaller than 12 MB.');
+      return;
+    }
+    try {
+      const source = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = reject;
+        element.src = source;
+      });
+      const scale = Math.min(1, 1200 / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      setNewPlant(previous => ({ ...previous, image_url: canvas.toDataURL('image/jpeg', 0.8) }));
+      setAiError(null);
+    } catch {
+      setAiError('Could not prepare that photo. Try another image.');
+    }
+  };
+
   const returnToAddPlant = () => {
     setIsIdentificationOpen(false);
     setIsAddPlantModalOpen(true);
@@ -368,7 +401,7 @@ export default function Home() {
       humidity: cp.humidity?.level || '',
       pet_friendly: !!cp.toxicity?.pet_friendly,
       water_freq: cp.water?.frequency_days || 7,
-      light_req: cp.light?.level || 'Medium',
+      light_req: cp.light?.level || 'Not sure',
       care_plan: cp,
     }));
     setPlantInfo({ species: identified.species, description: identified.description });
@@ -470,15 +503,15 @@ export default function Home() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           >
-            <button type="button" className={styles.closeBtn} onClick={closeModal} aria-label="Close add plant form">
+            <button type="button" className={styles.closeBtn} onClick={closeModal} aria-label={language === 'hi' ? 'पौधा जोड़ने का फ़ॉर्म बंद करें' : 'Close add plant form'}>
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
             <div className={styles.addPlantHeading}>
               <span className={styles.addPlantIcon}><Sprout size={21} /></span>
               <div>
-                <span className={styles.addPlantEyebrow}>YOUR GARDEN</span>
+                <span className={styles.addPlantEyebrow}>{language === 'hi' ? 'आपका बगीचा' : 'YOUR GARDEN'}</span>
                 <h2 id="add-plant-title">{t('dashboard.modalAddTitle')}</h2>
-                <p>Confirm the plant first, then complete its required 3-step care setup.</p>
+                <p>{language === 'hi' ? 'नाम, जगह और चाहें तो फ़ोटो जोड़ें। देखभाल की जानकारी बाद में बदल सकते हैं।' : 'Add its name, location and an optional photo. You can refine its care later.'}</p>
               </div>
             </div>
             <form onSubmit={handleAddPlant} className={styles.addPlantForm}>
@@ -491,25 +524,21 @@ export default function Home() {
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor="plant-species">{t('dashboard.speciesLabel')}</label>
                     <button type="button" onClick={openPlantIdentification} className={styles.identifyBtn}>
-                      <ScanLine size={14} /> Identify with 2–4 photos
+                      <ScanLine size={14} /> {language === 'hi' ? '2–4 फ़ोटो से पहचानें' : 'Identify with 2–4 photos'}
                     </button>
                   </div>
                   <input id="plant-species" type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />
                 </div>
                 <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
-                  <label htmlFor="plant-purchased-on">Purchase date <span className={styles.optionalLabel}>Optional</span></label>
-                  <input id="plant-purchased-on" type="date" max={localDateInputValue()} value={newPlant.purchased_on} onChange={e => setNewPlant({...newPlant, purchased_on: e.target.value})} />
-                </div>
-                <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
-                  <label htmlFor="plant-placement">Where does it grow?</label>
-                  <select id="plant-placement" value={newPlant.placement} onChange={e => setNewPlant({...newPlant, placement: e.target.value})}>
-                    <option value="">Not set</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option>
+                  <label htmlFor="plant-placement">{language === 'hi' ? 'यह कहाँ रखा है?' : 'Where does it grow?'}</label>
+                  <select id="plant-placement" required value={newPlant.placement} onChange={e => setNewPlant({...newPlant, placement: e.target.value, room: e.target.value === 'outdoor' ? 'Balcony' : 'Living room' })}>
+                    <option value="">{language === 'hi' ? 'जगह चुनें' : 'Choose a location'}</option><option value="indoor">{language === 'hi' ? 'घर के अंदर' : 'Indoor'}</option><option value="outdoor">{language === 'hi' ? 'बाहर' : 'Outdoor'}</option>
                   </select>
                 </div>
-                <div className={`${styles.inputGroup} ${styles.addPlantField} ${styles.addPlantFieldWide}`}>
-                  <label htmlFor="plant-light-level">Light exposure</label>
-                  <select id="plant-light-level" value={newPlant.light_req} onChange={e => setNewPlant({...newPlant, light_req: e.target.value})}>
-                    <option value="Medium">Not sure / medium</option><option value="Direct sun">Direct sun</option><option value="Full sun">Full sun</option><option value="Bright indirect">Bright, indirect light</option><option value="Low light">Low light</option>
+                <div className={`${styles.inputGroup} ${styles.addPlantField}`}>
+                  <label htmlFor="plant-room">{language === 'hi' ? 'कमरा या क्षेत्र' : 'Room or area'}</label>
+                  <select id="plant-room" required value={newPlant.room} onChange={e => setNewPlant({...newPlant, room: e.target.value})}>
+                    <option value="">{language === 'hi' ? 'क्षेत्र चुनें' : 'Choose an area'}</option>{['Living room','Bedroom','Kitchen','Bathroom','Office','Balcony','Terrace','Garden'].map((area, index) => <option key={area} value={area}>{language === 'hi' ? ['बैठक','शयनकक्ष','रसोई','बाथरूम','दफ़्तर','बालकनी','छत','बगीचा'][index] : area}</option>)}
                   </select>
                 </div>
               </div>
@@ -537,7 +566,7 @@ export default function Home() {
               <div className={`${styles.inputGroup} ${styles.photoField}`}>
                 <div className={styles.photoFieldHeading}>
                   <span className={styles.photoFieldIcon}><ScanLine size={17} /></span>
-                  <div><label>{t('dashboard.plantPhotoLabel')}</label><small>Add a photo now or come back to it later.</small></div>
+                  <div><label htmlFor="plant-photo-upload">{t('dashboard.plantPhotoLabel')}</label><small>{language === 'hi' ? 'अभी फ़ोटो जोड़ें या बाद में जोड़ें।' : 'Add a photo now or come back to it later.'}</small></div>
                 </div>
                 {isCapturing && cameraMode !== 'diagnose' ? (
                   <div>
@@ -557,17 +586,16 @@ export default function Home() {
                       </div>
                     ) : (
                       <div>
-                        <input type="url" value={newPlant.image_url} onChange={e => setNewPlant({...newPlant, image_url: e.target.value})} placeholder={t('dashboard.urlPlaceholder')} style={{marginBottom: '0.5rem'}} />
-                        <button type="button" onClick={openPlantIdentification} className={styles.cameraBtn}>Identify with 2–4 photos</button>
+                        <input id="plant-photo-upload" type="file" accept="image/jpeg,image/png,image/webp" onChange={event => uploadPlantPhoto(event.target.files?.[0])} />
                       </div>
                     )}
                   </div>
                 )}
               </div>
               <div className={styles.addPlantActions}>
-                <span>Name and species are required. Setup has 3 steps.</span>
+                <span>{language === 'hi' ? 'शुरू करने के लिए नाम, पौधे का प्रकार और जगह काफ़ी है।' : 'Name, plant type, and location are enough to start.'}</span>
                 <button type="submit" className={styles.submitBtn} disabled={isAdding || isCapturing}>
-                  <><Sprout size={17} /> Continue to setup</>
+                  <><Sprout size={17} /> {language === 'hi' ? 'देखें और पौधा जोड़ें' : 'Review and add plant'}</>
                 </button>
               </div>
             </form>
@@ -650,19 +678,9 @@ export default function Home() {
         <Link href="/explore" className={styles.discoverLink}>{language === 'hi' ? 'कुछ नया उगाएँ' : 'A little inspiration'} <ArrowUpRight size={17} /></Link>
       </header>
 
-      <WeatherCard onLocationChange={setWeatherLocation} />
-
-      <div className={styles.shortcuts}>
-        <Link href="/space"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'नर्सरी और बालकनी' : <>Nursery &<br />Balcony</>}</strong></Link>
-        <button onClick={() => plants[0] ? router.push(`/plant?id=${plants[0].id}&tab=scan`) : startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'Plant SOS' : 'Plant SOS'}</strong></button>
-        <Link href="/remedies"><span className={styles.shortcutPeach}><FlaskConical size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'घरेलू उपाय' : 'Remedies'}</strong></Link>
-        <Link href="/garden-manager"><span className={styles.shortcutGreen}><Sparkles size={25} strokeWidth={1.6} /></span><strong>Plant Manager</strong></Link>
-        <Link href="/journal"><span className={styles.shortcutBlue}><BookOpen size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'ग्रोथ जर्नल' : 'Growth Journal'}</strong></Link>
-        <Link href="/vacation"><span className={styles.shortcutPeach}><Plane size={25} strokeWidth={1.6} /></span><strong>Vacation Mode</strong></Link>
-      </div>
-
       <section className={styles.todaySection}>
-        <div className={styles.sectionHeader}><h3>{language === 'hi' ? 'आज की देखभाल' : "Today's care"}</h3><Link href="/care">{language === 'hi' ? 'सभी देखें' : 'View schedule'} <ArrowUpRight size={14} /></Link></div>
+        <div className={styles.sectionHeader}><div><h2>{language === 'hi' ? 'आज अपने पौधों के लिए क्या करें?' : 'What do my plants need today?'}</h2><p>{language === 'hi' ? 'हर पौधे के लिए एक साफ अगला कदम।' : 'One clear next step for each plant.'}</p></div><Link href="/care">{language === 'hi' ? 'सभी देखें' : 'View schedule'} <ArrowUpRight size={14} /></Link></div>
+        {welcomePlant && <div className={styles.welcomeTask} role="status"><Sprout size={24} /><div><strong>{language === 'hi' ? `${welcomePlant.name} आपके बगीचे में है` : `${welcomePlant.name} is in your garden`}</strong><p>{language === 'hi' ? 'इसका देखभाल प्लान देखें और आज इसकी मिट्टी जाँचें।' : 'Meet your plant, review its care plan, and check its soil today.'}</p></div><Link href={`/plant?id=${welcomePlant.id}`}>{language === 'hi' ? 'पौधा देखें' : 'Meet your plant'} <ArrowUpRight size={15} /></Link></div>}
         {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा जोड़ें।' : 'Your green family starts with one plant.'}</p><button onClick={() => setIsAddPlantModalOpen(true)}>{t('dashboard.addPlant')}</button></div> : plants.map(plant => {
           const statusText = String(plant.status || '').trim();
           const statusColor = String(plant.status_color || '').toLowerCase().replace(/[\s-]+/g, '_');
@@ -701,11 +719,22 @@ export default function Home() {
                   )}
                 </div>
               </Link>
-              <Link href={`/plant?id=${plant.id}&tab=scan`} className={styles.scanPill}>{language === 'hi' ? 'स्कैन' : 'Scan'}</Link>
+              {needsWaterToday && !needsExtraCare ? <button type="button" className={styles.scanPill} onClick={() => handleWaterPlant(Number(plant.id))}>{language === 'hi' ? 'पानी दिया' : 'I watered it'}</button> : <Link href={`/plant?id=${plant.id}`} className={styles.scanPill}>{language === 'hi' ? 'देखें' : 'View care'}</Link>}
             </div>
           );
         })}
       </section>
+
+      <WeatherCard onLocationChange={setWeatherLocation} />
+
+      <div className={styles.shortcuts} aria-label={language === 'hi' ? 'और विकल्प' : 'More ways to care'}>
+        <Link href="/space"><span className={styles.shortcutGreen}><Compass size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'नर्सरी और बालकनी' : <>Nursery &<br />Balcony</>}</strong></Link>
+        <button onClick={() => plants[0] ? router.push(`/plant?id=${plants[0].id}&tab=scan`) : startCamera('diagnose')}><span className={styles.shortcutBlue}><HeartPulse size={25} strokeWidth={1.6} /></span><strong>Plant SOS</strong></button>
+        <Link href="/remedies"><span className={styles.shortcutPeach}><FlaskConical size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'घरेलू उपाय' : 'Remedies'}</strong></Link>
+        <Link href="/garden-manager"><span className={styles.shortcutGreen}><Sparkles size={25} strokeWidth={1.6} /></span><strong>Plant Manager</strong></Link>
+        <Link href="/journal"><span className={styles.shortcutBlue}><BookOpen size={25} strokeWidth={1.6} /></span><strong>{language === 'hi' ? 'ग्रोथ जर्नल' : 'Growth Journal'}</strong></Link>
+        <Link href="/vacation"><span className={styles.shortcutPeach}><Plane size={25} strokeWidth={1.6} /></span><strong>Vacation Mode</strong></Link>
+      </div>
 
       {carePlant && (
         <section id="garden" className={styles.plantCareForecast} aria-labelledby="plant-care-forecast-title">
@@ -922,7 +951,6 @@ export default function Home() {
     </div>
   );
 }
-
 function formatPlantAge(date: string) {
   const start = new Date(`${date}T00:00:00`);
   if (!Number.isFinite(start.getTime())) return '';
@@ -934,9 +962,4 @@ function formatPlantAge(date: string) {
   const years = Math.floor(months / 12);
   const remainder = months % 12;
   return [years ? `${years}y` : '', remainder ? `${remainder}mo` : ''].filter(Boolean).join(' ');
-}
-
-function localDateInputValue() {
-  const date = new Date();
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }

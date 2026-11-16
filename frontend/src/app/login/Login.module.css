@@ -211,6 +211,10 @@
 
 .toggleLink {
   color: var(--accent-green);
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  font: inherit;
   font-weight: 600;
   cursor: pointer;
   transition: color 0.3s ease;
@@ -218,6 +222,8 @@
 .toggleLink:hover {
   color: var(--accent-orange);
 }
+.toggleLink:focus-visible, .submitBtn:focus-visible { outline: 3px solid var(--primary-green); outline-offset: 3px; }
+.submitBtn:disabled { opacity: .65; cursor: wait; transform: none; }
 
 .formPanel::before { display: none; }
 .card { background: white; border-radius: 27px; box-shadow: var(--glass-shadow); }

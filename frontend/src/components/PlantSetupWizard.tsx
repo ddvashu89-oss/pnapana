@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Bell, Check, Droplets, HeartPulse, Leaf, Lightbulb, PawPrint, RotateCw, Sprout, Sun, Thermometer, Wind } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import styles from './PlantSetupWizard.module.css';
 
 export type SetupPlant = {
@@ -10,6 +11,7 @@ export type SetupPlant = {
   species: string;
   image_url?: string;
   placement?: string;
+  room?: string;
   light_req?: string;
   water_freq?: number;
   care_plan?: string | Record<string, any>;
@@ -19,9 +21,9 @@ export type SetupPlant = {
 export type PlantSetupValues = {
   placement: 'indoor' | 'outdoor';
   room: string;
-  light: 'Direct sun' | 'Full sun' | 'Bright indirect' | 'Medium' | 'Low light';
+  light: 'Direct sun' | 'Full sun' | 'Bright indirect' | 'Medium' | 'Low light' | 'Not sure';
   pot_size: 'small' | 'medium' | 'large' | 'extra-large' | 'not-sure';
-  has_drainage: boolean;
+  has_drainage: boolean | null;
   soil_condition: 'well-draining' | 'dense' | 'sandy' | 'moisture-retaining' | 'not-sure';
   moisture_level: 'dry' | 'slightly-dry' | 'moist' | 'wet' | 'not-sure';
   last_watered: 'today' | '1-3-days' | '4-7-days' | 'over-week' | 'never' | 'not-sure';
@@ -40,12 +42,11 @@ type Completion = { name: string; setup: PlantSetupValues };
 
 export default function PlantSetupWizard({
   plant,
-  existing = false,
-  remaining = 1,
   busy = false,
   serverError = '',
   onBack,
   onComplete,
+  editing = false,
 }: {
   plant: SetupPlant;
   existing?: boolean;
@@ -54,7 +55,10 @@ export default function PlantSetupWizard({
   serverError?: string;
   onBack?: () => void;
   onComplete: (value: Completion) => Promise<void> | void;
+  editing?: boolean;
 }) {
+  const { language } = useLanguage();
+  const hi = language === 'hi';
   const care = useMemo(() => parseCarePlan(plant.care_plan), [plant.care_plan]);
   const [step, setStep] = useState(1);
   const [name, setName] = useState(plant.name || commonName(plant.species));
@@ -69,7 +73,7 @@ export default function PlantSetupWizard({
   const next = () => {
     const message = validateStep(step, name, values);
     if (message) {
-      setError(message);
+      setError(hi ? translateValidation(message) : message);
       return;
     }
     setError('');
@@ -83,9 +87,9 @@ export default function PlantSetupWizard({
   };
 
   const finish = async () => {
-    const message = validateStep(3, name, values);
+    const message = validateStep(1, name, values);
     if (message) {
-      setError(message);
+      setError(hi ? translateValidation(message) : message);
       return;
     }
     if (values.notification_mode === 'browser' && 'Notification' in window && Notification.permission === 'default') {
@@ -103,77 +107,77 @@ export default function PlantSetupWizard({
         <header className={styles.topbar}>
           <span className={styles.brand}><Leaf size={22} /> Pnapana</span>
           <div className={styles.progress} aria-label={`Step ${step} of 3`}>
-            {['Identify', 'Care setup', 'Reminders'].map((label, index) => {
+            {(hi ? ['शुरू करें', 'विवरण', 'रिमाइंडर'] : ['Get started', 'More details', 'Reminders']).map((label, index) => {
               const number = index + 1;
               return <div key={label} className={`${styles.progressStep} ${number === step ? styles.active : ''} ${number < step ? styles.complete : ''}`}>
                 <span>{number < step ? <Check size={15} /> : number}</span><small>{label}</small>
               </div>;
             })}
           </div>
-          {existing ? <span className={styles.requiredBadge}>{remaining} setup{remaining === 1 ? '' : 's'} required</span> : <span className={styles.requiredBadge}>Required setup</span>}
+          <span className={styles.requiredBadge}>{editing ? (hi ? 'देखभाल बदलें' : 'Edit care') : (hi ? 'कुछ ही जानकारी चाहिए' : 'Just the essentials')}</span>
         </header>
 
         <main className={styles.main}>
           <section className={styles.formPane}>
             {step === 1 && <>
-              <p className={styles.eyebrow}>{existing ? 'COMPLETE THIS PLANT’S SETUP' : 'PLANT IDENTIFIED'}</p>
-              <h1>{existing ? 'Let’s finish its setup.' : 'You’re all set! Here’s your plant.'}</h1>
-              <p className={styles.intro}>Confirm where it will live so every care recommendation fits this plant’s real environment.</p>
+              <p className={styles.eyebrow}>{hi ? 'आपका पौधा' : 'YOUR PLANT'}</p>
+              <h1>{editing ? (hi ? 'देखभाल की जानकारी बदलें।' : 'Update this plant’s care.') : (hi ? 'अपने पौधे से शुरुआत करें।' : 'Let’s welcome your plant.')}</h1>
+              <p className={styles.intro}>{hi ? 'नाम और जगह तय करें। बाकी जानकारी बाद में भी जोड़ सकते हैं।' : 'Confirm its name and where it lives. You can add the details later.'}</p>
               <div className={styles.identity}>
                 <img src={image} alt={plant.name || plant.species} />
-                <div><strong>{plant.species}</strong><span><Sprout size={15} /> Weather-aware plan after setup</span></div>
+                <div><strong>{plant.species}</strong><span><Sprout size={15} /> {hi ? 'इसे आपकी देखभाल सूची में जोड़ेंगे' : 'We’ll add it to your care list'}</span></div>
               </div>
-              <label className={styles.field}><span>Plant nickname</span><input value={name} maxLength={255} onChange={event => { setName(event.target.value); setError(''); }} placeholder="Give your plant a name" /></label>
+              <label className={styles.field}><span>{hi ? 'पौधे का नाम' : 'Plant nickname'}</span><input value={name} maxLength={255} onChange={event => { setName(event.target.value); setError(''); }} placeholder={hi ? 'अपने पौधे को नाम दें' : 'Give your plant a name'} /></label>
               <div className={styles.fieldGrid}>
-                <label className={styles.field}><span>Placement</span><select value={values.placement} onChange={event => update('placement', event.target.value as PlantSetupValues['placement'])}><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option></select></label>
-                <label className={styles.field}><span>Room or area</span><select value={values.room} onChange={event => update('room', event.target.value)}><option>Living room</option><option>Bedroom</option><option>Kitchen</option><option>Bathroom</option><option>Office</option><option>Balcony</option><option>Terrace</option><option>Garden</option></select></label>
-                <label className={`${styles.field} ${styles.wide}`}><span>Available light</span><select value={values.light} onChange={event => update('light', event.target.value as PlantSetupValues['light'])}><option>Bright indirect</option><option>Direct sun</option><option>Full sun</option><option>Medium</option><option>Low light</option></select></label>
+                <label className={styles.field}><span>{hi ? 'कहाँ रहेगा?' : 'Where does it live?'}</span><select value={values.placement} onChange={event => update('placement', event.target.value as PlantSetupValues['placement'])}><option value="indoor">{hi ? 'घर के अंदर' : 'Indoor'}</option><option value="outdoor">{hi ? 'बाहर' : 'Outdoor'}</option></select></label>
+                <label className={styles.field}><span>{hi ? 'कमरा या जगह' : 'Room or area'}</span><select value={values.room} onChange={event => update('room', event.target.value)}>{[['Living room','लिविंग रूम'],['Bedroom','बेडरूम'],['Kitchen','रसोई'],['Bathroom','बाथरूम'],['Office','ऑफिस'],['Balcony','बालकनी'],['Terrace','छत'],['Garden','बगीचा']].map(([value,label]) => <option key={value} value={value}>{hi ? label : value}</option>)}</select></label>
+                <label className={`${styles.field} ${styles.wide}`}><span>{hi ? 'रोशनी कैसी है? (वैकल्पिक)' : 'How much light? (optional)'}</span><select value={values.light} onChange={event => update('light', event.target.value as PlantSetupValues['light'])}>{[['Not sure','पता नहीं'],['Bright indirect','तेज़ परोक्ष रोशनी'],['Direct sun','सीधी धूप'],['Full sun','पूरी धूप'],['Medium','मध्यम'],['Low light','कम रोशनी']].map(([value,label]) => <option key={value} value={value}>{hi ? label : value}</option>)}</select></label>
               </div>
-              <div className={`${styles.fitNote} ${lightMismatch ? styles.warning : ''}`}><Lightbulb size={19} /><div><strong>{lightMismatch ? 'Check this light choice' : 'Placement looks suitable'}</strong><p>{lightMismatch || care.light?.detail || plant.light_req || 'We’ll use this placement to personalize its routine.'}</p></div></div>
+              {values.light !== 'Not sure' && <div className={`${styles.fitNote} ${lightMismatch ? styles.warning : ''}`}><Lightbulb size={19} /><div><strong>{lightMismatch ? (hi ? 'रोशनी की जाँच करें' : 'Check this light choice') : (hi ? 'यह जगह ठीक लगती है' : 'Placement looks suitable')}</strong><p>{lightMismatch || care.light?.detail || (hi ? 'इस जगह के अनुसार देखभाल तय करेंगे।' : 'We’ll use this placement to personalize its routine.')}</p></div></div>}
             </>}
 
             {step === 2 && <>
-              <p className={styles.eyebrow}>CURRENT GROWING CONDITIONS</p>
-              <h1>Let’s set up its care.</h1>
-              <p className={styles.intro}>Tell us what the plant is growing in now. This prevents generic pot, soil and watering advice.</p>
+              <p className={styles.eyebrow}>{hi ? 'वैकल्पिक जानकारी' : 'OPTIONAL DETAILS'}</p>
+              <h1>{hi ? 'इसके बारे में और बताएँ।' : 'Tell us a little more.'}</h1>
+              <p className={styles.intro}>{hi ? 'जो पता हो वही चुनें। बाकी बाद में बदल सकते हैं।' : 'Choose only what you know. You can update the rest later.'}</p>
               <div className={styles.fieldGrid}>
-                <label className={styles.field}><span>Pot size</span><select value={values.pot_size} onChange={event => update('pot_size', event.target.value as PlantSetupValues['pot_size'])}><option value="small">Small (under 15 cm)</option><option value="medium">Medium (15–25 cm)</option><option value="large">Large (25–35 cm)</option><option value="extra-large">Extra large</option><option value="not-sure">Not sure</option></select></label>
-                <label className={styles.field}><span>Drainage holes</span><select value={values.has_drainage ? 'yes' : 'no'} onChange={event => update('has_drainage', event.target.value === 'yes')}><option value="yes">Yes, has drainage</option><option value="no">No drainage holes</option></select></label>
-                <label className={styles.field}><span>Soil condition</span><select value={values.soil_condition} onChange={event => update('soil_condition', event.target.value as PlantSetupValues['soil_condition'])}><option value="well-draining">Loose and well-draining</option><option value="dense">Dense or compacted</option><option value="sandy">Sandy or gritty</option><option value="moisture-retaining">Moisture-retaining</option><option value="not-sure">Not sure</option></select></label>
-                <label className={styles.field}><span>Current moisture</span><select value={values.moisture_level} onChange={event => update('moisture_level', event.target.value as PlantSetupValues['moisture_level'])}><option value="dry">Dry</option><option value="slightly-dry">Slightly dry</option><option value="moist">Moist</option><option value="wet">Wet</option><option value="not-sure">Not sure</option></select></label>
-                <label className={styles.field}><span>Last watered</span><select value={values.last_watered} onChange={event => update('last_watered', event.target.value as PlantSetupValues['last_watered'])}><option value="today">Today</option><option value="1-3-days">1–3 days ago</option><option value="4-7-days">4–7 days ago</option><option value="over-week">More than a week ago</option><option value="never">Never</option><option value="not-sure">Not sure</option></select></label>
-                <label className={styles.field}><span>Last repotted</span><select value={values.last_repotted} onChange={event => update('last_repotted', event.target.value as PlantSetupValues['last_repotted'])}><option value="under-month">Within the last month</option><option value="1-6-months">1–6 months ago</option><option value="over-6-months">More than 6 months ago</option><option value="never">Never</option><option value="not-sure">Not sure</option></select></label>
+                <label className={styles.field}><span>{hi ? 'गमले का आकार' : 'Pot size'}</span><select value={values.pot_size} onChange={event => update('pot_size', event.target.value as PlantSetupValues['pot_size'])}>{[['not-sure','Not sure','पता नहीं'],['small','Small (under 15 cm)','छोटा (15 सेमी से कम)'],['medium','Medium (15–25 cm)','मध्यम (15–25 सेमी)'],['large','Large (25–35 cm)','बड़ा (25–35 सेमी)'],['extra-large','Extra large','बहुत बड़ा']].map(([value,en,translation]) => <option key={value} value={value}>{hi ? translation : en}</option>)}</select></label>
+                <label className={styles.field}><span>{hi ? 'गमले में पानी निकलने के छेद' : 'Drainage holes'}</span><select value={values.has_drainage === null ? 'not-sure' : values.has_drainage ? 'yes' : 'no'} onChange={event => update('has_drainage', event.target.value === 'not-sure' ? null : event.target.value === 'yes')}><option value="not-sure">{hi ? 'पता नहीं' : 'Not sure'}</option><option value="yes">{hi ? 'हाँ' : 'Yes, has drainage'}</option><option value="no">{hi ? 'नहीं' : 'No drainage holes'}</option></select></label>
+                <label className={styles.field}><span>{hi ? 'मिट्टी कैसी है?' : 'Soil condition'}</span><select value={values.soil_condition} onChange={event => update('soil_condition', event.target.value as PlantSetupValues['soil_condition'])}>{[['not-sure','Not sure','पता नहीं'],['well-draining','Loose and well-draining','ढीली, पानी आसानी से निकले'],['dense','Dense or compacted','घनी या सख्त'],['sandy','Sandy or gritty','रेतीली'],['moisture-retaining','Moisture-retaining','नमी रोकने वाली']].map(([value,en,translation]) => <option key={value} value={value}>{hi ? translation : en}</option>)}</select></label>
+                <label className={styles.field}><span>{hi ? 'मिट्टी की नमी' : 'Current moisture'}</span><select value={values.moisture_level} onChange={event => update('moisture_level', event.target.value as PlantSetupValues['moisture_level'])}>{[['not-sure','Not sure','पता नहीं'],['dry','Dry','सूखी'],['slightly-dry','Slightly dry','थोड़ी सूखी'],['moist','Moist','नम'],['wet','Wet','गीली']].map(([value,en,translation]) => <option key={value} value={value}>{hi ? translation : en}</option>)}</select></label>
+                <label className={styles.field}><span>{hi ? 'आखिरी बार पानी कब दिया?' : 'Last watered'}</span><select value={values.last_watered} onChange={event => update('last_watered', event.target.value as PlantSetupValues['last_watered'])}>{[['not-sure','Not sure','पता नहीं'],['today','Today','आज'],['1-3-days','1–3 days ago','1–3 दिन पहले'],['4-7-days','4–7 days ago','4–7 दिन पहले'],['over-week','More than a week ago','एक हफ्ते से पहले'],['never','Never','कभी नहीं']].map(([value,en,translation]) => <option key={value} value={value}>{hi ? translation : en}</option>)}</select></label>
+                <label className={styles.field}><span>{hi ? 'गमला आखिरी बार कब बदला?' : 'Last repotted'}</span><select value={values.last_repotted} onChange={event => update('last_repotted', event.target.value as PlantSetupValues['last_repotted'])}>{[['not-sure','Not sure','पता नहीं'],['under-month','Within the last month','पिछले महीने में'],['1-6-months','1–6 months ago','1–6 महीने पहले'],['over-6-months','More than 6 months ago','6 महीने से पहले'],['never','Never','कभी नहीं']].map(([value,en,translation]) => <option key={value} value={value}>{hi ? translation : en}</option>)}</select></label>
               </div>
               <div className={styles.careChecklist}>
-                <h2>Species-specific care checklist</h2>
+                <h2>{hi ? 'देखभाल की जानकारी' : 'Care guidance'}</h2>
                 {[
-                  ['Soil', care.soil || 'Use a loose, well-draining mix.', Sprout],
-                  ['First watering', care.water?.instructions || 'Check soil moisture before watering.', Droplets],
-                  ['Humidity', care.humidity?.detail || care.humidity?.level || 'Follow the plant’s normal humidity range.', Wind],
-                  ['Temperature', care.temperature || 'Keep away from sudden temperature changes.', Thermometer],
-                  ['Pet safety', care.toxicity?.detail || (care.toxicity?.pet_friendly ? 'Listed as pet friendly.' : 'Keep out of reach until toxicity is confirmed.'), PawPrint],
+                  [hi ? 'मिट्टी' : 'Soil', hi ? 'मिट्टी ढीली और पानी निकलने वाली रखें। पौधे की योजना में पूरी जानकारी देखें।' : care.soil || 'Use a loose, well-draining mix.', Sprout],
+                  [hi ? 'पहली बार पानी देना' : 'First watering', hi ? 'पानी देने से पहले मिट्टी की नमी जाँचें।' : care.water?.instructions || 'Check soil moisture before watering.', Droplets],
+                  [hi ? 'नमी' : 'Humidity', hi ? 'इस पौधे की देखभाल योजना में नमी की सलाह देखें।' : care.humidity?.detail || care.humidity?.level || 'Follow the plant’s normal humidity range.', Wind],
+                  [hi ? 'तापमान' : 'Temperature', hi ? 'तापमान में अचानक बदलाव से बचाएँ।' : care.temperature || 'Keep away from sudden temperature changes.', Thermometer],
+                  [hi ? 'पालतू जानवरों की सुरक्षा' : 'Pet safety', hi ? 'सुरक्षा की पुष्टि होने तक पौधे को पालतू जानवरों से दूर रखें।' : care.toxicity?.detail || (care.toxicity?.pet_friendly ? 'Listed as pet friendly.' : 'Keep out of reach until toxicity is confirmed.'), PawPrint],
                 ].map(([title, body, Icon]: any) => <div key={title}><span><Icon size={18} /></span><p><strong>{title}</strong><small>{body}</small></p><Check size={17} /></div>)}
               </div>
             </>}
 
             {step === 3 && <>
-              <p className={styles.eyebrow}>PERSONAL CARE ROUTINE</p>
-              <h1>Set your care reminders.</h1>
-              <p className={styles.intro}>These intervals start from setup completion and stay attached to this plant.</p>
-              <div className={styles.soilNotice}><Droplets size={21} /><p><strong>Soil checks don’t mean automatic watering.</strong><span>We’ll remind you to check moisture first—not water on the calendar alone.</span></p></div>
+              <p className={styles.eyebrow}>{hi ? 'देखभाल रिमाइंडर' : 'CARE REMINDERS'}</p>
+              <h1>{hi ? 'रिमाइंडर चुनें।' : 'Choose your reminders.'}</h1>
+              <p className={styles.intro}>{hi ? 'इन्हें बाद में किसी भी समय बदल सकते हैं।' : 'You can change these at any time from your plant’s page.'}</p>
+              <div className={styles.soilNotice}><Droplets size={21} /><p><strong>{hi ? 'मिट्टी जाँचना, पानी देना नहीं है।' : 'A soil check is not a watering instruction.'}</strong><span>{hi ? 'पानी देने से पहले मिट्टी की नमी जाँचें।' : 'Check moisture before deciding whether to water.'}</span></p></div>
               <div className={styles.reminderGrid}>
-                <ReminderSelect icon={Droplets} title="Soil check" value={values.soil_check_days} onChange={value => update('soil_check_days', value)} options={dayOptions([1,2,3,5,7,10,14])} />
-                <ReminderSelect icon={Leaf} title="Fertilizer" value={values.fertilizer_weeks} onChange={value => update('fertilizer_weeks', value)} options={weekOptions([0,2,4,6,8,12])} />
-                <ReminderSelect icon={RotateCw} title="Rotation" value={values.rotation_days} onChange={value => update('rotation_days', value)} options={dayOptions([0,7,14,30])} />
-                <ReminderSelect icon={Sun} title="Light review" value={values.light_review_days} onChange={value => update('light_review_days', value)} options={dayOptions([0,7,14,30])} />
-                <ReminderSelect icon={Sprout} title="Leaf cleaning" value={values.leaf_cleaning_days} onChange={value => update('leaf_cleaning_days', value)} options={dayOptions([0,7,14,30])} />
-                <ReminderSelect icon={HeartPulse} title="Health check" value={values.health_check_days} onChange={value => update('health_check_days', value)} options={dayOptions([7,14,30])} />
+                <ReminderSelect icon={Droplets} title={hi ? 'मिट्टी की जाँच' : 'Soil check'} value={values.soil_check_days} onChange={value => update('soil_check_days', value)} options={dayOptions([1,2,3,5,7,10,14], hi)} />
+                <ReminderSelect icon={Leaf} title={hi ? 'खाद' : 'Fertilizer'} value={values.fertilizer_weeks} onChange={value => update('fertilizer_weeks', value)} options={weekOptions([0,2,4,6,8,12], hi)} />
+                <ReminderSelect icon={RotateCw} title={hi ? 'गमला घुमाएँ' : 'Rotation'} value={values.rotation_days} onChange={value => update('rotation_days', value)} options={dayOptions([0,7,14,30], hi)} />
+                <ReminderSelect icon={Sun} title={hi ? 'रोशनी जाँचें' : 'Light review'} value={values.light_review_days} onChange={value => update('light_review_days', value)} options={dayOptions([0,7,14,30], hi)} />
+                <ReminderSelect icon={Sprout} title={hi ? 'पत्ते साफ करें' : 'Leaf cleaning'} value={values.leaf_cleaning_days} onChange={value => update('leaf_cleaning_days', value)} options={dayOptions([0,7,14,30], hi)} />
+                <ReminderSelect icon={HeartPulse} title={hi ? 'सेहत जाँचें' : 'Health check'} value={values.health_check_days} onChange={value => update('health_check_days', value)} options={dayOptions([7,14,30], hi)} />
               </div>
               <div className={styles.fieldGrid}>
-                <label className={styles.field}><span>Reminder time</span><input type="time" value={values.reminder_time} onChange={event => update('reminder_time', event.target.value)} /></label>
-                <label className={styles.field}><span>Notifications</span><select value={values.notification_mode} onChange={event => update('notification_mode', event.target.value as PlantSetupValues['notification_mode'])}><option value="in-app">In-app reminders</option><option value="browser">In-app + browser notifications</option></select></label>
+                <label className={styles.field}><span>{hi ? 'रिमाइंडर का समय' : 'Reminder time'}</span><input type="time" value={values.reminder_time} onChange={event => update('reminder_time', event.target.value)} /></label>
+                <label className={styles.field}><span>{hi ? 'सूचनाएँ' : 'Notifications'}</span><select value={values.notification_mode} onChange={event => update('notification_mode', event.target.value as PlantSetupValues['notification_mode'])}><option value="in-app">{hi ? 'ऐप में रिमाइंडर' : 'In-app reminders'}</option><option value="browser">{hi ? 'ऐप और ब्राउज़र में' : 'In-app + browser notifications'}</option></select></label>
               </div>
-              <div className={styles.summary}><Bell size={20} /><div><strong>{name || plant.species}’s routine is ready</strong><p>Soil check every {values.soil_check_days} days · Health check every {values.health_check_days} days · Reminder at {formatTime(values.reminder_time)}</p></div></div>
+              <div className={styles.summary}><Bell size={20} /><div><strong>{hi ? `${name || plant.species} के रिमाइंडर तैयार हैं` : `${name || plant.species}’s reminders are ready`}</strong><p>{hi ? `मिट्टी हर ${values.soil_check_days} दिन जाँचें · सेहत हर ${values.health_check_days} दिन जाँचें` : `Soil check every ${values.soil_check_days} days · Health check every ${values.health_check_days} days · Reminder at ${formatTime(values.reminder_time)}`}</p></div></div>
             </>}
 
             {(error || serverError) && <p className={styles.error} role="alert">{error || serverError}</p>}
@@ -187,11 +191,12 @@ export default function PlantSetupWizard({
         </main>
 
         <footer className={styles.actions}>
-          {(step > 1 || onBack) ? <button type="button" className={styles.back} onClick={back} disabled={busy}><ArrowLeft size={19} /> Back</button> : <span />}
-          <p>No skip—complete all three steps to add this plant to your garden family.</p>
-          {step < 3
-            ? <button type="button" className={styles.primary} onClick={next}>Continue <ArrowRight size={19} /></button>
-            : <button type="button" className={styles.primary} onClick={finish} disabled={busy}>{busy ? 'Saving setup…' : existing ? 'Complete Setup' : 'Add to My Garden'} <ArrowRight size={19} /></button>}
+          {(step > 1 || onBack) ? <button type="button" className={styles.back} onClick={back} disabled={busy}><ArrowLeft size={19} /> {hi ? 'वापस' : 'Back'}</button> : <span />}
+          <p>{hi ? 'विवरण बाद में भी बदल सकते हैं।' : 'You can refine the care details later.'}</p>
+          <div className={styles.actionChoices}>
+            {step < 3 && <button type="button" className={styles.detailsLink} onClick={next}>{hi ? 'और जानकारी जोड़ें' : 'Add more details'} <ArrowRight size={17} /></button>}
+            <button type="button" className={styles.primary} onClick={finish} disabled={busy}>{busy ? (hi ? 'सहेज रहे हैं…' : 'Saving…') : editing ? (hi ? 'बदलाव सहेजें' : 'Save changes') : (hi ? 'पौधा जोड़ें' : 'Add to my garden')} <ArrowRight size={19} /></button>
+          </div>
         </footer>
       </div>
     </div>
@@ -213,9 +218,9 @@ function commonName(species: string) { return species.split(' ')[0] || 'My plant
 function initialValues(plant: SetupPlant): PlantSetupValues {
   const saved = plant.setup_data;
   if (saved) return saved;
-  const validLight = ['Direct sun', 'Full sun', 'Bright indirect', 'Medium', 'Low light'].includes(plant.light_req || '') ? plant.light_req as PlantSetupValues['light'] : 'Medium';
+  const validLight = ['Direct sun', 'Full sun', 'Bright indirect', 'Medium', 'Low light', 'Not sure'].includes(plant.light_req || '') ? plant.light_req as PlantSetupValues['light'] : 'Not sure';
   const soilDays = [1,2,3,5,7,10,14].includes(Number(plant.water_freq)) ? Number(plant.water_freq) : 7;
-  return { placement: plant.placement === 'outdoor' ? 'outdoor' : 'indoor', room: plant.placement === 'outdoor' ? 'Balcony' : 'Living room', light: validLight, pot_size: 'not-sure', has_drainage: true, soil_condition: 'not-sure', moisture_level: 'not-sure', last_watered: 'not-sure', last_repotted: 'not-sure', soil_check_days: soilDays, fertilizer_weeks: 4, rotation_days: 14, light_review_days: 14, leaf_cleaning_days: 14, health_check_days: 14, reminder_time: '09:00', notification_mode: 'in-app' };
+  return { placement: plant.placement === 'outdoor' ? 'outdoor' : 'indoor', room: plant.room || (plant.placement === 'outdoor' ? 'Balcony' : 'Living room'), light: validLight, pot_size: 'not-sure', has_drainage: null, soil_condition: 'not-sure', moisture_level: 'not-sure', last_watered: 'not-sure', last_repotted: 'not-sure', soil_check_days: soilDays, fertilizer_weeks: 0, rotation_days: 0, light_review_days: 0, leaf_cleaning_days: 0, health_check_days: 14, reminder_time: '09:00', notification_mode: 'in-app' };
 }
 
 function validateStep(step: number, name: string, values: PlantSetupValues) {
@@ -226,6 +231,16 @@ function validateStep(step: number, name: string, values: PlantSetupValues) {
   return '';
 }
 
+function translateValidation(message: string) {
+  const messages: Record<string, string> = {
+    'Give your plant a nickname to continue.': 'आगे बढ़ने के लिए पौधे को नाम दें।',
+    'Choose where this plant will live.': 'पौधे की जगह चुनें।',
+    'Complete the current growing conditions.': 'पौधे की वर्तमान स्थिति बताएँ।',
+    'Choose a reminder time.': 'रिमाइंडर का समय चुनें।',
+  };
+  return messages[message] || message;
+}
+
 function placementWarning(selected: string, preferred: string) {
   const need = preferred.toLowerCase();
   if (/indirect|shade|low/.test(need) && /^(?:direct sun|full sun)$/i.test(selected)) return 'This plant prefers filtered or indirect light. Protect it from harsh direct afternoon sun.';
@@ -233,6 +248,6 @@ function placementWarning(selected: string, preferred: string) {
   return '';
 }
 
-function dayOptions(values: number[]): Array<[number,string]> { return values.map(value => [value, value === 0 ? 'Off' : value === 1 ? 'Every day' : `Every ${value} days`]); }
-function weekOptions(values: number[]): Array<[number,string]> { return values.map(value => [value, value === 0 ? 'Off' : value === 1 ? 'Every week' : `Every ${value} weeks`]); }
+function dayOptions(values: number[], hi = false): Array<[number,string]> { return values.map(value => [value, hi ? value === 0 ? 'बंद' : value === 1 ? 'हर दिन' : `हर ${value} दिन` : value === 0 ? 'Off' : value === 1 ? 'Every day' : `Every ${value} days`]); }
+function weekOptions(values: number[], hi = false): Array<[number,string]> { return values.map(value => [value, hi ? value === 0 ? 'बंद' : value === 1 ? 'हर हफ्ते' : `हर ${value} हफ्ते` : value === 0 ? 'Off' : value === 1 ? 'Every week' : `Every ${value} weeks`]); }
 function formatTime(value: string) { const [hour, minute] = value.split(':').map(Number); return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(2020, 0, 1, hour, minute)); }

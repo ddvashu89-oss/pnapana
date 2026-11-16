@@ -97,6 +97,9 @@
   font-size: 0.85rem;
   border: 1px solid var(--border-color);
 }
+.editCareButton { display: inline-flex; align-items: center; min-height: 44px; margin: 12px 0 22px; padding: 8px 15px; border: 1px solid #b7d2bd; border-radius: 12px; background: #edf6eb; color: #1c6540; font-weight: 700; cursor: pointer; }
+.editCareButton:hover { background: #e0f0dd; }
+.editCareButton:focus-visible { outline: 3px solid #267446; outline-offset: 3px; }
 
 .statusDot {
   width: 8px;

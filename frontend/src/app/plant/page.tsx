@@ -9,13 +9,14 @@ import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
 import styles from './Plant.module.css';
 import WeatherCard from '@/components/WeatherCard';
+import PlantSetupWizard, { PlantSetupValues } from '@/components/PlantSetupWizard';
 import { Droplets, Globe, Sun, CalendarDays, Check, FlaskConical, HeartPulse } from 'lucide-react';
 
 function PlantDetailsInner() {
   const searchParams = useSearchParams();
   const plantId = searchParams.get('id') ?? '';
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [hasUser, setHasUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [plant, setPlant] = useState<any>({
@@ -43,6 +44,9 @@ function PlantDetailsInner() {
   const [placement, setPlacement] = useState('');
   const [lightReq, setLightReq] = useState('Medium');
   const [purchaseMessage, setPurchaseMessage] = useState('');
+  const [editSetupOpen, setEditSetupOpen] = useState(false);
+  const [setupBusy, setSetupBusy] = useState(false);
+  const [setupError, setSetupError] = useState('');
   
   // AI Scanner States
   const [scans, setScans] = useState<any[]>([]);
@@ -193,8 +197,30 @@ function PlantDetailsInner() {
 
   if (!hasUser || isLoading) return <Loader fullScreen label={t('common.loading')} />;
 
+  const savedSetup = (() => {
+    try { return typeof plant.setup_data === 'string' ? JSON.parse(plant.setup_data) : plant.setup_data; }
+    catch { return null; }
+  })();
+  const saveCareSetup = async ({ name, setup }: { name: string; setup: PlantSetupValues }) => {
+    setSetupBusy(true);
+    setSetupError('');
+    try {
+      const response = await authFetch('complete_plant_setup.php', { method: 'POST', body: JSON.stringify({ plant_id: plant.id, name, setup }) });
+      const data = await response.json();
+      if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not save care details.');
+      setPlant((previous: any) => ({ ...previous, name, placement: setup.placement, light_req: setup.light, water_freq: setup.soil_check_days, setup_data: JSON.stringify(setup) }));
+      setEditSetupOpen(false);
+      window.dispatchEvent(new Event('pnapana:plants-changed'));
+    } catch (error) {
+      setSetupError(error instanceof Error ? error.message : 'Could not save care details.');
+    } finally {
+      setSetupBusy(false);
+    }
+  };
+
   return (
     <div className={styles.container}>
+      {editSetupOpen && <PlantSetupWizard plant={{ ...plant, room: savedSetup?.room, setup_data: savedSetup }} editing busy={setupBusy} serverError={setupError} onBack={() => setEditSetupOpen(false)} onComplete={saveCareSetup} />}
       <nav className={styles.topNav}>
         <Link href="/dashboard" className={styles.iconBtn}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m15 18-6-6 6-6"/></svg>
@@ -236,6 +262,7 @@ function PlantDetailsInner() {
           {plantAge && <span>Plant age: <strong>{plantAge}</strong></span>}
           {purchaseMessage && <small role="status">{purchaseMessage}</small>}
         </form>
+        <button type="button" className={styles.editCareButton} onClick={() => { setSetupError(''); setEditSetupOpen(true); }}>{language === 'hi' ? 'देखभाल और रिमाइंडर बदलें' : 'Edit care details and reminders'}</button>
         <div className={styles.plantActions}>
           <button onClick={waterPlant} disabled={watering}><Droplets size={19} />{watering ? 'Saving…' : 'Water it'}</button>
           <button onClick={() => { setActiveTab('AI Scan'); requestAnimationFrame(() => { document.getElementById('plant-care')?.scrollIntoView({ behavior: 'smooth' }); startCamera(); }); }}><HeartPulse size={20} />Plant SOS</button>

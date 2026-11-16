@@ -16,6 +16,10 @@
 .active { color: var(--primary-green); background: var(--accent-green-dim); font-weight: 500; }
 .scan .icon { background: var(--primary-green); border-radius: 50%; color: white; width: 38px; height: 38px; margin: -3px; margin-right: -3px; }
 .secondaryLinks { display: flex; flex-direction: column; gap: 2px; border-top: var(--glass-border); margin-top: 26px; padding-top: 24px; }
+.secondaryLinks details { width: 100%; }
+.secondaryLinks summary { display: flex; align-items: center; min-height: 48px; padding: 12px 18px; border-radius: 12px; color: var(--text-secondary); font-size: 14px; font-weight: 700; cursor: pointer; }
+.secondaryLinks summary:hover { background: #f0f5ed; color: var(--primary-green); }
+.secondaryLinks summary:focus-visible, .navItem:focus-visible, .secondaryLinks a:focus-visible { outline: 3px solid var(--primary-green); outline-offset: 2px; }
 .navCaption { color: var(--text-muted); font-size: 10px; letter-spacing: 2px; padding: 0 14px 12px; }
 .secondaryLinks a { display: flex; align-items: center; gap: 16px; padding: 12px 18px; color: var(--text-secondary); border-radius: 12px; font-size: 14px; }
 .sidebarNote { margin: auto 8px 0; padding: 20px 10px 0; display: flex; gap: 10px; color: #71846c; font-size: 13px; line-height: 1.7; }

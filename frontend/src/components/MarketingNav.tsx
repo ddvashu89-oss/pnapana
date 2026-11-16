@@ -65,7 +65,7 @@ export default function MarketingNav({ labels }: { labels?: Labels }) {
         ) : (
           <>
             <Link href="/login" className={styles.loginBtn} onClick={close}>{l.signIn}</Link>
-            <Link href="/login" className={styles.signupBtn} onClick={close}>{l.getStarted}</Link>
+            <Link href="/login?mode=signup" className={styles.signupBtn} onClick={close}>{l.getStarted}</Link>
           </>
         )}
       </div>

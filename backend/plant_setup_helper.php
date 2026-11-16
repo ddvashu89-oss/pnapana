@@ -2,7 +2,7 @@
 
 function pnapana_normalize_plant_setup($value) {
     if (!is_array($value)) {
-        throw new InvalidArgumentException('Complete all three plant setup steps before continuing.');
+        throw new InvalidArgumentException('Add your plant name and where it will live before continuing.');
     }
 
     $pick = static function ($key, $allowed) use ($value) {
@@ -24,8 +24,8 @@ function pnapana_normalize_plant_setup($value) {
     if ($room === '' || mb_strlen($room) > 80) {
         throw new InvalidArgumentException('Choose where this plant will live.');
     }
-    if (!array_key_exists('has_drainage', $value) || !is_bool($value['has_drainage'])) {
-        throw new InvalidArgumentException('Confirm whether the pot has drainage holes.');
+    if (!array_key_exists('has_drainage', $value) || ($value['has_drainage'] !== null && !is_bool($value['has_drainage']))) {
+        throw new InvalidArgumentException('Choose a valid drainage option.');
     }
     $reminderTime = trim((string)($value['reminder_time'] ?? ''));
     if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', $reminderTime)) {
@@ -35,7 +35,7 @@ function pnapana_normalize_plant_setup($value) {
     return [
         'placement' => $pick('placement', ['indoor', 'outdoor']),
         'room' => $room,
-        'light' => $pick('light', ['Direct sun', 'Full sun', 'Bright indirect', 'Medium', 'Low light']),
+        'light' => $pick('light', ['Direct sun', 'Full sun', 'Bright indirect', 'Medium', 'Low light', 'Not sure']),
         'pot_size' => $pick('pot_size', ['small', 'medium', 'large', 'extra-large', 'not-sure']),
         'has_drainage' => $value['has_drainage'],
         'soil_condition' => $pick('soil_condition', ['well-draining', 'dense', 'sandy', 'moisture-retaining', 'not-sure']),

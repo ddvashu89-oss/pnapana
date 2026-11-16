@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sprout, ScanLine, Users, Leaf, UserRound, Compass, Droplets, Sparkles, Settings, Trophy, Bot, Plane, BookOpen } from 'lucide-react';
+import { Home, Sprout, ScanLine, Users, Leaf, UserRound, Compass, Droplets, Sparkles, Settings, Bot, Plane, BookOpen, Grid2X2 } from 'lucide-react';
 import { isAppShellRoute } from '@/lib/routePolicy';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { authFetch } from '@/lib/api';
@@ -39,8 +39,8 @@ export default function Sidebar() {
     { href: '/dashboard', label: hi ? 'आज' : 'Today', icon: Home, active: pathname === '/dashboard' && !hash },
     { href: '/dashboard#garden', label: hi ? 'बगीचा' : 'Garden', icon: Sprout, active: pathname === '/plant' || (pathname === '/dashboard' && hash === '#garden') },
     { href: '/dashboard?action=scan', label: hi ? 'स्कैन' : 'Scan', icon: ScanLine, active: false, scan: true },
-    { href: '/rewards', label: hi ? 'इनाम' : 'Rewards', icon: Trophy, active: pathname === '/rewards', mobileOnly: true },
     { href: '/community', label: t('nav.community'), icon: Users, active: pathname === '/community' },
+    { href: '/you', label: hi ? 'और' : 'More', icon: Grid2X2, active: pathname === '/you' || ['/care', '/journal', '/garden-manager', '/vacation', '/rituals', '/explore', '/settings', '/rewards'].includes(pathname), mobileOnly: true },
   ];
 
   return (
@@ -67,14 +67,16 @@ export default function Sidebar() {
           ))}
         </div>
         <div className={styles.secondaryLinks}>
-          <span className={styles.navCaption}>{hi ? 'और जानें' : 'KEEP GROWING'}</span>
-          <Link href="/care"><Droplets size={19} />{t('nav.care')}</Link>
-          <Link href="/journal"><BookOpen size={19} />{hi ? 'प्लांट जर्नल' : 'Growth & Journal'}</Link>
-          <Link href="/garden-manager"><Bot size={19} />Plant Manager</Link>
-          <Link href="/vacation"><Plane size={19} />Vacation Mode</Link>
-          <Link href="/rituals"><Sparkles size={19} />{t('nav.rituals')}</Link>
-          <Link href="/explore"><Compass size={19} />{t('nav.explore')}</Link>
-          <Link href="/settings"><Settings size={19} />{hi ? 'सेटिंग्स' : 'Settings'}</Link>
+          <details>
+            <summary>{hi ? 'और विकल्प' : 'More tools'}</summary>
+            <Link href="/care"><Droplets size={19} />{t('nav.care')}</Link>
+            <Link href="/journal"><BookOpen size={19} />{hi ? 'प्लांट जर्नल' : 'Growth & Journal'}</Link>
+            <Link href="/garden-manager"><Bot size={19} />{hi ? 'प्लांट मैनेजर' : 'Plant Manager'}</Link>
+            <Link href="/vacation"><Plane size={19} />{hi ? 'छुट्टी मोड' : 'Vacation Mode'}</Link>
+            <Link href="/rituals"><Sparkles size={19} />{t('nav.rituals')}</Link>
+            <Link href="/explore"><Compass size={19} />{t('nav.explore')}</Link>
+            <Link href="/settings"><Settings size={19} />{hi ? 'सेटिंग्स' : 'Settings'}</Link>
+          </details>
         </div>
         <div className={styles.sidebarNote}><Sprout size={23} /><p>A little care.<br />A greener every day.</p></div>
       </nav>

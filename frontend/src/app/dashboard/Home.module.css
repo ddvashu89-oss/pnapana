@@ -754,6 +754,15 @@
 .shortcutBlue { background: #e3eff5; color: #46839a; }
 .shortcutPeach { background: #faeae1; color: #aa654b; }
 .todaySection { margin-bottom: 22px; }
+.todaySection .sectionHeader h2 { color: var(--text-primary); font: 650 clamp(25px, 3vw, 34px)/1.16 var(--font-sans); letter-spacing: -.035em; }
+.todaySection .sectionHeader p { color: var(--text-secondary); font-size: 14px; margin-top: 6px; }
+.welcomeTask { display: flex; align-items: center; gap: 15px; padding: 18px 20px; margin-bottom: 14px; border: 1px solid #bdd7bc; border-radius: 22px; background: #eef6e9; color: #1d5031; }
+.welcomeTask > svg { flex: 0 0 auto; }
+.welcomeTask > div { flex: 1; }
+.welcomeTask strong { display: block; font-size: 16px; margin-bottom: 3px; }
+.welcomeTask p { color: #52745b; font-size: 14px; }
+.welcomeTask a { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; padding: 8px 12px; border-radius: 999px; background: #1f6943; color: white; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.welcomeTask a:focus-visible, .scanPill:focus-visible { outline: 3px solid #367a4c; outline-offset: 3px; }
 .sectionHeader { margin-bottom: 16px; gap: 10px; }
 .sectionHeader h3 { font-size: 23px; font-weight: 600; }
 .sectionHeader > a { display: inline-flex; align-items: center; gap: 3px; color: var(--text-muted); font-size: 12px; }
@@ -771,6 +780,8 @@
 .todayCareUrgent i { width: 7px; height: 7px; border-radius: 50%; background: #d94b43; box-shadow: 0 0 0 3px rgba(217, 75, 67, .12); }
 .todayCareSecondary { margin-left: 5px; color: #89938c; font-size: 11px; font-weight: 400; }
 .scanPill { font-size: 14px; padding: 12px 18px; border-radius: 99px; background: #e2f0e6; color: #305d3e; }
+.todayPlant button.scanPill { border: 1px solid #7dae82; cursor: pointer; font-weight: 700; }
+@media (max-width: 600px) { .welcomeTask { flex-wrap: wrap; padding: 16px; } .welcomeTask a { margin-left: 39px; } .todaySection .sectionHeader h2 { font-size: 25px; } }
 .todayEmpty { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 22px; border: var(--glass-border); border-radius: 24px; background: white; color: var(--text-secondary); font-size: 14px; }
 .todayEmpty > svg { color: #5e8f61; }
 .todayEmpty > button { background: var(--primary-green); color: white; border-radius: 99px; padding: 10px 18px; margin-left: auto; }
@@ -998,13 +1009,14 @@
 .modalContent:has(.addPlantHeading) .identifyingState, .modalContent:has(.addPlantHeading) .plantInfoCard { border-radius: 12px; }
 @media (max-width: 600px) {
   .modalOverlay:has(.addPlantHeading) { align-items: flex-end; padding: 0; }
-  .modalContent:has(.addPlantHeading) { align-self: end; width: calc(100% + 20px); max-height: 94dvh; padding: 23px 19px 0; border-radius: 24px 24px 0 0; }
+  .modalContent:has(.addPlantHeading) { align-self: end; width: 100%; max-width: 100%; max-height: 94dvh; padding: 23px 19px 0; border-radius: 24px 24px 0 0; }
   .modalContent:has(.addPlantHeading) .closeBtn { top: 18px; right: 17px; width: 35px; height: 35px; }
   .addPlantHeading { gap: 12px; padding: 0 42px 18px 0; margin-bottom: 18px; }
   .addPlantIcon { width: 44px; height: 44px; border-radius: 14px; }
   .modalContent .addPlantHeading h2 { font-size: 21px; }
   .addPlantHeading p { font-size: 12px; }
-  .addPlantFields { column-gap: 11px; }
+  .addPlantFields { grid-template-columns: 1fr; }
+  .fieldLabelRow { flex-wrap: wrap; }
   .addPlantField { margin-bottom: 13px; }
   .addPlantFields .inputGroup input, .addPlantFields .inputGroup select { min-height: 44px; padding: 10px; font-size: 13px; }
   .photoField { padding: 12px; margin-bottom: 13px; }
@@ -1012,7 +1024,6 @@
   .addPlantActions .submitBtn { min-width: 136px; padding: 11px 13px; }
 }
 @media (max-width: 380px) {
-  .addPlantFields { grid-template-columns: 1fr; }
   .addPlantFieldWide { grid-column: auto; }
   .addPlantActions > span { max-width: 115px; }
 }

@@ -6,7 +6,7 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import { authFetch } from '@/lib/api';
 import styles from './You.module.css';
-import { Bell, ChevronRight, CircleHelp, Compass, CreditCard, Droplets, Globe2, LogOut, MessageCircle, Sparkles, UserRound } from 'lucide-react';
+import { Bell, ChevronRight, CircleHelp, Compass, CreditCard, Droplets, Globe2, LogOut, MessageCircle, Sparkles, UserRound, BookOpen, Plane, Bot, Trophy } from 'lucide-react';
 
 type ProfileUser = { id: number; name: string; email: string; level?: number };
 type ProfileStats = { plants: number; streak: number; rituals: number };
@@ -85,6 +85,10 @@ export default function You() {
             <h2>{language === 'hi' ? 'और जानें' : 'Keep growing'}</h2>
             {[
               { href: '/care', label: t('nav.care'), Icon: Droplets },
+              { href: '/journal', label: language === 'hi' ? 'पौधे की डायरी' : 'Growth journal', Icon: BookOpen },
+              { href: '/garden-manager', label: language === 'hi' ? 'प्लांट मैनेजर' : 'Plant Manager', Icon: Bot },
+              { href: '/vacation', label: language === 'hi' ? 'छुट्टी मोड' : 'Vacation Mode', Icon: Plane },
+              { href: '/rewards', label: language === 'hi' ? 'इनाम' : 'Rewards', Icon: Trophy },
               { href: '/rituals', label: t('nav.rituals'), Icon: Sparkles },
               { href: '/explore', label: t('nav.explore'), Icon: Compass },
             ].map(({ href, label, Icon }) => <Link key={href} href={href} className={styles.menuItem}><span className={styles.menuIcon}><Icon size={20} /></span><span>{label}</span><ChevronRight size={20} /></Link>)}

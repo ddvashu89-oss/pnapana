@@ -35,7 +35,7 @@ if (!$owned->fetchColumn()) {
 }
 
 $lastWatered = pnapana_setup_last_watered_at($setup['last_watered']);
-$sql = 'UPDATE plants SET name = ?, placement = ?, light_req = ?, water_freq = ?, setup_data = ?, setup_completed = 1, setup_completed_at = NOW()';
+$sql = 'UPDATE plants SET name = ?, placement = ?, light_req = ?, water_freq = ?, setup_data = ?, setup_completed_at = CASE WHEN setup_completed = 1 THEN setup_completed_at ELSE NOW() END, setup_completed = 1';
 $params = [$name, $setup['placement'], $setup['light'], $setup['soil_check_days'], json_encode($setup)];
 if ($lastWatered !== null) {
     $sql .= ', last_watered = ?';

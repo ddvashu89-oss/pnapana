@@ -196,3 +196,31 @@
 .sectionHeader h3 { font: 600 23px var(--font-sans); }
 .markAllBtn { color: var(--primary-green); }
 @media (max-width: 768px) { .header { padding: 27px 20px 24px; } .content { padding: 0 20px; } }
+.container { padding: 36px 28px 90px; }
+.header { padding: 0 0 30px; }
+.header::before { display: none; }
+.eyebrow { color: var(--primary-green); font-size: .75rem; font-weight: 800; letter-spacing: .14em; }
+.header h1 { font-size: clamp(2rem, 4vw, 3rem); margin: 8px 0; }
+.header p { color: var(--text-secondary); line-height: 1.6; }
+.content { display: block; padding: 24px; background: white; border: 1px solid var(--border-color); border-radius: 24px; box-shadow: var(--glass-shadow); }
+.sectionHeader { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.sectionHeader h2 { font-size: 1.35rem; }
+.sectionHeader span { border-radius: 50px; background: #e6efe7; color: var(--primary-green); padding: 3px 10px; font-weight: 700; }
+.taskList { display: grid; gap: 12px; }
+.taskCard { display: flex; align-items: center; gap: 16px; padding: 18px; border: 1px solid var(--border-color); border-radius: 18px; box-shadow: none; }
+.taskIcon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 13px; background: #eaf4eb; font-size: 1.3rem; }
+.taskInfo { flex: 1; min-width: 0; }
+.taskInfo h3 { font-size: 1rem; margin: 0 0 5px; }
+.taskInfo p { color: var(--text-secondary); font-size: .9rem; line-height: 1.5; margin: 0 0 5px; }
+.taskInfo a, .empty a { color: var(--primary-green); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.doneButton, .viewButton { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 12px; font-size: .9rem; font-weight: 700; text-align: center; }
+.doneButton { color: white; background: var(--primary-green); cursor: pointer; }
+.doneButton:disabled { opacity: .6; cursor: wait; }
+.viewButton { color: var(--primary-green); background: #eaf4eb; }
+.doneButton:focus-visible, .viewButton:focus-visible, .taskInfo a:focus-visible, .empty a:focus-visible { outline: 3px solid #e7a64d; outline-offset: 3px; }
+.empty { text-align: center; padding: 45px 18px; }
+.empty h3 { font-size: 1.25rem; }
+.empty p { color: var(--text-secondary); margin: 8px 0 18px; }
+.error { padding: 14px 18px; margin-bottom: 18px; background: #fff1ed; border-radius: 12px; color: #8a3425; }
+.error button { color: inherit; background: transparent; border: 0; font-weight: 700; text-decoration: underline; cursor: pointer; }
+@media (max-width: 680px) { .container { padding: 25px 16px 90px; } .content { padding: 18px 14px; } .taskCard { align-items: flex-start; flex-wrap: wrap; } .taskInfo { flex-basis: calc(100% - 60px); } .doneButton, .viewButton { margin-left: 60px; } }
