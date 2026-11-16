@@ -38,11 +38,11 @@ if (!is_string($image_url) || kindwise_image_payload($image_url) === null) {
 // Only the plant's owner can submit a scan for it — otherwise anyone with a
 // plant_id could write fake scans into another user's history and burn the
 // site's paid AI quota on arbitrary attacker-supplied images.
-$ownerCheckStmt = $pdo->prepare("SELECT user_id FROM plants WHERE id = ?");
+$ownerCheckStmt = $pdo->prepare("SELECT user_id, species, name, placement, light_req, light_requirement, care_plan FROM plants WHERE id = ?");
 $ownerCheckStmt->execute([$plant_id]);
-$ownerId = $ownerCheckStmt->fetchColumn();
+$savedPlant = $ownerCheckStmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$ownerId || (int)$ownerId !== (int)$user['id']) {
+if (!$savedPlant || (int)$savedPlant['user_id'] !== (int)$user['id']) {
     http_response_code(403);
     echo json_encode(["status" => "error", "message" => "You don't have permission to scan this plant."]);
     exit;
@@ -56,14 +56,32 @@ $kindwiseHealth = kindwise_health_assessment($image_url);
 
 if (!empty($kindwiseHealth['ok'])) {
     $summary = kindwise_health_summary($kindwiseHealth['data']);
-    $ai_status = $summary['status'] ?? null;
-    $ai_analysis = trim((string)($summary['diagnosis'] ?? '') . '. ' . (string)($summary['analysis'] ?? ''));
-    $provider = 'kindwise';
-} elseif (!empty($activeApiKey)) {
+    if (($summary['status'] ?? '') === 'invalid') {
+        http_response_code(422);
+        echo json_encode(["status" => "error", "message" => "No plant was detected. Try a clearer photo of the plant or affected leaf."]);
+        exit;
+    }
+    if (($summary['status'] ?? '') === 'uncertain') {
+        http_response_code(422);
+        echo json_encode(["status" => "error", "message" => "The plant's condition could not be assessed from this photo. Try a clear, well-lit image of the leaves and any affected area."]);
+        exit;
+    }
+    if (in_array($summary['status'] ?? null, ['healthy', 'issue'], true)) {
+        $ai_status = $summary['status'];
+        $ai_analysis = trim((string)($summary['diagnosis'] ?? '') . '. ' . (string)($summary['analysis'] ?? ''));
+        $provider = 'kindwise';
+    }
+}
+if ($ai_status === null && !empty($activeApiKey)) {
     $prompt = 'Assess this plant photo for visible health problems. Return only JSON with keys is_healthy (boolean), diagnosis (short string), and treatment (practical short guidance). If the image is not a plant, set is_healthy to false and diagnosis to "Not a plant".';
     $result = gemini_vision_json_call($image_url, $prompt, $activeApiKey);
 
     if (is_array($result) && array_key_exists('is_healthy', $result) && !empty($result['diagnosis'])) {
+        if (strcasecmp(trim((string)$result['diagnosis']), 'Not a plant') === 0) {
+            http_response_code(422);
+            echo json_encode(["status" => "error", "message" => "No plant was detected. Try a clearer photo of the plant or affected leaf."]);
+            exit;
+        }
         $ai_status = !empty($result['is_healthy']) ? 'healthy' : 'issue';
         $ai_analysis = trim((string)$result['diagnosis'] . '. ' . (string)($result['treatment'] ?? ''));
         $provider = 'gemini';
@@ -77,12 +95,40 @@ if (!in_array($ai_status, ['healthy', 'issue', 'unhealthy'], true) || $ai_analys
     exit;
 }
 
+// Identify the photographed plant separately from the condition assessment.
+// A single photo is a suggestion, so retain the customer's confirmed species.
+$identification = kindwise_identify($image_url);
+$candidates = !empty($identification['ok']) ? kindwise_identification_candidates($identification['data'], 2) : [];
+$photoIsPlant = $identification['data']['result']['is_plant']['binary'] ?? null;
+if ($photoIsPlant === false && !empty($identification['ok'])) {
+    http_response_code(422);
+    echo json_encode(["status" => "error", "message" => "The photo could not be confirmed as a plant. Try a clearer photo with the leaves in focus."]);
+    exit;
+}
+$photoSpecies = $candidates[0]['species'] ?? '';
+$photoScore = (float)($candidates[0]['probability'] ?? 0);
+$savedSpecies = trim((string)($savedPlant['species'] ?? ''));
+$identityText = $photoSpecies !== ''
+    ? "Photo suggests {$photoSpecies} (" . round($photoScore * 100) . "% photo match). Saved plant: {$savedSpecies}. Compare the leaves before relying on this identification."
+    : "Photo identification is unavailable. Saved plant: {$savedSpecies}. Verify its identity before following the care advice.";
+
+$carePlan = json_decode((string)($savedPlant['care_plan'] ?? ''), true);
+$planLight = is_array($carePlan) ? ($carePlan['light']['detail'] ?? '') : '';
+$lightGuidance = trim((string)($planLight ?: $savedPlant['light_requirement'] ?: $savedPlant['light_req'] ?: ''));
+$savedPlacement = trim((string)($savedPlant['placement'] ?? ''));
+$placementText = $lightGuidance !== ''
+    ? "Assuming the saved species is correct, its care plan recommends: {$lightGuidance}" . ($savedPlacement !== '' ? " Current location: {$savedPlacement}." : '')
+    : 'Placement guidance is not available for this plant yet. Check its species and care plan before moving it.';
+
+$conditionLabel = $ai_status === 'healthy' ? 'No clear issue seen in this photo' : 'Possible health issue';
+$ai_analysis = "Condition: {$conditionLabel}. {$ai_analysis}\n\nPlant identification: {$identityText}\n\nWhere to put it: {$placementText}";
+
 try {
     $stmt = $pdo->prepare("INSERT INTO plant_scans (plant_id, image_url, ai_analysis, status) VALUES (?, ?, ?, ?)");
     $stmt->execute([$plant_id, $image_url, $ai_analysis, $ai_status]);
     $scan_id = $pdo->lastInsertId();
 
-    $plant_status_text = ($ai_status === 'healthy') ? 'Thriving' : 'Needs Attention';
+    $plant_status_text = ($ai_status === 'healthy') ? 'No visible issue' : 'Check plant';
     $plant_color = ($ai_status === 'healthy') ? 'green' : 'orange';
     $updateStmt = $pdo->prepare("UPDATE plants SET status = ?, status_color = ? WHERE id = ?");
     $updateStmt->execute([$plant_status_text, $plant_color, $plant_id]);
@@ -114,6 +160,7 @@ try {
             "id" => $scan_id,
             "status" => $ai_status,
             "analysis" => $ai_analysis,
+            "identification" => ["species" => $photoSpecies, "photo_match" => $photoScore, "saved_species" => $savedSpecies],
             "created_at" => date('Y-m-d H:i:s')
         ],
         "follow_up_scheduled" => in_array($ai_status, ['issue', 'unhealthy'], true)

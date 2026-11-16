@@ -252,6 +252,14 @@
 .aiScanBtn:hover {
   transform: translateY(-2px);
 }
+.scanInputActions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.scanInputActions .aiScanBtn { margin-bottom: 0; min-height: 48px; }
+.scanUpload { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border: 1px solid var(--primary-green); border-radius: 12px; color: var(--primary-green); font-weight: 700; cursor: pointer; }
+.scanUpload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.scanUpload:focus-within { outline: 3px solid #e7a64d; outline-offset: 3px; }
+.scanCaution { margin: -8px 0 20px; color: var(--text-secondary); font-size: .9rem; line-height: 1.5; }
+.scanError { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px; background: #fff1ed; color: #8a3425; }
+.scanCard p { white-space: pre-line; }
 
 .cameraBox {
   background: rgba(0,0,0,0.2);

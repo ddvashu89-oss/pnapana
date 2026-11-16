@@ -53,6 +53,7 @@ function PlantDetailsInner() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [scanError, setScanError] = useState('');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -123,6 +124,39 @@ function PlantDetailsInner() {
       stopCamera();
     }
   };
+
+  const uploadScanPhoto = async (file?: File) => {
+    if (!file) return;
+    setScanError('');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 12 * 1024 * 1024) {
+      setScanError(language === 'hi' ? '12 MB से छोटी JPG, PNG या WebP फ़ोटो चुनें।' : 'Choose a JPG, PNG, or WebP photo smaller than 12 MB.');
+      return;
+    }
+    try {
+      const source = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const photo = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = source;
+      });
+      const scale = Math.min(1, 1600 / Math.max(photo.naturalWidth, photo.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(photo.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(photo.naturalHeight * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas unavailable');
+      context.drawImage(photo, 0, 0, canvas.width, canvas.height);
+      setCapturedImage(canvas.toDataURL('image/jpeg', 0.82));
+    } catch {
+      setScanError(language === 'hi' ? 'फ़ोटो नहीं खुल सकी। दूसरी फ़ोटो आज़माएँ।' : 'Could not open that photo. Try another image.');
+    }
+  };
   
   const submitScan = async () => {
     if (!capturedImage) return;
@@ -137,16 +171,17 @@ function PlantDetailsInner() {
       if (data.status === 'success') {
         fetchScans();
         setCapturedImage(null);
+        setScanError('');
         // refresh plant data to update status color
         authFetch(`get_plant_details.php?id=${plantId}`)
           .then(r => r.json())
           .then(d => { if(d.status === "success") setPlant(d.plant); });
       } else {
-        alert(data.message || t('plant.aiScanFailed'));
+        setScanError(data.message || t('plant.aiScanFailed'));
       }
     } catch (e) {
       console.error(e);
-      alert(t('plant.aiScanFailed'));
+      setScanError(t('plant.aiScanFailed'));
     } finally {
       setIsScanning(false);
     }
@@ -313,12 +348,17 @@ function PlantDetailsInner() {
               <p style={{marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
                 {t('plant.aiScanText')}
               </p>
+              <p className={styles.scanCaution}>{language === 'hi' ? 'प्रभावित पत्ते की साफ फ़ोटो लें। स्कैन केवल दिखाई देने वाले लक्षणों का अनुमान देता है; इलाज से पहले पौधे को स्वयं जाँचें।' : 'Photograph the affected leaf clearly. A scan estimates visible symptoms; check the plant in person before treating it.'}</p>
 
               {!isCapturing && !capturedImage && (
-                <button className={styles.aiScanBtn} onClick={startCamera}>
-                  {t('plant.openCamera')}
-                </button>
+                <div className={styles.scanInputActions}>
+                  <button className={styles.aiScanBtn} onClick={startCamera}>{t('plant.openCamera')}</button>
+                  <label className={styles.scanUpload}>{language === 'hi' ? 'गैलरी से फ़ोटो चुनें' : 'Upload a photo'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={event => { void uploadScanPhoto(event.target.files?.[0]); event.currentTarget.value = ''; }} />
+                  </label>
+                </div>
               )}
+              {scanError && <p className={styles.scanError} role="alert">{scanError}</p>}
 
               {isCapturing && (
                 <div className={styles.cameraBox}>

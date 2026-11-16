@@ -225,9 +225,9 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
               <button type="button" className={`${styles.notListed} ${showCustom ? styles.notListedActive : ''}`} onClick={() => { setShowCustom(true); setSelectedSpecies(''); }}>My plant isn’t listed</button>
               {showCustom ? <div className={styles.customFields}><label>Correct species or plant name<input value={customSpecies} onChange={event => setCustomSpecies(event.target.value)} placeholder="e.g. Calathea orbifolia" /></label><label>Common name <small>Optional</small><input value={customCommonName} onChange={event => setCustomCommonName(event.target.value)} placeholder="e.g. Prayer plant" /></label></div> : null}
             </div>
-            <p className={styles.confirmNote}>Your confirmation is required. Your weather-aware care plan is created after you finish the required setup.</p>
+            <p className={styles.confirmNote}>These scores estimate a photo match, not certainty. Compare the leaf shape and growth pattern before choosing. Your care plan is created when you add the plant.</p>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
-            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={() => { setScan(null); setError(''); }}><RotateCcw size={16} /> Retake</button><button type="button" className={styles.primary} disabled={busy || (!showCustom && !selectedSpecies)} onClick={confirmPlant}>{busy ? 'Creating care plan…' : 'Confirm plant & create care plan'}</button></footer>
+            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={() => { setScan(null); setError(''); }}><RotateCcw size={16} /> Retake</button><button type="button" className={styles.primary} disabled={busy || (!showCustom && !selectedSpecies)} onClick={confirmPlant}>{busy ? 'Confirming…' : 'Use this identification'}</button></footer>
           </>
         )}
       </section>

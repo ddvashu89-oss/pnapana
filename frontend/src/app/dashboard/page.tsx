@@ -52,7 +52,7 @@ export default function Home() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [plantInfo, setPlantInfo] = useState<{ species: string, description: string } | null>(null);
   const [cameraMode, setCameraMode] = useState<'capture' | 'identify' | 'diagnose'>('capture');
-  const [healthStatus, setHealthStatus] = useState<{ diagnosis: string, treatment: string } | null>(null);
+  const [healthStatus, setHealthStatus] = useState<{ diagnosis: string, treatment: string, health_status: string, identification?: { species: string, photo_match: number }, placement?: string } | null>(null);
   const [isDiagnosingModalOpen, setIsDiagnosingModalOpen] = useState(false);
   const [isIdentificationOpen, setIsIdentificationOpen] = useState(false);
 
@@ -324,7 +324,7 @@ export default function Home() {
       if (!res.ok || data.status !== 'success') {
         throw new Error(data.message || t('dashboard.aiIdentifyFailed'));
       }
-      setHealthStatus({ diagnosis: data.diagnosis, treatment: data.treatment });
+      setHealthStatus({ diagnosis: data.diagnosis, treatment: data.treatment, health_status: data.health_status, identification: data.identification, placement: data.placement });
     } catch (err) {
       console.error(err);
       setAiError(err instanceof Error ? err.message : t('dashboard.aiIdentifyFailed'));
@@ -655,13 +655,18 @@ export default function Home() {
 
             {healthStatus && (
               <div className={styles.diagnosisCard}>
+                <p>{language === 'hi' ? '1. पौधे की स्थिति' : '1. Plant condition'}</p>
                 <div className={styles.diagHeader}>
-                  <span className={styles.diagIcon}>⚠️</span>
-                  <h3>{healthStatus.diagnosis}</h3>
+                  <span className={styles.diagIcon}>{healthStatus.health_status === 'healthy' ? '🌿' : '⚠️'}</span>
+                  <h3>{healthStatus.health_status === 'healthy' ? (language === 'hi' ? 'फ़ोटो में कोई साफ समस्या नहीं दिखी' : 'No clear issue seen in this photo') : (language === 'hi' ? 'संभावित समस्या' : 'Possible issue')}: {healthStatus.diagnosis}</h3>
                 </div>
                 <div className={styles.diagBody}>
                   <h4>{t('dashboard.treatmentPlan')}</h4>
                   <p>{healthStatus.treatment}</p>
+                  <h4>{language === 'hi' ? '2. पौधे की पहचान' : '2. Plant identification'}</h4>
+                  <p>{healthStatus.identification?.species ? `${healthStatus.identification.species} (${Math.round(healthStatus.identification.photo_match * 100)}% photo match). ${language === 'hi' ? 'पत्तों से मिलाकर जाँचें।' : 'Compare its leaves before relying on this match.'}` : (language === 'hi' ? 'इस फ़ोटो से पहचान की पुष्टि नहीं हुई।' : 'Identification could not be confirmed from this photo.')}</p>
+                  <h4>{language === 'hi' ? '3. इसे कहाँ रखें' : '3. Where to put it'}</h4>
+                  <p>{healthStatus.placement}</p>
                 </div>
                 <button className={styles.submitBtn} onClick={closeModal} style={{marginTop: '1.5rem'}}>{t('dashboard.gotItThanks')}</button>
               </div>

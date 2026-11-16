@@ -159,7 +159,7 @@ function kindwise_health_summary($response) {
     $result = $response['result'] ?? [];
     if (($result['is_plant']['binary'] ?? null) === false) {
         return [
-            'status' => 'issue',
+            'status' => 'invalid',
             'diagnosis' => 'No plant detected',
             'analysis' => 'This photo does not appear to show a plant clearly. Try again with the leaves and affected area in focus.'
         ];
@@ -168,11 +168,18 @@ function kindwise_health_summary($response) {
     $suggestions = $result['disease']['suggestions'] ?? [];
     $top = is_array($suggestions) ? array_slice($suggestions, 0, 3) : [];
 
-    if ($isHealthy === true || ($isHealthy === null && count($top) === 0)) {
+    if ($isHealthy === true) {
         return [
             'status' => 'healthy',
             'diagnosis' => 'Looks healthy',
             'analysis' => 'No clear signs of a disease or pest were detected in this photo. Continue the plant’s normal care and monitor new growth.'
+        ];
+    }
+    if ($isHealthy === null && count($top) === 0) {
+        return [
+            'status' => 'uncertain',
+            'diagnosis' => 'Health could not be assessed',
+            'analysis' => 'Try a clear photo of the leaves and any affected area.'
         ];
     }
 

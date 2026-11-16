@@ -8,6 +8,7 @@ if (file_exists(__DIR__ . '/../config.php')) {
     require_once __DIR__ . '/../config.php';
 }
 require_once __DIR__ . '/../kindwise_helper.php';
+require_once __DIR__ . '/../botanical_catalog.php';
 require_once __DIR__ . '/../gemini_helper.php';
 require_once __DIR__ . '/../growth_schema.php';
 require_once __DIR__ . '/../rate_limiter.php';
@@ -40,12 +41,33 @@ try { $pdo->prepare("INSERT INTO analytics_events (user_id, event_name) VALUES (
 $healthResponse = kindwise_health_assessment($image);
 if (!empty($healthResponse['ok'])) {
     $summary = kindwise_health_summary($healthResponse['data']);
+    if (($summary['status'] ?? '') === 'invalid' || ($summary['status'] ?? '') === 'uncertain') {
+        http_response_code(422);
+        echo json_encode(['status' => 'error', 'message' => ($summary['status'] === 'invalid') ? 'No plant was detected. Try a clearer photo.' : 'The plant condition could not be assessed. Try a clear photo of its leaves and affected area.']);
+        exit;
+    }
+    $identityResponse = kindwise_identify($image);
+    $identity = !empty($identityResponse['ok']) ? (kindwise_identification_candidates($identityResponse['data'], 1)[0] ?? null) : null;
+    $species = (string)($identity['species'] ?? '');
+    $score = (float)($identity['probability'] ?? 0);
+    $placement = 'Add this plant to your garden and confirm its species to get a placement recommendation tailored to its care plan.';
+    if ($species !== '' && $score >= 0.45) {
+        foreach (get_botanical_catalog() as $catalogPlant) {
+            if (strcasecmp((string)($catalogPlant['species'] ?? ''), $species) === 0) {
+                $lightAdvice = (string)($catalogPlant['care_plan']['light']['detail'] ?? '');
+                if ($lightAdvice !== '') $placement = "If this identification is correct: {$lightAdvice} Confirm the species before moving the plant.";
+                break;
+            }
+        }
+    }
     log_diagnosis_usage($pdo, (int)$user['id'], 'kindwise', true);
     echo json_encode([
         'status' => 'success',
         'diagnosis' => $summary['diagnosis'],
         'treatment' => $summary['analysis'],
         'health_status' => $summary['status'],
+        'identification' => ['species' => $species, 'photo_match' => $score],
+        'placement' => $placement,
         'provider' => 'kindwise'
     ]);
     exit;
@@ -55,6 +77,11 @@ $activeKey = pnapana_shared_gemini_key($pdo);
 if ($activeKey !== '') {
     $prompt = 'Assess this plant photo for visible health problems. Return only JSON with keys is_healthy (boolean), diagnosis (short string), and treatment (practical short guidance). If the image is not a plant, set is_healthy to false and diagnosis to "Not a plant".';
     $result = gemini_vision_json_call($image, $prompt, $activeKey);
+    if (is_array($result) && isset($result['diagnosis']) && strcasecmp(trim((string)$result['diagnosis']), 'Not a plant') === 0) {
+        http_response_code(422);
+        echo json_encode(['status' => 'error', 'message' => 'No plant was detected. Try a clearer photo.']);
+        exit;
+    }
     if (is_array($result) && isset($result['diagnosis'])) {
         log_diagnosis_usage($pdo, (int)$user['id'], 'gemini', true);
         echo json_encode([
@@ -62,6 +89,8 @@ if ($activeKey !== '') {
             'diagnosis' => (string) $result['diagnosis'],
             'treatment' => (string) ($result['treatment'] ?? 'Continue normal care and monitor the plant for changes.'),
             'health_status' => !empty($result['is_healthy']) ? 'healthy' : 'issue',
+            'identification' => ['species' => '', 'photo_match' => 0],
+            'placement' => 'Add this plant to your garden and confirm its species to get a placement recommendation tailored to its care plan.',
             'provider' => 'gemini'
         ]);
         exit;
