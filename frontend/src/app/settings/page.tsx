@@ -21,10 +21,6 @@ export default function Settings() {
   const { t } = useLanguage();
   const [user, setUser] = useState<UserData | null>(null);
 
-  // App Preferences State
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [reminderTime, setReminderTime] = useState('09:00');
-
   // Change Password State
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -365,10 +361,6 @@ export default function Settings() {
                 <p>{t('settings.pushNotificationsText')}</p>
               </div>
             </div>
-            <label className={styles.switch}>
-              <input type="checkbox" checked={pushNotifications} onChange={(e) => setPushNotifications(e.target.checked)} />
-              <span className={styles.slider}></span>
-            </label>
           </div>
         </motion.section>
 
@@ -386,12 +378,7 @@ export default function Settings() {
                 <p>{t('settings.dailyReminderText')}</p>
               </div>
             </div>
-            <input
-              type="time"
-              className={styles.timePicker}
-              value={reminderTime}
-              onChange={(e) => setReminderTime(e.target.value)}
-            />
+            <Link href="/dashboard/#garden">{t('settings.openGarden')}</Link>
           </div>
         </motion.section>
 

@@ -73,12 +73,7 @@ $result = null;
 if ($image !== '') {
     $result = gemini_vision_json_call($image, $prompt, $apiKey);
 } else {
-    $text = gemini_text_response($prompt, $apiKey);
-    if ($text !== null) {
-        $text = preg_replace('/^```(?:json)?\s*|\s*```$/', '', trim($text));
-        $decoded = json_decode($text, true);
-        if (is_array($decoded)) $result = $decoded;
-    }
+    $result = gemini_text_json_call($prompt, $apiKey);
 }
 
 if (!is_array($result)) {

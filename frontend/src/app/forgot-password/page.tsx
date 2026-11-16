@@ -52,13 +52,14 @@ export default function ForgotPassword() {
             </p>
           </div>
 
-          {error && <div className={styles.error}>{error}</div>}
+          {error && <div className={styles.error} role="alert">{error}</div>}
 
           {!sent && (
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
-                <label>Email</label>
+                <label htmlFor="reset-email">Email</label>
                 <input
+                  id="reset-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -75,7 +76,7 @@ export default function ForgotPassword() {
           {sent && (
             <div className={styles.toggleText}>
               Didn&apos;t get it? Check spam, or
-              <span className={styles.toggleLink} onClick={() => setSent(false)}>try again</span>
+              <button type="button" className={styles.toggleLink} onClick={() => setSent(false)}>try again</button>
             </div>
           )}
         </div>

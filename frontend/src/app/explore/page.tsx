@@ -43,8 +43,9 @@ export default function Explore() {
 
   if (!user) return <Loader fullScreen label={t('common.loading')} />;
 
-  const featuredPlant = plants.length > 0 ? plants[0] : null;
-  const gridPlants = plants.length > 1 ? plants.slice(1) : [];
+  const filteredPlants = plants.filter(plant => `${plant.name || ''} ${plant.species || ''}`.toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase()));
+  const featuredPlant = filteredPlants[0] || null;
+  const gridPlants = filteredPlants.slice(1);
 
   return (
     <div className={styles.container}>
@@ -54,7 +55,7 @@ export default function Explore() {
 
         <div className={styles.searchBar}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" placeholder={t('explore.searchPlaceholder')} />
+          <input type="search" aria-label={t('explore.searchPlaceholder')} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} placeholder={t('explore.searchPlaceholder')} />
         </div>
       </header>
 
@@ -66,10 +67,10 @@ export default function Explore() {
 
         {isLoading ? (
           <div style={{ marginTop: '3rem' }}><Loader label={t('explore.loading')} /></div>
-        ) : plants.length === 0 ? (
+        ) : filteredPlants.length === 0 ? (
           <div className={styles.emptyState}>
-            <p>{t('explore.emptyLine1')}</p>
-            <p>{t('explore.emptyLine2')}</p>
+            <p>{searchQuery ? t('explore.noSearchResults') : t('explore.emptyLine1')}</p>
+            {!searchQuery && <p>{t('explore.emptyLine2')}</p>}
           </div>
         ) : (
           <>
@@ -83,7 +84,7 @@ export default function Explore() {
                 <div className={styles.featuredCard}>
                   <img src={featuredPlant.image_url} alt={featuredPlant.name} />
                   <div className={styles.featuredContent}>
-                    <span className={styles.featuredTag}>{t('explore.plantOfTheDay')}</span>
+                    <span className={styles.featuredTag}>{t('explore.communityPlant')}</span>
                     <h2>{featuredPlant.name}</h2>
                     <p>{featuredPlant.species || t('explore.beautifulPlant')}</p>
                   </div>

@@ -10,7 +10,7 @@ type CarePlant = { id?: number | string; name?: string; species?: string; water_
 type LocationResult = { id: number; name: string; latitude: number; longitude: number; admin1?: string; country?: string };
 
 export default function WeatherCard({ plant, onLocationChange }: { plant?: CarePlant; onLocationChange?: (location: WeatherLocation | null) => void }) {
-  const { weather, loading, error, locationMode, refresh, chooseLocation, switchToDeviceLocation } = useWeather();
+  const { weather, loading, error, locationMode, refresh, chooseLocation, switchToDeviceLocation, clearSavedLocation } = useWeather();
   const { language } = useLanguage();
   const hi = language === 'hi';
   const [now] = useState(() => Date.now());
@@ -191,6 +191,7 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
           }}><MapPin size={15} /><span><strong>{result.name}</strong><small>{[result.admin1, result.country].filter(Boolean).join(', ')}</small></span></button></li>)}
         </ul>}
         <button type="button" className={styles.deviceLocation} onClick={async () => { await switchToDeviceLocation(); }} disabled={loading}><Navigation size={16} /> Use my current location{locationMode === 'device' && !locationNeedsAttention ? ' (current)' : ''}</button>
+        {locationMode === 'manual' && <button type="button" className={styles.deviceLocation} onClick={() => { clearSavedLocation(); setLocationQuery(''); setLocationResults([]); }}>Clear selected city</button>}
       </div>}
       {weather && <div className={styles.locationMeta}>
         <strong>{approximateLocation ? 'Location not confirmed' : weather.source === 'station-observation' ? 'Nearby observation' : 'Local forecast'}</strong>

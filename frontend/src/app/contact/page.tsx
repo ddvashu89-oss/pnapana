@@ -111,23 +111,23 @@ export default function Contact() {
             <form onSubmit={handleSubmit}>
               <div className={styles.contactFormRow}>
                 <div className={styles.contactFormGroup}>
-                  <label>Name</label>
-                  <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
+                  <label htmlFor="contact-name">Name</label>
+                  <input id="contact-name" type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
                 </div>
                 <div className={styles.contactFormGroup}>
-                  <label>Email</label>
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+                  <label htmlFor="contact-email">Email</label>
+                  <input id="contact-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
                 </div>
               </div>
 
               <div className={styles.contactFormGroup}>
-                <label>Subject</label>
-                <input type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="What's this about?" />
+                <label htmlFor="contact-subject">Subject</label>
+                <input id="contact-subject" type="text" value={subject} onChange={e => setSubject(e.target.value)} placeholder="What's this about?" />
               </div>
 
               <div className={styles.contactFormGroup}>
-                <label>Message</label>
-                <textarea required rows={5} value={message} onChange={e => setMessage(e.target.value)} placeholder="Tell us more..." />
+                <label htmlFor="contact-message">Message</label>
+                <textarea id="contact-message" required rows={5} value={message} onChange={e => setMessage(e.target.value)} placeholder="Tell us more..." />
               </div>
 
               <button type="submit" className={styles.contactSubmitBtn} disabled={isSubmitting}>

@@ -247,6 +247,14 @@ export function useWeather() {
     setLocationMode('device');
     await refresh(true);
   }, [refresh]);
+  const clearSavedLocation = useCallback(() => {
+    localStorage.removeItem(WEATHER_LOCATION_KEY);
+    cachedWeather = null;
+    setLocationMode('device');
+    setWeather(null);
+    setError('Choose your city or use your current location for weather-based care.');
+    setLoading(false);
+  }, []);
   useEffect(() => {
     refresh();
     const dayNightTimer = setInterval(() => {
@@ -258,5 +266,5 @@ export function useWeather() {
     }, 60_000);
     return () => clearInterval(dayNightTimer);
   }, [refresh]);
-  return { weather, loading, error, locationMode, refresh: () => refresh(true), chooseLocation, switchToDeviceLocation };
+  return { weather, loading, error, locationMode, refresh: () => refresh(true), chooseLocation, switchToDeviceLocation, clearSavedLocation };
 }

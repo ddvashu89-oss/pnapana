@@ -7,8 +7,24 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Loader from '@/components/Loader';
 import styles from './Rituals.module.css';
 
-const STREAK_DAYS = 3;
 const STREAK_GOAL = 7;
+
+function todayKey() {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function ritualStreak(days: string[]) {
+  const completed = new Set(days);
+  const date = new Date();
+  if (!completed.has(todayKey())) date.setDate(date.getDate() - 1);
+  let count = 0;
+  while (completed.has(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`)) {
+    count++;
+    date.setDate(date.getDate() - 1);
+  }
+  return count;
+}
 
 export default function Rituals() {
   const router = useRouter();
@@ -17,14 +33,27 @@ export default function Rituals() {
 
   const [activeRitual, setActiveRitual] = useState<string | null>(null);
   const [completedRituals, setCompletedRituals] = useState<string[]>([]);
+  const [completedDays, setCompletedDays] = useState<string[]>([]);
+  const [progressReady, setProgressReady] = useState(false);
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
       router.push('/login');
       return;
     }
-    setUser(JSON.parse(storedUser));
+    const currentUser = JSON.parse(storedUser);
+    setUser(currentUser);
+    try {
+      const saved = JSON.parse(localStorage.getItem(`pnapana-rituals-${currentUser.id}`) || '{}');
+      if (saved.date === todayKey() && Array.isArray(saved.rituals)) setCompletedRituals(saved.rituals);
+      if (Array.isArray(saved.days)) setCompletedDays(saved.days.filter((day: unknown) => typeof day === 'string'));
+    } catch { /* Begin with an empty history if local storage is malformed. */ }
+    setProgressReady(true);
   }, [router]);
+
+  useEffect(() => {
+    if (progressReady && user?.id) localStorage.setItem(`pnapana-rituals-${user.id}`, JSON.stringify({ date: todayKey(), rituals: completedRituals, days: completedDays }));
+  }, [progressReady, user, completedRituals, completedDays]);
 
   const handleStartRitual = (ritualName: string) => {
     if (completedRituals.includes(ritualName) || activeRitual === ritualName) return;
@@ -35,12 +64,14 @@ export default function Rituals() {
     setTimeout(() => {
       setActiveRitual(null);
       setCompletedRituals(prev => [...prev, ritualName]);
+      setCompletedDays(prev => prev.includes(todayKey()) ? prev : [...prev, todayKey()]);
     }, 2500);
   };
 
   if (!user) return <Loader fullScreen label={t('common.loading')} />;
 
   const isMorningComplete = completedRituals.includes('morning');
+  const streakDays = ritualStreak(completedDays);
 
   return (
     <div className={styles.container}>
@@ -63,14 +94,14 @@ export default function Rituals() {
                 cx="22" cy="22" r="19"
                 strokeDasharray={2 * Math.PI * 19}
                 initial={{ strokeDashoffset: 2 * Math.PI * 19 }}
-                animate={{ strokeDashoffset: 2 * Math.PI * 19 * (1 - STREAK_DAYS / STREAK_GOAL) }}
+                animate={{ strokeDashoffset: 2 * Math.PI * 19 * (1 - Math.min(streakDays, STREAK_GOAL) / STREAK_GOAL) }}
                 transition={{ duration: 1.2, ease: 'easeOut' }}
               />
             </svg>
             <span className={styles.fireIcon}>🔥</span>
           </div>
           <div className={styles.zenStats}>
-            <strong>{t('rituals.dayStreak', { days: STREAK_DAYS })}</strong>
+            <strong>{t('rituals.dayStreak', { days: streakDays })}</strong>
             <span>{t('rituals.keepItUp')}</span>
           </div>
         </div>

@@ -268,8 +268,8 @@ export default function Community() {
             <h2>{t('community.composerTitle')}</h2>
             <form onSubmit={handleSubmitPost}>
               <div className={styles.inputGroup}>
-                <label>{t('community.pickPlantLabel')}</label>
-                <select value={selectedPlantId} onChange={e => handlePlantSelect(e.target.value)}>
+                <label htmlFor="community-plant">{t('community.pickPlantLabel')}</label>
+                <select id="community-plant" value={selectedPlantId} onChange={e => handlePlantSelect(e.target.value)}>
                   <option value="">{t('community.pickPlantNone')}</option>
                   {myPlants.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -277,8 +277,9 @@ export default function Community() {
                 </select>
               </div>
               <div className={styles.inputGroup}>
-                <label>{t('community.captionLabel')}</label>
+                <label htmlFor="community-caption">{t('community.captionLabel')}</label>
                 <textarea
+                  id="community-caption"
                   required
                   rows={3}
                   value={caption}
@@ -287,8 +288,9 @@ export default function Community() {
                 />
               </div>
               <div className={styles.inputGroup}>
-                <label>{t('community.imageUrlLabel')}</label>
+                <label htmlFor="community-image-url">{t('community.imageUrlLabel')}</label>
                 <input
+                  id="community-image-url"
                   type="url"
                   value={imageUrl}
                   onChange={e => setImageUrl(e.target.value)}
