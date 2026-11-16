@@ -84,7 +84,7 @@ async function prepareImage(file: File): Promise<PreparedPhoto> {
   return { dataUrl: canvas.toDataURL('image/jpeg', 0.86), qualityNote: photoQualityNote(image) };
 }
 
-function formatPlantNetProbability(probability: number): string {
+function formatProbability(probability: number): string {
   if (!Number.isFinite(probability)) return '—';
   // Keep the provider's numeric score meaningful rather than rounding a
   // 63.127% result down to a misleading 63%.
@@ -127,7 +127,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
     setBusy(true);
     setError('');
     try {
-      const response = await authFetch('identify_plant.php', { method: 'POST', body: JSON.stringify({ images }) });
+      const response = await authFetch('identify_plant_multi.php', { method: 'POST', body: JSON.stringify({ images }) });
       const data = await response.json();
       if (!response.ok || data.status !== 'success') {
         const reference = typeof data.reference_id === 'string' && data.reference_id ? ` Reference: ${data.reference_id}.` : '';
@@ -186,7 +186,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
           <>
             <div className={styles.intro}>
               <strong>Use 2–4 photos for better accuracy</strong>
-              <p>PlantNet compares these views of the same plant. Good light and varied details improve the result.</p>
+              <p>Plant.id compares these views of the same plant. Good light and varied details improve the result.</p>
               <div className={styles.progress}><span style={{ width: `${requiredCount * 100 / 2}%` }} /></div>
               <small>{requiredCount}/2 required views ready · extra stem/flower and angle views recommended</small>
             </div>
@@ -211,7 +211,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
           <>
             <div className={`${styles.resultBanner} ${scan.strong_match ? styles.strong : styles.uncertain}`}>
               {scan.strong_match ? <Check size={21} /> : <Leaf size={21} />}
-              <div><strong>{scan.strong_match ? 'PlantNet’s top match — please confirm' : "We’re not fully sure"}</strong><p>{scan.strong_match ? 'Check the plant name before continuing to your care setup.' : 'Compare these PlantNet possibilities with your plant, then choose the closest match.'}</p></div>
+              <div><strong>{scan.strong_match ? 'Plant.id’s top match — please confirm' : "We’re not fully sure"}</strong><p>{scan.strong_match ? 'Check the plant name before continuing to your care setup.' : 'Compare these Plant.id possibilities with your plant, then choose the closest match.'}</p></div>
             </div>
             <div className={styles.candidates} role="radiogroup" aria-label="Plant identification choices">
               {scan.candidates.map(candidate => (
@@ -219,7 +219,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
                   <input type="radio" name="plant-candidate" checked={selectedSpecies === candidate.species && !showCustom} onChange={() => { setSelectedSpecies(candidate.species); setShowCustom(false); }} />
                   <span className={styles.radioMark} />
                   <span className={styles.candidateCopy}><strong>{candidate.common_name || candidate.species}</strong><em>{candidate.species}</em>{candidate.description ? <small>{candidate.description}</small> : null}</span>
-                  <span className={styles.confidence}>{formatPlantNetProbability(candidate.probability)}<small>{candidate.providers_agree ? 'Both agree' : 'PlantNet score'}</small></span>
+                  <span className={styles.confidence}>{formatProbability(candidate.probability)}<small>Plant.id score</small></span>
                 </label>
               ))}
               <button type="button" className={`${styles.notListed} ${showCustom ? styles.notListedActive : ''}`} onClick={() => { setShowCustom(true); setSelectedSpecies(''); }}>My plant isn’t listed</button>

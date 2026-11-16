@@ -1,7 +1,4 @@
 <?php
-require __DIR__ . '/identify_plant_v2.php';
-exit;
-
 require_once __DIR__ . '/../cors.php';
 pnapana_cors('POST, OPTIONS');
 header("Content-Type: application/json; charset=UTF-8");
