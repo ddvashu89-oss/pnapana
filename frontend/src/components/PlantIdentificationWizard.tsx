@@ -123,7 +123,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
   };
 
   const identify = async () => {
-    if (requiredCount < 2) return;
+    if (requiredCount < 1) return;
     setBusy(true);
     setError('');
     try {
