@@ -121,7 +121,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
   const [error, setError] = useState('');
   const requiredCount = PHOTO_SLOTS.filter(slot => slot.required && photos[slot.id]).length;
   const images = PHOTO_SLOTS.map(slot => photos[slot.id]).filter(Boolean);
-  const hasBlockingQuality = PHOTO_SLOTS.filter(slot => slot.required).some(slot => qualityNotes[slot.id]?.some(note => /Too dark|Too bright|blurry|small/.test(note)));
+  const hasBlockingQuality = false; // Quality notes guide the customer; they do not trap legitimate pale or flowering plants.
 
   const choosePhoto = async (slotId: string, file?: File) => {
     if (!file) return;
@@ -220,7 +220,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
             <div className={styles.signals}>
               <label>{hi ? 'यह किस तरह का पौधा है? (वैकल्पिक)' : 'What type of plant is this? (optional)'}<select value={category} onChange={event => setCategory(event.target.value)}><option value="">{hi ? 'पता नहीं' : 'Not sure'}</option><option value="houseplant">{hi ? 'घर के अंदर' : 'Houseplant'}</option><option value="outdoor">{hi ? 'बालकनी / बगीचा' : 'Balcony / garden'}</option><option value="herb">{hi ? 'जड़ी-बूटी / खाने वाला पौधा' : 'Herb / edible plant'}</option></select></label>
               <button type="button" className={styles.locationButton} onClick={requestLocation}>{location ? (hi ? 'क्षेत्र जोड़ा गया' : 'Area added') : (hi ? 'अपना क्षेत्र जोड़ें' : 'Use my area')}</button>
-              <small>{locationMessage || (hi ? 'क्षेत्र और मौसम समान पौधों में परिणाम बेहतर कर सकते हैं।' : 'Area and season can improve close matches. We never save precise location.')}</small>
+              <small>{locationMessage || (hi ? 'क्षेत्र और मौसम परिणाम बेहतर कर सकते हैं। Pnapana आपकी सटीक लोकेशन सेव नहीं करता; यह केवल इस scan के लिए Plant.id को भेजी जाती है।' : 'Area and season can improve close matches. Pnapana does not store precise location; it is sent to Plant.id only for this scan.')}</small>
             </div>
             <div className={styles.photoGrid}>
               {PHOTO_SLOTS.map((slot, index) => (
@@ -228,14 +228,14 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
                   {photos[slot.id] ? <img src={photos[slot.id]} alt={`${slot.title} preview`} /> : <span className={styles.slotNumber}>{index + 1}</span>}
                   <div className={styles.slotCopy}><strong>{slot.title}{!slot.required && <em>Optional</em>}</strong><p>{slot.detail}</p>{qualityNotes[slot.id]?.map(note => <p className={styles.qualityWarning} key={note}>{note}</p>)}</div>
                   <div className={styles.photoActions}>
-                    <label><Camera size={15} /> Take photo<input type="file" accept="image/*" capture="environment" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
-                    <label><ImagePlus size={15} /> Upload from gallery<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
+                    <label><Camera size={15} /> {hi ? 'फ़ोटो लें' : 'Take photo'}<input type="file" accept="image/*" capture="environment" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
+                    <label><ImagePlus size={15} /> {hi ? 'गैलरी से चुनें' : 'Upload from gallery'}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={event => choosePhoto(slot.id, event.target.files?.[0])} /></label>
                     {photos[slot.id] ? <button type="button" onClick={() => { setPhotos(current => { const next = { ...current }; delete next[slot.id]; return next; }); setQualityNotes(current => { const next = { ...current }; delete next[slot.id]; return next; }); }} aria-label={`Remove ${slot.title} photo`}><X size={15} /></button> : null}
                   </div>
                 </article>
               ))}
             </div>
-            <div className={styles.tip}><Sparkles size={17} /><span>For the best result: use daylight, keep one plant in frame, and make the leaves sharp. If we are unsure, you can compare a few matches.</span></div>
+            <div className={styles.tip}><Sparkles size={17} /><span>{hi ? 'बेहतर परिणाम: दिन की रोशनी में एक ही पौधा रखें और पत्ते साफ़ दिखें। चेतावनी होने पर भी आप चाहें तो scan जारी रख सकते हैं।' : 'For the best result: use daylight, keep one plant in frame, and make leaves sharp. Quality warnings are guidance; you can still scan.'}</span></div>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
             <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={onClose}>{hi ? 'रद्द करें' : 'Cancel'}</button><button type="button" className={styles.primary} disabled={requiredCount < 3 || busy || (needsCloseup && !photos.leaf) || hasBlockingQuality} onClick={identify}>{busy ? (hi ? 'पहचान रहे हैं…' : 'Identifying…') : (hi ? 'पौधा पहचानें' : 'Identify my plant')}</button></footer>
           </>

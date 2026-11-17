@@ -28,6 +28,7 @@ if (!is_array($rawImages) || count($rawImages) < 3 || count($rawImages) > 4) {
     exit;
 }
 $images = [];
+$imageHashes = [];
 foreach ($rawImages as $image) {
     $value = is_array($image) ? ($image['image_base64'] ?? null) : $image;
     if (!is_string($value) || kindwise_image_payload($value) === null) {
@@ -36,6 +37,13 @@ foreach ($rawImages as $image) {
         exit;
     }
     $images[] = $value;
+    $payload = kindwise_image_payload($value);
+    $imageHashes[] = hash('sha256', $payload ?: '');
+}
+if (count(array_unique($imageHashes)) < 3) {
+    http_response_code(400);
+    echo json_encode(['status' => 'error', 'message' => 'Use three different views of the same plant: whole plant, close-up leaf, and stem or flower.']);
+    exit;
 }
 
 pnapana_log_user_activity($pdo, (int)$user['id'], 'plant_identification_requested', ['image_count' => count($images)]);
