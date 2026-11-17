@@ -40,8 +40,8 @@ type Props = {
 
 const PHOTO_SLOTS = [
   { id: 'whole', title: 'Plant photo', detail: 'Show the whole plant, including a few clear leaves.', required: true },
-  { id: 'leaf', title: 'Close-up leaf', detail: 'Optional: a clear leaf helps when the first result is uncertain.', required: false },
-  { id: 'stem', title: 'Stem or flower', detail: 'Recommended: show nodes, stem texture, or a flower.', required: false },
+  { id: 'leaf', title: 'Close-up leaf', detail: 'Required: fill the frame with one sharp, healthy leaf.', required: true },
+  { id: 'stem', title: 'Stem or flower', detail: 'Required: show stem texture, nodes, or a flower.', required: true },
   { id: 'angle', title: 'Another angle', detail: 'Optional: back of leaf or side view.', required: false },
 ] as const;
 
@@ -121,6 +121,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
   const [error, setError] = useState('');
   const requiredCount = PHOTO_SLOTS.filter(slot => slot.required && photos[slot.id]).length;
   const images = PHOTO_SLOTS.map(slot => photos[slot.id]).filter(Boolean);
+  const hasBlockingQuality = PHOTO_SLOTS.filter(slot => slot.required).some(slot => qualityNotes[slot.id]?.some(note => /Too dark|Too bright|blurry|small/.test(note)));
 
   const choosePhoto = async (slotId: string, file?: File) => {
     if (!file) return;
@@ -142,7 +143,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
   };
 
   const identify = async () => {
-    if (requiredCount < 1 || (needsCloseup && !photos.leaf) || Boolean(qualityNotes.whole?.length && qualityNotes.whole.some(note => /Too dark|Too bright|blurry|small/.test(note)))) return;
+    if (requiredCount < 3 || (needsCloseup && !photos.leaf) || hasBlockingQuality) return;
     setBusy(true);
     setError('');
     try {
@@ -211,10 +212,10 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
         {!scan ? (
           <>
             <div className={styles.intro}>
-              <strong>{hi ? 'शुरू करने के लिए एक साफ़ फ़ोटो काफ़ी है' : 'One clear photo is enough to start'}</strong>
-              <p>{hi ? 'बेहतर परिणाम के लिए एक ही पौधा, साफ़ पत्ता और दिन की रोशनी रखें।' : 'Use one plant, a clear leaf, and daylight for the best result.'}</p>
-              <div className={styles.progress}><span style={{ width: `${requiredCount * 100}%` }} /></div>
-              <small>{requiredCount}/1 required photo ready · extra views are optional</small>
+              <strong>{hi ? 'सटीक पहचान के लिए 3 फ़ोटो ज़रूरी हैं' : 'Three photos are required for a reliable match'}</strong>
+              <p>{hi ? 'पूरा पौधा, पत्ते का क्लोज़-अप, और तना या फूल—तीनों एक ही पौधे के हों।' : 'Add the whole plant, a close-up leaf, and stem or flower from the same plant.'}</p>
+              <div className={styles.progress}><span style={{ width: `${requiredCount * 100 / 3}%` }} /></div>
+              <small>{requiredCount}/3 {hi ? 'ज़रूरी फ़ोटो तैयार' : 'required photos ready'} · {hi ? 'अतिरिक्त कोण वैकल्पिक हैं' : 'another angle is optional'}</small>
             </div>
             <div className={styles.signals}>
               <label>{hi ? 'यह किस तरह का पौधा है? (वैकल्पिक)' : 'What type of plant is this? (optional)'}<select value={category} onChange={event => setCategory(event.target.value)}><option value="">{hi ? 'पता नहीं' : 'Not sure'}</option><option value="houseplant">{hi ? 'घर के अंदर' : 'Houseplant'}</option><option value="outdoor">{hi ? 'बालकनी / बगीचा' : 'Balcony / garden'}</option><option value="herb">{hi ? 'जड़ी-बूटी / खाने वाला पौधा' : 'Herb / edible plant'}</option></select></label>
@@ -236,7 +237,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
             </div>
             <div className={styles.tip}><Sparkles size={17} /><span>For the best result: use daylight, keep one plant in frame, and make the leaves sharp. If we are unsure, you can compare a few matches.</span></div>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
-            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={onClose}>{hi ? 'रद्द करें' : 'Cancel'}</button><button type="button" className={styles.primary} disabled={requiredCount < 1 || busy || (needsCloseup && !photos.leaf) || Boolean(qualityNotes.whole?.length && qualityNotes.whole.some(note => /Too dark|Too bright|blurry|small/.test(note)))} onClick={identify}>{busy ? (hi ? 'पहचान रहे हैं…' : 'Identifying…') : (hi ? 'पौधा पहचानें' : 'Identify my plant')}</button></footer>
+            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={onClose}>{hi ? 'रद्द करें' : 'Cancel'}</button><button type="button" className={styles.primary} disabled={requiredCount < 3 || busy || (needsCloseup && !photos.leaf) || hasBlockingQuality} onClick={identify}>{busy ? (hi ? 'पहचान रहे हैं…' : 'Identifying…') : (hi ? 'पौधा पहचानें' : 'Identify my plant')}</button></footer>
           </>
         ) : (
           <>

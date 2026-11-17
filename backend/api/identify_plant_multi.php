@@ -22,9 +22,9 @@ if ((int)$dailyStmt->fetchColumn() >= $dailyLimit) {
     exit;
 }
 $rawImages = $data['images'] ?? null;
-if (!is_array($rawImages) || count($rawImages) < 1 || count($rawImages) > 4) {
+if (!is_array($rawImages) || count($rawImages) < 3 || count($rawImages) > 4) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Add 1 to 4 clear photos of the same plant.']);
+    echo json_encode(['status' => 'error', 'message' => 'Add 3 to 4 clear photos of the same plant: whole plant, close-up leaf, and stem or flower.']);
     exit;
 }
 $images = [];
