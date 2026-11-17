@@ -6,6 +6,7 @@ require_once __DIR__ . '/../db.php';
 if (file_exists(__DIR__ . '/../config.php')) require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../growth_schema.php';
 require_once __DIR__ . '/../rate_limiter.php';
+require_once __DIR__ . '/../botanical_catalog.php';
 require_once __DIR__ . '/auth.php';
 
 $user = authenticate($pdo);
@@ -16,6 +17,7 @@ $scanId = strtolower(trim((string)($data['scan_id'] ?? '')));
 $species = trim((string)($data['species'] ?? ''));
 $commonName = trim((string)($data['common_name'] ?? $species));
 $customCorrection = !empty($data['custom_correction']);
+$language = strtolower(trim((string)($data['lang'] ?? 'en')));
 if (!preg_match('/^[a-f0-9]{32}$/', $scanId) || $species === '' || mb_strlen($species) > 180 || mb_strlen($commonName) > 180) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Choose or enter the plant you want to confirm.']);
@@ -67,6 +69,22 @@ try {
     throw $e;
 }
 
+// A confirmed photo match may be added immediately. When the confirmed species
+// is in our reviewed catalogue, carry its species-specific plan into setup.
+// Unknown species intentionally get no invented plan; the setup wizard will use
+// the customer's location and safe defaults instead.
+$catalogMatch = null;
+$normalizedSpecies = confirmation_normalize($species);
+foreach (get_botanical_catalog($language) as $catalogPlant) {
+    $names = array_merge([(string)($catalogPlant['species'] ?? ''), (string)($catalogPlant['common_name'] ?? '')], $catalogPlant['aliases'] ?? []);
+    foreach ($names as $name) {
+        if (confirmation_normalize((string)$name) === $normalizedSpecies) {
+            $catalogMatch = $catalogPlant;
+            break 2;
+        }
+    }
+}
+
 echo json_encode(['status' => 'success', 'identification' => ['species' => $species, 'common_name' => $commonName ?: $species,
-    'confidence_score' => $selectedProbability, 'description' => ''],
-    'care_plan' => null, 'correction_recorded' => $corrected]);
+    'confidence_score' => $selectedProbability, 'description' => (string)($catalogMatch['description'] ?? '')],
+    'care_plan' => $catalogMatch['care_plan'] ?? null, 'correction_recorded' => $corrected]);

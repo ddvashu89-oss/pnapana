@@ -36,8 +36,8 @@ type Props = {
 };
 
 const PHOTO_SLOTS = [
-  { id: 'whole', title: 'Whole plant', detail: 'Include the pot and full growth shape.', required: true },
-  { id: 'leaf', title: 'Clear leaf', detail: 'Fill the frame with one healthy leaf.', required: true },
+  { id: 'whole', title: 'Plant photo', detail: 'Show the whole plant, including a few clear leaves.', required: true },
+  { id: 'leaf', title: 'Close-up leaf', detail: 'Optional: a clear leaf helps when the first result is uncertain.', required: false },
   { id: 'stem', title: 'Stem or flower', detail: 'Recommended: show nodes, stem texture, or a flower.', required: false },
   { id: 'angle', title: 'Another angle', detail: 'Optional: back of leaf or side view.', required: false },
 ] as const;
@@ -127,7 +127,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
     setBusy(true);
     setError('');
     try {
-      const response = await authFetch('identify_plant_multi.php', { method: 'POST', body: JSON.stringify({ images }) });
+      const response = await authFetch('identify_plant_multi.php', { method: 'POST', body: JSON.stringify({ images, lang: document.documentElement.lang || 'en' }) });
       const data = await response.json();
       if (!response.ok || data.status !== 'success') {
         const reference = typeof data.reference_id === 'string' && data.reference_id ? ` Reference: ${data.reference_id}.` : '';
@@ -161,6 +161,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
           species: chosen,
           common_name: showCustom ? (customCommonName.trim() || chosen) : (candidate?.common_name || chosen),
           custom_correction: showCustom,
+          lang: document.documentElement.lang || 'en',
         }),
       });
       const data = await response.json();
@@ -185,10 +186,10 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
         {!scan ? (
           <>
             <div className={styles.intro}>
-              <strong>Use 2–4 photos for better accuracy</strong>
-              <p>Plant.id compares these views of the same plant. Good light and varied details improve the result.</p>
-              <div className={styles.progress}><span style={{ width: `${requiredCount * 100 / 2}%` }} /></div>
-              <small>{requiredCount}/2 required views ready · extra stem/flower and angle views recommended</small>
+              <strong>One clear photo is enough to start</strong>
+              <p>We identify the plant from your photo. Add a close-up leaf or flower only if you want a more confident match.</p>
+              <div className={styles.progress}><span style={{ width: `${requiredCount * 100}%` }} /></div>
+              <small>{requiredCount}/1 required photo ready · extra views are optional</small>
             </div>
             <div className={styles.photoGrid}>
               {PHOTO_SLOTS.map((slot, index) => (
@@ -203,9 +204,9 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
                 </article>
               ))}
             </div>
-            <div className={styles.tip}><Sparkles size={17} /><span>Avoid zoom, filters, harsh shadows, and multiple plants in one frame.</span></div>
+            <div className={styles.tip}><Sparkles size={17} /><span>For the best result: use daylight, keep one plant in frame, and make the leaves sharp. If we are unsure, you can compare a few matches.</span></div>
             {error ? <p className={styles.error} role="alert">{error}</p> : null}
-            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={onClose}>Cancel</button><button type="button" className={styles.primary} disabled={requiredCount < 2 || busy} onClick={identify}>{busy ? 'Identifying…' : 'Identify my plant'}</button></footer>
+            <footer className={styles.footer}><button type="button" className={styles.secondary} onClick={onClose}>Cancel</button><button type="button" className={styles.primary} disabled={requiredCount < 1 || busy} onClick={identify}>{busy ? 'Identifying…' : 'Identify my plant'}</button></footer>
           </>
         ) : (
           <>

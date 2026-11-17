@@ -529,7 +529,7 @@ export default function Home() {
                   <div className={styles.fieldLabelRow}>
                     <label htmlFor="plant-species">{t('dashboard.speciesLabel')}</label>
                     <button type="button" onClick={openPlantIdentification} className={styles.identifyBtn}>
-                      <ScanLine size={14} /> {language === 'hi' ? '2–4 फ़ोटो से पहचानें' : 'Identify with 2–4 photos'}
+                      <ScanLine size={14} /> {language === 'hi' ? 'फ़ोटो से पहचानें' : 'Identify from a photo'}
                     </button>
                   </div>
                   <input id="plant-species" type="text" required value={newPlant.species} onChange={e => setNewPlant({...newPlant, species: e.target.value})} placeholder={t('dashboard.speciesPlaceholder')} />

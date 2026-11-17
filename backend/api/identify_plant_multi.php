@@ -14,9 +14,9 @@ pnapana_ensure_growth_schema($pdo);
 check_rate_limit('plant_identification', 40, 3600);
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $rawImages = $data['images'] ?? null;
-if (!is_array($rawImages) || count($rawImages) < 2 || count($rawImages) > 4) {
+if (!is_array($rawImages) || count($rawImages) < 1 || count($rawImages) > 4) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Add 2 to 4 clear photos of the same plant.']);
+    echo json_encode(['status' => 'error', 'message' => 'Add 1 to 4 clear photos of the same plant.']);
     exit;
 }
 $images = [];
