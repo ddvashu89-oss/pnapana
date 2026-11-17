@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Pnapana - Your Green Family",
   description: "Plant care app",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/brand/pnapana-apple-touch-icon.png",
+  },
 };
 
 import Sidebar from "@/components/Sidebar";

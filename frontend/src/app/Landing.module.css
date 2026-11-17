@@ -68,6 +68,19 @@
   filter: drop-shadow(0 0 8px rgba(82, 191, 120, 0.5));
 }
 
+.logo .brandMark {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  vertical-align: middle;
+}
+
+.logo .brandMark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .navLinks {
   display: flex;
   gap: 2rem;

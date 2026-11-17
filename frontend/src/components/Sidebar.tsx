@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sprout, ScanLine, Users, Leaf, UserRound, Compass, Droplets, Sparkles, Settings, Bot, Plane, BookOpen, Grid2X2 } from 'lucide-react';
+import { Home, Sprout, ScanLine, Users, UserRound, Compass, Droplets, Sparkles, Settings, Bot, Plane, BookOpen, Grid2X2 } from 'lucide-react';
 import { isAppShellRoute } from '@/lib/routePolicy';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { authFetch } from '@/lib/api';
@@ -47,7 +47,7 @@ export default function Sidebar() {
     <>
       <header className={styles.topbar}>
         <Link href="/dashboard" className={styles.brand} aria-label="Pnapana home">
-          <span className={styles.brandMark}><Leaf size={24} strokeWidth={1.6} /></span>
+          <span className={styles.brandMark}><img src="/brand/pnapana-mark.png" alt="" /></span>
           <span>Pnapana</span>
         </Link>
         <div className={styles.headerActions}>
@@ -57,7 +57,7 @@ export default function Sidebar() {
         </div>
       </header>
       <nav className={styles.sidebar} aria-label="Main navigation">
-        <Link href="/dashboard" className={styles.desktopBrand}><span className={styles.brandMark}><Leaf size={24} strokeWidth={1.6} /></span>Pnapana</Link>
+        <Link href="/dashboard" className={styles.desktopBrand}><span className={styles.brandMark}><img src="/brand/pnapana-mark.png" alt="" /></span>Pnapana</Link>
         <div className={styles.navLinks}>
           {links.map(({ href, label, icon: Icon, active, scan, mobileOnly }) => (
             <Link key={label} href={href} onClick={(event) => { setHash(href.includes('#') ? '#' + href.split('#')[1] : ''); if (scan && pathname === '/dashboard') { event.preventDefault(); window.history.replaceState(null, '', href); window.dispatchEvent(new Event('pnapana:scan')); } }} className={`${styles.navItem} ${active ? styles.active : ''} ${scan ? styles.scan : ''} ${mobileOnly ? styles.mobileOnly : ''}`} aria-current={active ? 'page' : undefined}>

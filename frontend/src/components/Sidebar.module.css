@@ -1,6 +1,7 @@
 .topbar { height: 82px; position: sticky; top: 0; z-index: 90; background: #faf8f1f5; border-bottom: var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; backdrop-filter: blur(16px); }
 .brand, .desktopBrand { display: inline-flex; align-items: center; gap: 12px; font: 700 25px var(--font-sans); letter-spacing: -.6px; }
 .brandMark { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 43px; height: 43px; background: var(--primary-green); color: white; border-radius: 50%; }
+.brandMark img { width: 100%; height: 100%; object-fit: contain; }
 .headerActions { display: flex; align-items: center; gap: 10px; }
 .streak, .coins { display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 99px; padding: 8px 12px; font-size: 15px; font-weight: 500; min-width: 55px; }
 .streak { color: #a14f39; background: #faeae2; }
@@ -49,7 +50,6 @@
  .topbar { height: 58px; padding: 0 16px; background: #faf8f2f8; }
  .brand { font-size: 20px; gap: 8px; letter-spacing: -.5px; }
  .brandMark { width: 32px; height: 32px; }
- .brandMark svg { width: 20px; height: 20px; }
  .streak, .coins { min-width: 46px; padding: 6px 8px; gap: 5px; font-size: 13px; }
  .flameEmoji { font-size: 18px; }
  .profile { width: 28px; height: 36px; margin-left: 2px; }

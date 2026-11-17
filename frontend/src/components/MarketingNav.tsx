@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import CareGuideLink from './CareGuideLink';
-import { Leaf } from 'lucide-react';
 import styles from '@/app/Landing.module.css';
 
 type Labels = {
@@ -39,7 +38,7 @@ export default function MarketingNav({ labels }: { labels?: Labels }) {
   return (
     <nav className={styles.nav}>
       <Link href="/" className={styles.logo}>
-        <span className={styles.brandMark}><Leaf size={23} strokeWidth={1.6} /></span> Pnapana
+        <span className={styles.brandMark}><img src="/brand/pnapana-mark.png" alt="" /></span> Pnapana
       </Link>
 
       <button
