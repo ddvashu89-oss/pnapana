@@ -13,12 +13,16 @@ type Metric = { series: Point[]; total: number; delta_pct: number };
 type Species = { species: string; c: number };
 type ProductMetrics = { scan_attempts_30d: number; scan_success_rate: number; setup_completion_rate: number; inactive_users_30d: number; journal_entries_30d: number; open_disease_followups: number; pending_deletions: number; estimated_ai_cost_usd_30d: number; identification_confirmations_30d: number; identification_correction_rate: number; multi_angle_scan_rate: number };
 type AiUsage = { operation: string; provider: string; requests: number; successes: number; estimated_cost_usd: number };
+type ConfidenceBand = { band: string; scans: number; confirmed: number; corrected: number };
+type IdentificationContext = { category: string; scans: number };
 
 export default function AdminAnalytics() {
   const [metrics, setMetrics] = useState<Record<string, Metric> | null>(null);
   const [topSpecies, setTopSpecies] = useState<Species[]>([]);
   const [product, setProduct] = useState<ProductMetrics | null>(null);
   const [aiUsage, setAiUsage] = useState<AiUsage[]>([]);
+  const [confidenceBands, setConfidenceBands] = useState<ConfidenceBand[]>([]);
+  const [identificationContexts, setIdentificationContexts] = useState<IdentificationContext[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -31,6 +35,8 @@ export default function AdminAnalytics() {
         setTopSpecies(data.top_species);
         setProduct(data.product_metrics);
         setAiUsage(data.ai_usage || []);
+        setConfidenceBands(data.identification_confidence_bands || []);
+        setIdentificationContexts(data.identification_contexts || []);
       })
       .catch(err => setError(err.message || 'Failed to load analytics.'))
       .finally(() => setIsLoading(false));
@@ -96,6 +102,11 @@ export default function AdminAnalytics() {
           <motion.div className={adminStyles.tableContainer} style={{ marginTop: '2rem', padding: '2rem' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.4rem', marginBottom: '1.5rem' }}>AI usage & estimated cost</h3>
             {!aiUsage.length ? <p style={{ color: 'var(--text-secondary)' }}>No tracked AI requests yet. Add provider cost values to the server environment to calculate spend.</p> : <div className={styles.usageTable}><div className={styles.usageHead}><span>Operation</span><span>Provider</span><span>Success</span><span>Requests</span><span>Cost</span></div>{aiUsage.map(row => <div key={`${row.operation}-${row.provider}`}><span>{row.operation}</span><span>{row.provider}</span><span>{row.requests ? Math.round(row.successes * 100 / row.requests) : 0}%</span><span>{row.requests}</span><span>${Number(row.estimated_cost_usd).toFixed(4)}</span></div>)}</div>}
+          </motion.div>
+          <motion.div className={adminStyles.tableContainer} style={{ marginTop: '2rem', padding: '2rem' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.4rem', marginBottom: '1rem' }}>Identification quality</h3>
+            <div className={styles.usageTable}><div className={styles.usageHead}><span>Confidence</span><span>Scans</span><span>Confirmed</span><span>Corrected</span><span>Correction rate</span></div>{confidenceBands.map(row => <div key={row.band}><span>{row.band}</span><span>{row.scans}</span><span>{row.confirmed}</span><span>{row.corrected}</span><span>{row.confirmed ? `${Math.round(row.corrected * 100 / row.confirmed)}%` : '—'}</span></div>)}</div>
+            <p className={styles.contextLine}>Scan context: {identificationContexts.map(item => `${item.category}: ${item.scans}`).join(' · ') || 'No scan context yet'}</p>
           </motion.div>
         </>
       )}

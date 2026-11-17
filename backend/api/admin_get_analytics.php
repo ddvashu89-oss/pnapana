@@ -78,6 +78,14 @@ try {
     $correctedIdentifications = (int)$pdo->query("SELECT COUNT(*) FROM plant_identification_events WHERE corrected=1 AND confirmed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchColumn();
     $multiAngleScans = (int)$pdo->query("SELECT COUNT(*) FROM plant_identification_events WHERE image_count >= 3 AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchColumn();
     $identificationScans = (int)$pdo->query("SELECT COUNT(*) FROM plant_identification_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchColumn();
+    $confidenceBands = $pdo->query("SELECT CASE WHEN kindwise_probability >= .80 THEN '80–100%' WHEN kindwise_probability >= .45 THEN '45–79%' ELSE 'Below 45%' END AS band, COUNT(*) AS scans, SUM(confirmed_at IS NOT NULL) AS confirmed, SUM(corrected=1) AS corrected FROM plant_identification_events WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY band ORDER BY MIN(kindwise_probability) DESC")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($confidenceBands as &$band) { $band['scans'] = (int)$band['scans']; $band['confirmed'] = (int)$band['confirmed']; $band['corrected'] = (int)$band['corrected']; }
+    $identificationContexts = [];
+    foreach (['houseplant', 'outdoor', 'herb', 'unknown'] as $category) {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM analytics_events WHERE event_name='plant_scan_succeeded' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND metadata LIKE ?");
+        $stmt->execute(['%\"category\":\"' . $category . '\"%']);
+        $identificationContexts[] = ['category' => $category, 'scans' => (int)$stmt->fetchColumn()];
+    }
     $product = [
         'scan_attempts_30d' => $attempts,
         'scan_success_rate' => $attempts > 0 ? round($scanSuccesses * 100 / $attempts, 1) : 0,
@@ -97,7 +105,9 @@ try {
         "metrics" => $result,
         "top_species" => $species,
         "product_metrics" => $product,
-        "ai_usage" => $aiUsage
+        "ai_usage" => $aiUsage,
+        "identification_confidence_bands" => $confidenceBands,
+        "identification_contexts" => $identificationContexts
     ]);
 } catch (PDOException $e) {
     // Log the detail for the operator; never expose schema internals to the client.

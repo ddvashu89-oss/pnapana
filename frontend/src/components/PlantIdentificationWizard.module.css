@@ -9,6 +9,11 @@
 .intro strong { font-size: 17px; }
 .intro p { margin: 5px 0 13px; color: #66736a; font-size: 13px; line-height: 1.5; }
 .intro small { display: block; margin-top: 6px; color: #6f7b72; font-size: 11px; font-weight: 700; }
+.signals { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin:0 24px 14px; padding:12px; border:1px solid #dce8dc; border-radius:14px; background:#f6faf5; }
+.signals label { display:grid; gap:5px; color:#435948; font-size:11px; font-weight:750; }
+.signals select { min-height:40px; padding:8px; border:1px solid #cddacd; border-radius:9px; background:white; color:#24342a; }
+.signals small { grid-column:1/-1; color:#66736a; font-size:10px; line-height:1.35; }
+.locationButton { min-height:40px; padding:8px 11px; border:1px solid #b8cfbc; border-radius:9px; background:white; color:#315f41; font-size:11px; font-weight:800; cursor:pointer; }
 .progress { height: 7px; overflow: hidden; border-radius: 99px; background: #e8ede6; }
 .progress span { display: block; height: 100%; border-radius: inherit; background: #34744b; transition: width .25s ease; }
 .photoGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 4px 24px 104px; }
@@ -40,7 +45,8 @@
 .strong { background: #eaf5e9; color: #285c3c; }
 .uncertain { background: #f5f0df; color: #66572e; }
 .candidates { display: grid; gap: 9px; padding: 0 24px 14px; }
-.candidate { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 14px; border: 1px solid #dfe6dc; border-radius: 15px; background: white; cursor: pointer; }
+.candidate { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 12px; padding: 14px; border: 1px solid #dfe6dc; border-radius: 15px; background: white; cursor: pointer; }
+.candidateImage { width:46px; height:46px; border-radius:10px; object-fit:cover; background:#eef3ed; }
 .candidateSelected { border-color: #4c835e; box-shadow: 0 0 0 2px rgba(76,131,94,.13); background: #f7fbf5; }
 .candidate > input { position: absolute; opacity: 0; pointer-events: none; }
 .radioMark { width: 20px; height: 20px; border: 2px solid #a7b3aa; border-radius: 50%; box-shadow: inset 0 0 0 4px white; }
@@ -66,7 +72,9 @@
   .intro { padding: 17px 18px 12px; }
   .photoGrid { grid-template-columns: 1fr; gap: 12px; padding: 3px 18px 96px; }
   .photoSlot { min-height: 166px; }
-  .tip, .resultBanner, .error, .confirmNote { margin-left: 18px; margin-right: 18px; }
+  .tip, .resultBanner, .error, .confirmNote, .signals { margin-left: 18px; margin-right: 18px; }
+  .signals { grid-template-columns:1fr; }
+  .signals small { grid-column:auto; }
   .candidates { padding-left: 18px; padding-right: 18px; }
   .customFields { grid-template-columns: 1fr; }
   .footer { padding: 13px 18px 17px; }

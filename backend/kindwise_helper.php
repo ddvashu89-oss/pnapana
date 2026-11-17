@@ -66,7 +66,7 @@ function kindwise_request($endpoint, $payload) {
     return ['ok' => true, 'configured' => true, 'data' => $decoded, 'http_status' => $status, 'error_code' => null];
 }
 
-function kindwise_identify($image, $language = 'en') {
+function kindwise_identify($image, $language = 'en', $context = []) {
     $images = is_array($image) ? array_slice($image, 0, 4) : [$image];
     $imageData = [];
     foreach ($images as $candidate) {
@@ -78,7 +78,10 @@ function kindwise_identify($image, $language = 'en') {
     }
 
     $payload = ['images' => $imageData];
-    $query = ['details' => 'common_names,url,description,taxonomy,image'];
+    foreach (['latitude', 'longitude', 'datetime'] as $key) {
+        if (isset($context[$key]) && $context[$key] !== '') $payload[$key] = $context[$key];
+    }
+    $query = ['details' => 'common_names,url,description,taxonomy,image', 'similar_images' => 'true'];
     if (in_array($language, ['en', 'hi', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'ru', 'uk', 'zh', 'ja', 'ko'], true)) {
         $query['language'] = $language;
     }
@@ -102,6 +105,8 @@ function kindwise_identification_candidates($response, $limit = 3) {
             'common_name' => (string)($names[0] ?? $suggestion['name']),
             'probability' => max(0, min(1, (float)($suggestion['probability'] ?? 0))),
             'description' => is_string($description) ? $description : '',
+            'image_url' => is_array($details['image'] ?? null) ? (($details['image']['value'] ?? $details['image']['url'] ?? '')) : (string)($details['image'] ?? ''),
+            'family' => (string)($details['taxonomy']['family'] ?? ''),
             'source' => 'kindwise'
         ];
     }
