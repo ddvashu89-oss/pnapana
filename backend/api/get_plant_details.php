@@ -23,7 +23,7 @@ if ($plant_id > 0) {
     $plant = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($plant) {
-        $plant['last_watered'] = $plant['last_watered_logged'];
+        $plant['last_watered'] = $plant['last_watered_logged'] ?: $plant['last_watered'];
         unset($plant['last_watered_logged']);
         echo json_encode(["status" => "success", "plant" => $plant]);
     } else {

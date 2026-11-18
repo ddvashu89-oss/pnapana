@@ -19,6 +19,8 @@ function PlantDetailsInner() {
   const { t, language } = useLanguage();
   const [hasUser, setHasUser] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [plantError, setPlantError] = useState('');
+  const [retryLoad, setRetryLoad] = useState(0);
   const [plant, setPlant] = useState<any>({
     name: '',
     species: '',
@@ -67,20 +69,36 @@ function PlantDetailsInner() {
     setHasUser(true);
     setActiveTab(searchParams.get('tab') === 'scan' ? 'AI Scan' : searchParams.get('tab') === 'passport' ? 'Passport' : 'Care');
 
+    setIsLoading(true);
+    setPlantError('');
+    if (!plantId) {
+      setPlantError('No plant was selected. Open a plant from your garden.');
+      setIsLoading(false);
+      return;
+    }
+
     authFetch(`get_plant_details.php?id=${plantId}`)
       .then(res => res.json())
-      .then(data => { if(data.status === "success") { setPlant(data.plant); setPurchaseDate(data.plant.purchased_on || ''); setPlacement(data.plant.placement || ''); setLightReq(data.plant.light_req || 'Medium'); } })
+      .then(data => {
+        if (data.status !== 'success' || !data.plant) throw new Error(data.message || 'Could not load this plant.');
+        setPlant(data.plant);
+        setPurchaseDate(data.plant.purchased_on || '');
+        setPlacement(data.plant.placement || '');
+        setLightReq(data.plant.light_req || 'Medium');
+      })
+      .catch(error => setPlantError(error instanceof Error ? error.message : 'Could not load this plant.'))
       .finally(() => setIsLoading(false));
 
     fetchScans();
     fetchCareEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plantId]);
+  }, [plantId, retryLoad]);
 
   function fetchScans() {
     authFetch(`get_plant_scans.php?plant_id=${plantId}`)
       .then(res => res.json())
-      .then(data => { if(data.status === "success") setScans(data.scans); });
+      .then(data => { if(data.status === "success") setScans(data.scans); })
+      .catch(() => {});
   }
 
   function fetchCareEvents() {
@@ -212,8 +230,8 @@ function PlantDetailsInner() {
       if (data.status === 'success') {
         setPlant((previous: any) => ({ ...previous, purchased_on: data.purchased_on, placement: data.placement, light_req: data.light_req }));
         setPurchaseMessage('Plant profile saved.');
-      } else setPurchaseMessage(data.message || 'Could not save purchase date.');
-    } catch { setPurchaseMessage('Could not save purchase date.'); }
+      } else setPurchaseMessage(data.message || 'Could not save plant profile.');
+    } catch { setPurchaseMessage('Could not save plant profile.'); }
   };
   const logFertilizer = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -231,6 +249,7 @@ function PlantDetailsInner() {
   const plantAge = plant.purchased_on ? describePlantAge(plant.purchased_on) : '';
 
   if (!hasUser || isLoading) return <Loader fullScreen label={t('common.loading')} />;
+  if (plantError) return <main className={styles.container}><section className={styles.loadError} role="alert"><h1>Plant unavailable</h1><p>{plantError}</p><div><button type="button" onClick={() => setRetryLoad(value => value + 1)}>Try again</button><Link href="/dashboard#garden">Back to garden</Link></div></section></main>;
 
   const savedSetup = (() => {
     try { return typeof plant.setup_data === 'string' ? JSON.parse(plant.setup_data) : plant.setup_data; }
@@ -286,14 +305,14 @@ function PlantDetailsInner() {
 
         <div className={styles.plantStats}>
           <div><span><Droplets size={14} />Last watered</span><strong>{daysSinceWatering === null || !Number.isFinite(daysSinceWatering) ? 'Not logged yet' : daysSinceWatering === 0 ? 'Today' : `${daysSinceWatering} days ago`}</strong></div>
-          <div><span><CalendarDays size={14} />Water every</span><strong>{plant.water_freq || 7} days</strong></div>
+          <div><span><CalendarDays size={14} />Check soil about every</span><strong>{plant.water_freq || 7} days</strong></div>
           <div><span><Sun size={14} />Light</span><strong>{plant.light_req || 'See care plan'}</strong></div>
         </div>
         <form className={styles.purchaseDateForm} onSubmit={savePurchaseDate}>
           <label htmlFor="purchase-date">Purchase date <input id="purchase-date" type="date" max={localDateInputValue()} value={purchaseDate} onChange={event => setPurchaseDate(event.target.value)} /></label>
-          <label htmlFor="plant-placement-detail">Location <select id="plant-placement-detail" value={placement} onChange={event => setPlacement(event.target.value)}><option value="">Not set</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option></select></label>
+          <label htmlFor="plant-placement-detail">Location <select id="plant-placement-detail" value={placement} onChange={event => setPlacement(event.target.value)}><option value="">Not set</option><option value="unknown">Not specified</option><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option></select></label>
           <label htmlFor="plant-light-detail">Light <select id="plant-light-detail" value={lightReq} onChange={event => setLightReq(event.target.value)}>{!['Medium', 'Direct sun', 'Full sun', 'Bright indirect', 'Low light'].includes(lightReq) && <option value={lightReq}>{lightReq}</option>}<option value="Medium">Not sure / medium</option><option value="Direct sun">Direct sun</option><option value="Full sun">Full sun</option><option value="Bright indirect">Bright, indirect</option><option value="Low light">Low light</option></select></label>
-          <button type="submit">Save date</button>
+          <button type="submit">Save profile</button>
           {plantAge && <span>Plant age: <strong>{plantAge}</strong></span>}
           {purchaseMessage && <small role="status">{purchaseMessage}</small>}
         </form>
@@ -328,7 +347,7 @@ function PlantDetailsInner() {
                   <span className={styles.attrValue}>{plant.light_requirement || 'Check the detailed care plan for light requirements.'}</span></div>
                 </div>
                 <div className={styles.attributeItem}>
-                  <span className={styles.careIcon}><Droplets size={24} /></span><div><span className={styles.attrLabel}>{t('plant.water')} <em>{plant.water_freq || 7} days between waterings</em></span>
+                  <span className={styles.careIcon}><Droplets size={24} /></span><div><span className={styles.attrLabel}>{t('plant.water')} <em>Check soil about every {plant.water_freq || 7} days</em></span>
                   <span className={styles.attrValue}>{plant.water_requirement || 'Check the topsoil before watering.'}</span></div>
                 </div>
               </div>

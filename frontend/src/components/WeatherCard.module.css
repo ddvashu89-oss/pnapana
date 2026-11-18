@@ -6,9 +6,10 @@
 .temperature strong { font: italic 700 28px/1.15 var(--font-sans); letter-spacing: -.8px; }
 .temperature small { font-size: 11px; color: #8a918d; white-space: nowrap; }
 .temperature > span { display: block; color: #1e5973; font-size: 13px; line-height: 1.5; margin-top: 2px; }
-.temperature > .city { display: flex; align-items: center; gap: 4px; max-width: 100%; width: fit-content; color: #28573a; font: inherit; font-weight: 700; line-height: 1.5; margin-top: 1px; text-align: left; }
+.temperature > .city { display: flex; align-items: center; gap: 4px; max-width: 100%; width: 100%; color: #28573a; font: inherit; font-weight: 700; line-height: 1.5; margin-top: 1px; text-align: left; }
 .temperature > .city:hover { color: #173f28; }
-.temperature > .city > span { color: #6d8875; font-size: 10px; font-weight: 600; margin-left: 3px; text-decoration: underline; text-underline-offset: 2px; }
+.cityName { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.temperature > .city > .change { flex-shrink: 0; color: #6d8875; font-size: 10px; font-weight: 600; margin-left: 3px; text-decoration: underline; text-underline-offset: 2px; }
 .city svg { flex-shrink: 0; }
 .humidity { display: flex; gap: 4px; align-items: center; background: #e5f0f6; color: #24718e; padding: 6px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .weatherBased { color: #1e5973; font-size: 11px; white-space: nowrap; }
@@ -85,8 +86,11 @@
 @media (min-width: 601px) { .card { padding: 22px; } .temperature strong { font-size: 32px; } .temperature > span { font-size: 15px; } .tip { font-size: 16px; } .verdictLine { gap: 12px; } .verdict strong { font-size: 24px; } }
 @media (max-width: 360px) { .overview { gap: 7px; } .weatherIcon { width: 25px; font-size: 25px; } .temperature strong { font-size: 25px; } .temperature small { font-size: 10px; } .humidity { padding: 6px; font-size: 10px; } .weatherBased { font-size: 10px; } .plantCard .temperature > span { font-size: 10px; } .metricLabel { font-size: 9px; } .verdict { padding: 13px; gap: 10px; } .verdict strong { font-size: 18px; } .verdictLine p { font-size: 12px; } }
 @media (max-width: 600px) {
- .overview { gap: 8px; }
+ .overview { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: start; gap: 4px 8px; }
  .weatherIcon { width: 28px; font-size: 28px; }
+ .temperature { grid-column: 2 / -1; }
+ .humidity, .weatherBased { grid-column: 2; grid-row: 2; justify-self: start; }
+ .refresh { grid-column: 3; grid-row: 2; justify-self: end; }
  .temperatureLine { column-gap: 4px; }
  .temperature small { font-size: 10px; }
  .humidity { padding: 6px 8px; font-size: 11px; }
@@ -101,13 +105,13 @@
  .verdict { padding: 15px; gap: 12px; }
  .verdict strong { font-size: 19px; }
  .verdictLine { column-gap: 8px; }
- .verdictLine p { font-size: 13px; }
+ .verdictLine p { font-size: 13px; white-space: normal; }
 }
 @media (min-width: 361px) and (max-width: 600px) {
  .verdict { padding: 14px; }
  .check { width: 36px; height: 36px; }
  .check svg { width: 21px; height: 21px; }
  .verdict strong { font-size: 18px; }
- .verdictLine { flex-wrap: nowrap; gap: 7px; }
+ .verdictLine { flex-wrap: wrap; gap: 7px; }
  .verdictLine p { font-size: 13px; }
 }

@@ -6,19 +6,23 @@ import { useLanguage } from '@/lib/i18n/LanguageContext';
 import styles from './WeatherCard.module.css';
 
 type CarePlan = { temperature?: string; pruning?: string; light?: { level?: string; detail?: string }; water?: { frequency_days?: number; instructions?: string }; humidity?: { level?: string; detail?: string }; common_issues?: Array<{ issue?: string; solution?: string }> };
-type CarePlant = { id?: number | string; name?: string; species?: string; water_freq?: number; last_watered?: string; light_req?: string; light_requirement?: string; water_requirement?: string; humidity?: string; care_plan?: string | CarePlan };
+type CarePlant = { id?: number | string; name?: string; species?: string; water_freq?: number; last_watered?: string; setup_completed_at?: string; light_req?: string; light_requirement?: string; water_requirement?: string; humidity?: string; care_plan?: string | CarePlan };
 type LocationResult = { id: number; name: string; latitude: number; longitude: number; admin1?: string; country?: string };
 
 export default function WeatherCard({ plant, onLocationChange }: { plant?: CarePlant; onLocationChange?: (location: WeatherLocation | null) => void }) {
   const { weather, loading, error, locationMode, refresh, chooseLocation, switchToDeviceLocation, clearSavedLocation } = useWeather();
   const { language } = useLanguage();
   const hi = language === 'hi';
-  const [now] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [locationOpen, setLocationOpen] = useState(false);
   const [locationQuery, setLocationQuery] = useState('');
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [locationSearching, setLocationSearching] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
   useEffect(() => {
     onLocationChange?.(weather?.latitude !== undefined && weather?.longitude !== undefined
       ? { lat: weather.latitude, lon: weather.longitude, city: weather.city || 'Your area', region: weather.region || null, country: weather.country || null }
@@ -27,8 +31,9 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
   let plan: CarePlan = {};
   try { plan = typeof plant?.care_plan === 'string' ? JSON.parse(plant.care_plan) : plant?.care_plan || {}; } catch { /* Older plants may have no structured care plan. */ }
   const frequency = Math.max(1, Number(plant?.water_freq || plan.water?.frequency_days) || 7);
-  const lastWatered = plant?.last_watered ? new Date(plant.last_watered.replace(' ', 'T')).getTime() : NaN;
-  const elapsed = Number.isFinite(lastWatered) ? Math.max(0, Math.floor((now - lastWatered) / 86400000)) : null;
+  const lastCheckBaseline = plant?.last_watered || plant?.setup_completed_at;
+  const lastCheckTime = lastCheckBaseline ? new Date(lastCheckBaseline.replace(' ', 'T')).getTime() : NaN;
+  const elapsed = Number.isFinite(lastCheckTime) ? Math.max(0, Math.floor((now - lastCheckTime) / 86400000)) : null;
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
   // A few kilometres is still a meaningful weather-grid location. Require a
   // city confirmation only when GPS is broad enough to plausibly be another
@@ -89,8 +94,8 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
         ? 'Cool conditions can keep this plant’s soil wet longer. Check the soil before watering and avoid watering on the calendar alone.'
         : plan.water?.instructions || 'Weather does not change this plant’s usual schedule. Finger-test the soil and water when the top inch is dry.';
   const temperaturePosition = localWeather ? Math.max(2, Math.min(96, localWeather.temp / 50 * 100)) : null;
-  const tip = !localWeather ? approximateLocation ? 'choose your city above before using weather-based care advice.' : 'check the soil before watering and follow each plant’s care plan.' : !localWeather.isDay ? 'a calm evening. Keep to the usual care routine and water only if the soil is dry.' : localWeather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : localWeather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a good growing day. Normal watering, and let them have the morning light.';
-  const dateKey = new Date(now).toISOString().slice(0, 10);
+  const tip = !localWeather ? approximateLocation ? 'choose your city above before using weather-based care advice.' : 'check the soil before watering and follow each plant’s care plan.' : !localWeather.isDay ? 'a calm evening. Keep to the usual care routine and water only if the soil is dry.' : localWeather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : localWeather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a mild day. Check each plant’s soil before watering and follow its light needs.';
+  const dateKey = new Date(now).toLocaleDateString('en-CA');
   const adviceSeed = `${plant?.id || plant?.species || plant?.name || 'plant'}:${dateKey}`;
   const issues = (plan.common_issues || []).filter(issue => issue.issue || issue.solution);
   const issue = issues.length ? issues[stableIndex(`${adviceSeed}:issue`, issues.length)] : null;
@@ -170,10 +175,10 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
         <span className={styles.weatherIcon} aria-hidden="true">{weatherEmoji}</span>
         <div className={styles.temperature}>
           <div className={styles.temperatureLine}><strong>{localWeather ? `${localWeather.temp}°C` : '—°C'}</strong>{!plant && localWeather?.feelsLike !== null && localWeather?.feelsLike !== undefined && <small>(Feels {localWeather.feelsLike}°C)</small>}</div>
-          <button type="button" className={styles.city} onClick={() => setLocationOpen(open => !open)} aria-expanded={locationOpen} aria-label={`Weather location: ${cityRegion}. Change location.`}><MapPin size={13} aria-hidden="true" /> {cityRegion}<span>Change</span></button>
+          <button type="button" className={styles.city} onClick={() => setLocationOpen(open => !open)} aria-expanded={locationOpen} aria-label={`Weather location: ${cityRegion}. Change location.`}><MapPin size={13} aria-hidden="true" /><span className={styles.cityName}>{cityRegion}</span><span className={styles.change}>Change</span></button>
           <span>{condition}{plant && localWeather ? ` · ${humidityText} Humidity` : ''}</span>
         </div>
-        {plant ? <span className={styles.weatherBased}>{localWeather ? 'Weather-based' : 'Location needed'}</span> : <span className={styles.humidity}><Droplets size={14} /> {localWeather ? localWeather.humidity : '—'}% {hi ? 'नमी' : 'Humidity'}</span>}
+        {plant ? <span className={styles.weatherBased}>{localWeather ? 'Weather-based' : 'Location needed'}</span> : <span className={styles.humidity}><Droplets size={14} /> {localWeather?.humidity == null ? '—' : `${localWeather.humidity}%`} {hi ? 'नमी' : 'Humidity'}</span>}
         <button className={styles.refresh} onClick={refresh} disabled={loading} aria-label={hi ? 'मौसम रिफ्रेश करें' : 'Refresh weather'} title={weather?.location || 'Refresh local weather'}><RefreshCw size={18} className={loading ? styles.spinning : ''} /></button>
       </div>
       {locationOpen && <div className={styles.locationPicker} aria-label="Choose weather location">
@@ -209,7 +214,7 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
           </div>
           <div className={styles.verdict}>
             <span className={styles.check}><Check size={24} /></span>
-            <div><span>{hi ? 'आज पानी देना है?' : 'WATER TODAY?'}</span><div className={styles.verdictLine}><strong>{remaining === null ? 'Check the soil first' : remaining === 0 ? 'Time to check the soil' : 'No, leave it today'}</strong>{remaining !== null && remaining > 0 && <p>next in {remaining} {remaining === 1 ? 'day' : 'days'}</p>}</div></div>
+            <div><span>{hi ? 'मिट्टी की जाँच' : 'SOIL CHECK'}</span><div className={styles.verdictLine}><strong>{remaining === null ? 'Check before watering' : remaining === 0 ? 'Time to check the soil' : 'Check sooner if dry'}</strong>{remaining !== null && remaining > 0 && <p>planned check in {remaining} {remaining === 1 ? 'day' : 'days'}</p>}</div></div>
           </div>
           <div className={styles.advice}><span className={styles.adviceIcon}>{dailyAdvice.kind === 'light' ? <Sun size={20} /> : dailyAdvice.kind === 'growth' || dailyAdvice.kind === 'issue' ? <Sprout size={20} /> : <Droplets size={20} />}</span><div><h3>{dailyAdvice.title}</h3><p>{dailyAdvice.body}</p><small>{dailyAdvice.meta}</small></div></div>
           <div className={styles.detail}>

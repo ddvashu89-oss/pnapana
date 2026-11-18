@@ -787,7 +787,7 @@ export default function Home() {
               </div>
               <div className={styles.dashboardCareRow}>
                 <span className={styles.dashboardCareIcon}><Droplets size={22} /></span>
-                <div><span className={styles.dashboardCareLabel}>Water <em>{carePlant.water_freq || 7} days between waterings</em></span><p>{carePlant.water_requirement || 'Check the topsoil before watering.'}</p></div>
+                <div><span className={styles.dashboardCareLabel}>Water <em>Check soil about every {carePlant.water_freq || 7} days</em></span><p>{carePlant.water_requirement || 'Check the topsoil before watering.'}</p></div>
               </div>
             </div>
           </div>

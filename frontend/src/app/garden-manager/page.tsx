@@ -11,10 +11,10 @@ import styles from './Manager.module.css';
 type Plant = {
   id: number; name: string; species: string; image_url?: string; placement: 'indoor' | 'outdoor' | 'unknown';
   direct_sun: boolean; light_req: string; light_requirement: string; water_freq: number;
-  last_watered: string | null; waterings_30d: number; care_consistency: number;
+  last_watered: string | null; waterings_30d: number;
   last_issue_at: string | null; last_issue: string | null; status: string; status_color: string;
 };
-type ManagerData = { total_plants: number; indoor_plants: number; outdoor_plants: number; direct_sun_plants: number; needs_watering: number; plants_with_disease_history: number; regular_care_plants: number };
+type ManagerData = { total_plants: number; indoor_plants: number; outdoor_plants: number; direct_sun_plants: number; needs_watering: number; waterings_logged_30d: number; plants_with_disease_history: number };
 
 export default function GardenManager() {
   const router = useRouter();
@@ -60,9 +60,9 @@ export default function GardenManager() {
       <article><span><Leaf size={18} /> Plants</span><strong>{summary.total_plants}</strong><small>in your garden</small></article>
       <article><span><House size={18} /> Indoor</span><strong>{summary.indoor_plants}</strong><small>{summary.outdoor_plants} outdoor · {summary.total_plants - summary.indoor_plants - summary.outdoor_plants} not set</small></article>
       <article><span><Sun size={18} /> Direct sun</span><strong>{summary.direct_sun_plants}</strong><small>based on saved light preferences</small></article>
-      <article><span><Droplets size={18} /> Need watering</span><strong>{summary.needs_watering}</strong><small>based on logged watering dates</small></article>
+      <article><span><Droplets size={18} /> Soil checks due</span><strong>{summary.needs_watering}</strong><small>check moisture before watering</small></article>
       <article><span><TriangleAlert size={18} /> Past issues</span><strong>{summary.plants_with_disease_history}</strong><small>plants with an issue scan</small></article>
-      <article><span><CalendarClock size={18} /> Regular care</span><strong>{summary.regular_care_plants}/{summary.total_plants}</strong><small>at least 70% of expected waterings, last 30 days</small></article>
+      <article><span><CalendarClock size={18} /> Watering logs</span><strong>{summary.waterings_logged_30d}</strong><small>recorded in the last 30 days</small></article>
     </section>}
 
     <section className={styles.askCard}>
@@ -81,14 +81,14 @@ export default function GardenManager() {
         {plant.image_url ? <img src={plant.image_url} alt="" /> : <span className={styles.plantPlaceholder}><Leaf size={22} /></span>}
         <div className={styles.plantBody}>
           <div className={styles.plantTitle}><div><h3>{plant.name}</h3><p>{plant.species}</p></div><span className={`${styles.placement} ${styles[plant.placement]}`}>{plant.placement === 'unknown' ? 'Location not set' : plant.placement}</span></div>
-          <div className={styles.factGrid}><span><Sun size={15} />{plant.direct_sun ? 'Direct sun' : plant.light_requirement || plant.light_req || 'Light preference unknown'}</span><span><Droplets size={15} />Last watered: {formatDate(plant.last_watered)}</span><span><CalendarClock size={15} />Every {plant.water_freq} days</span></div>
-          <div className={styles.consistency}><div><span>Care consistency</span><strong>{plant.care_consistency}%</strong></div><div className={styles.track}><i style={{ width: `${plant.care_consistency}%` }} /></div><small>{plant.waterings_30d} logged watering{plant.waterings_30d === 1 ? '' : 's'} in 30 days</small></div>
+          <div className={styles.factGrid}><span><Sun size={15} />{plant.direct_sun ? 'Direct sun' : plant.light_requirement || plant.light_req || 'Light preference unknown'}</span><span><Droplets size={15} />Last watered: {formatDate(plant.last_watered)}</span><span><CalendarClock size={15} />Check soil about every {plant.water_freq} days</span></div>
+          <div className={styles.consistency}><div><span>Watering logs</span><strong>{plant.waterings_30d}</strong></div><small>Recorded in the last 30 days. Water only when the soil needs it.</small></div>
           {plant.last_issue_at && <div className={styles.issue}><TriangleAlert size={16} /><div><strong>Previous plant health issue</strong><p>{plant.last_issue || 'Issue found in a previous health scan'} · {formatDate(plant.last_issue_at)}</p></div></div>}
           <Link className={styles.detailsLink} href={`/plant?id=${plant.id}`}>Open plant record <ArrowUpRight size={14} /></Link>
         </div>
       </article>)}
     </section>}
-    <section className={styles.sosBanner}><div><span className={styles.eyebrow}>URGENT PLANT CHECK</span><h2>Plant SOS</h2><p>Take a photo to run a health scan and save its diagnosis to that plant’s history.</p></div><Link href={plants[0] ? `/plant?id=${plants[0].id}&tab=scan` : '/dashboard?action=scan'}>Start a health scan <ArrowUpRight size={16} /></Link></section>
+    <section className={styles.sosBanner}><div><span className={styles.eyebrow}>URGENT PLANT CHECK</span><h2>Plant SOS</h2><p>{plants[0] ? 'Take a photo to run a health scan and save its diagnosis to that plant’s history.' : 'Scan your first plant to start tracking its health and care.'}</p></div><Link href={plants[0] ? `/plant?id=${plants[0].id}&tab=scan` : '/dashboard?action=scan'}>{plants[0] ? 'Start a health scan' : 'Scan your first plant'} <ArrowUpRight size={16} /></Link></section>
   </main>;
 }
 

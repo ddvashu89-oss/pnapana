@@ -15,9 +15,9 @@ $hasLight = array_key_exists('light_req', $data);
 $lightReq = $data['light_req'] ?? null;
 $parsedDate = $purchaseDate === '' ? null : DateTime::createFromFormat('!Y-m-d', $purchaseDate);
 $validDate = $purchaseDate === '' || ($parsedDate && $parsedDate->format('Y-m-d') === $purchaseDate && $purchaseDate <= date('Y-m-d'));
-if (!$plantId || !$validDate || ($placement !== null && !in_array($placement, ['', 'indoor', 'outdoor'], true)) || ($hasLight && (!is_string($lightReq) || mb_strlen(trim($lightReq)) > 50))) {
+if (!$plantId || !$validDate || ($placement !== null && !in_array($placement, ['', 'indoor', 'outdoor', 'unknown'], true)) || ($hasLight && (!is_string($lightReq) || mb_strlen(trim($lightReq)) > 50))) {
     http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Choose a valid purchase date.']);
+    echo json_encode(['status' => 'error', 'message' => 'Check the purchase date, location, and light selection.']);
     exit;
 }
 $profileFields = [];
