@@ -33,7 +33,7 @@ function pnapana_normalize_plant_setup($value) {
     }
 
     return [
-        'placement' => $pick('placement', ['indoor', 'outdoor']),
+        'placement' => $pick('placement', ['indoor', 'outdoor', 'unknown']),
         'room' => $room,
         'light' => $pick('light', ['Direct sun', 'Full sun', 'Bright indirect', 'Medium', 'Low light', 'Not sure']),
         'pot_size' => $pick('pot_size', ['small', 'medium', 'large', 'extra-large', 'not-sure']),

@@ -19,7 +19,7 @@ export type SetupPlant = {
 };
 
 export type PlantSetupValues = {
-  placement: 'indoor' | 'outdoor';
+  placement: 'indoor' | 'outdoor' | 'unknown';
   room: string;
   light: 'Direct sun' | 'Full sun' | 'Bright indirect' | 'Medium' | 'Low light' | 'Not sure';
   pot_size: 'small' | 'medium' | 'large' | 'extra-large' | 'not-sure';
@@ -129,7 +129,7 @@ export default function PlantSetupWizard({
               </div>
               <label className={styles.field}><span>{hi ? 'पौधे का नाम' : 'Plant nickname'}</span><input value={name} maxLength={255} onChange={event => { setName(event.target.value); setError(''); }} placeholder={hi ? 'अपने पौधे को नाम दें' : 'Give your plant a name'} /></label>
               <div className={styles.fieldGrid}>
-                <label className={styles.field}><span>{hi ? 'कहाँ रहेगा?' : 'Where does it live?'}</span><select value={values.placement} onChange={event => update('placement', event.target.value as PlantSetupValues['placement'])}><option value="indoor">{hi ? 'घर के अंदर' : 'Indoor'}</option><option value="outdoor">{hi ? 'बाहर' : 'Outdoor'}</option></select></label>
+                <label className={styles.field}><span>{hi ? 'कहाँ रहेगा?' : 'Where does it live?'}</span><select value={values.placement} onChange={event => update('placement', event.target.value as PlantSetupValues['placement'])}><option value="unknown">{hi ? 'अभी पता नहीं' : 'Not specified'}</option><option value="indoor">{hi ? 'घर के अंदर' : 'Indoor'}</option><option value="outdoor">{hi ? 'बाहर' : 'Outdoor'}</option></select></label>
                 <label className={styles.field}><span>{hi ? 'कमरा या जगह' : 'Room or area'}</span><select value={values.room} onChange={event => update('room', event.target.value)}>{[['Living room','लिविंग रूम'],['Bedroom','बेडरूम'],['Kitchen','रसोई'],['Bathroom','बाथरूम'],['Office','ऑफिस'],['Balcony','बालकनी'],['Terrace','छत'],['Garden','बगीचा']].map(([value,label]) => <option key={value} value={value}>{hi ? label : value}</option>)}</select></label>
                 <label className={`${styles.field} ${styles.wide}`}><span>{hi ? 'रोशनी कैसी है? (वैकल्पिक)' : 'How much light? (optional)'}</span><select value={values.light} onChange={event => update('light', event.target.value as PlantSetupValues['light'])}>{[['Not sure','पता नहीं'],['Bright indirect','तेज़ परोक्ष रोशनी'],['Direct sun','सीधी धूप'],['Full sun','पूरी धूप'],['Medium','मध्यम'],['Low light','कम रोशनी']].map(([value,label]) => <option key={value} value={value}>{hi ? label : value}</option>)}</select></label>
               </div>

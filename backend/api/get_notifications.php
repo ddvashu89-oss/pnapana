@@ -13,7 +13,7 @@ pnapana_ensure_growth_schema($pdo);
 try {
     // Find plants where last_watered + water_freq days is in the past
     // water_freq is in days
-    $stmt = $pdo->prepare("SELECT id, name, species, image_url, last_watered, water_freq FROM plants WHERE user_id = ? AND setup_completed = 1 AND DATE_ADD(last_watered, INTERVAL water_freq DAY) <= CURRENT_TIMESTAMP");
+    $stmt = $pdo->prepare("SELECT id, name, species, image_url, last_watered, water_freq FROM plants WHERE user_id = ? AND setup_completed = 1 AND DATE_ADD(COALESCE(last_watered, setup_completed_at), INTERVAL water_freq DAY) <= CURRENT_TIMESTAMP");
     $stmt->execute([$user_id]);
     $thirsty_plants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

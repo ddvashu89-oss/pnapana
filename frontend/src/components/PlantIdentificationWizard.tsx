@@ -35,7 +35,7 @@ export type ConfirmedPlantIdentification = {
 
 type Props = {
   onClose: () => void;
-  onConfirmed: (plant: ConfirmedPlantIdentification) => void;
+  onConfirmed: (plant: ConfirmedPlantIdentification) => Promise<void> | void;
 };
 
 const PHOTO_SLOTS = [
@@ -108,9 +108,6 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const [qualityNotes, setQualityNotes] = useState<Record<string, string[]>>({});
   const [quality, setQuality] = useState<Record<string, PreparedPhoto['metrics']>>({});
-  const [category, setCategory] = useState('');
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationMessage, setLocationMessage] = useState('');
   const [needsCloseup, setNeedsCloseup] = useState(false);
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [selectedSpecies, setSelectedSpecies] = useState('');
@@ -147,7 +144,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
     setBusy(true);
     setError('');
     try {
-      const response = await authFetch('identify_plant_multi.php', { method: 'POST', body: JSON.stringify({ images, lang: language, category, location_consent: Boolean(location), latitude: location?.latitude, longitude: location?.longitude, quality }) });
+      const response = await authFetch('identify_plant_multi.php', { method: 'POST', body: JSON.stringify({ images, lang: language, quality }) });
       const data = await response.json();
       if (!response.ok || data.status !== 'success') {
         const reference = typeof data.reference_id === 'string' && data.reference_id ? ` Reference: ${data.reference_id}.` : '';
@@ -157,6 +154,9 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
       setNeedsCloseup(Boolean(data.uncertain && images.length < 2));
       setSelectedSpecies(data.strong_match ? data.candidates[0]?.species || '' : '');
       setShowCustom(false);
+      if (data.strong_match && data.candidates[0]?.species) {
+        await saveIdentifiedPlant(data, data.candidates[0].species, data.candidates[0].common_name || data.candidates[0].species, false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Identification failed. Please retake the photos.');
     } finally {
@@ -164,9 +164,20 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
     }
   };
 
-  const requestLocation = () => {
-    if (!navigator.geolocation) { setLocationMessage(hi ? 'इस ब्राउज़र में लोकेशन उपलब्ध नहीं है।' : 'Location is unavailable in this browser.'); return; }
-    navigator.geolocation.getCurrentPosition(position => { setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude }); setLocationMessage(hi ? 'क्षेत्र केवल इस पहचान के लिए उपयोग होगा।' : 'Your area will be used only for this identification.'); }, () => setLocationMessage(hi ? 'लोकेशन नहीं मिली। आप बिना इसके जारी रख सकते हैं।' : 'Location was not shared. You can continue without it.'), { maximumAge: 86_400_000, timeout: 8_000 });
+  const saveIdentifiedPlant = async (result: ScanResult, chosen: string, commonName: string, correction: boolean) => {
+      const response = await authFetch('confirm_identification.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          scan_id: result.scan_id,
+          species: chosen,
+          common_name: commonName,
+          custom_correction: correction,
+          lang: document.documentElement.lang || 'en',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not confirm this plant.');
+      await onConfirmed({ ...data.identification, care_plan: data.care_plan, primary_image: images[0] });
   };
 
   const confirmPlant = async () => {
@@ -180,19 +191,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
     setBusy(true);
     setError('');
     try {
-      const response = await authFetch('confirm_identification.php', {
-        method: 'POST',
-        body: JSON.stringify({
-          scan_id: scan.scan_id,
-          species: chosen,
-          common_name: showCustom ? (customCommonName.trim() || chosen) : (candidate?.common_name || chosen),
-          custom_correction: showCustom,
-          lang: document.documentElement.lang || 'en',
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not confirm this plant.');
-      onConfirmed({ ...data.identification, care_plan: data.care_plan, primary_image: images[0] });
+      await saveIdentifiedPlant(scan, chosen, showCustom ? (customCommonName.trim() || chosen) : (candidate?.common_name || chosen), showCustom);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not confirm this plant.');
     } finally {
@@ -217,11 +216,6 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
               <div className={styles.progress}><span style={{ width: `${requiredCount * 100 / 3}%` }} /></div>
               <small>{requiredCount}/3 {hi ? 'ज़रूरी फ़ोटो तैयार' : 'required photos ready'} · {hi ? 'अतिरिक्त कोण वैकल्पिक हैं' : 'another angle is optional'}</small>
             </div>
-            <div className={styles.signals}>
-              <label>{hi ? 'यह किस तरह का पौधा है? (वैकल्पिक)' : 'What type of plant is this? (optional)'}<select value={category} onChange={event => setCategory(event.target.value)}><option value="">{hi ? 'पता नहीं' : 'Not sure'}</option><option value="houseplant">{hi ? 'घर के अंदर' : 'Houseplant'}</option><option value="outdoor">{hi ? 'बालकनी / बगीचा' : 'Balcony / garden'}</option><option value="herb">{hi ? 'जड़ी-बूटी / खाने वाला पौधा' : 'Herb / edible plant'}</option></select></label>
-              <button type="button" className={styles.locationButton} onClick={requestLocation}>{location ? (hi ? 'क्षेत्र जोड़ा गया' : 'Area added') : (hi ? 'अपना क्षेत्र जोड़ें' : 'Use my area')}</button>
-              <small>{locationMessage || (hi ? 'क्षेत्र और मौसम परिणाम बेहतर कर सकते हैं। Pnapana आपकी सटीक लोकेशन सेव नहीं करता; यह केवल इस scan के लिए Plant.id को भेजी जाती है।' : 'Area and season can improve close matches. Pnapana does not store precise location; it is sent to Plant.id only for this scan.')}</small>
-            </div>
             <div className={styles.photoGrid}>
               {PHOTO_SLOTS.map((slot, index) => (
                 <article className={`${styles.photoSlot} ${photos[slot.id] ? styles.photoReady : ''}`} key={slot.id}>
@@ -243,7 +237,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
           <>
             <div className={`${styles.resultBanner} ${scan.strong_match ? styles.strong : styles.uncertain}`}>
               {scan.strong_match ? <Check size={21} /> : <Leaf size={21} />}
-              <div><strong>{scan.strong_match ? (hi ? 'सबसे अच्छा मिलान — पुष्टि करें' : 'Top match — please confirm') : (hi ? 'हमें पूरी तरह भरोसा नहीं है' : "We’re not fully sure")}</strong><p>{needsCloseup ? (hi ? 'करीब से पत्ते या फूल की एक और फ़ोटो जोड़ें।' : 'Add one close-up leaf or flower photo before choosing.') : (hi ? 'नाम, पत्ते और पैटर्न मिलाकर चुनें।' : 'Compare the name, leaf shape, and pattern before choosing.')}</p></div>
+              <div><strong>{scan.strong_match ? (hi ? 'पौधा पहचाना गया' : 'Plant identified') : (hi ? 'हमें पूरी तरह भरोसा नहीं है' : "We’re not fully sure")}</strong><p>{scan.strong_match ? (hi ? 'आपका देखभाल प्लान तैयार हो रहा है…' : 'Your care plan is being prepared…') : needsCloseup ? (hi ? 'करीब से पत्ते या फूल की एक और फ़ोटो जोड़ें।' : 'Add one close-up leaf or flower photo before choosing.') : (hi ? 'नाम, पत्ते और पैटर्न मिलाकर चुनें।' : 'Compare the name, leaf shape, and pattern before choosing.')}</p></div>
             </div>
             <div className={styles.candidates} role="radiogroup" aria-label="Plant identification choices">
               {scan.candidates.map(candidate => (

@@ -9,6 +9,7 @@ require_once '../plant_setup_helper.php';
 require_once '../gemini_helper.php';
 require_once '../care_weather_helper.php';
 require_once '../activity_logger.php';
+require_once '../botanical_catalog.php';
 require_once 'auth.php';
 
 // Authenticate user using token
@@ -73,12 +74,25 @@ $weatherInstruction = $weatherAvailable
     ? 'Current weather near ' . $city . ': ' . json_encode($weather) . '. Adjust today\'s guidance to these conditions.'
     : 'Current weather is temporarily unavailable or the customer did not share a location. Create a safe species-specific baseline plan from the confirmed plant and setup. State in weather_note that weather adjustments will appear when local weather becomes available.';
 $drainage = $setup['has_drainage'] === null ? 'unknown' : ($setup['has_drainage'] ? 'yes' : 'no');
-$prompt = "Create a careful, specific plant care plan. The customer identified the plant as '{$species}'. The customer reports: placement {$setup['placement']}, area {$setup['room']}, available light {$setup['light']}, pot {$setup['pot_size']}, drainage {$drainage}, soil {$setup['soil_condition']}, current moisture {$setup['moisture_level']}, last watered {$setup['last_watered']}. Treat 'not sure' and 'unknown' as missing information; do not claim the customer confirmed those conditions. {$weatherInstruction} Recommend care according to this plant and the known setup. Never tell them to water by calendar alone; require a soil check. Return only JSON: {\"description\":string,\"care_plan\":{\"native_region\":string,\"light\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"water\":{\"frequency_days\":number,\"instructions\":string},\"humidity\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"soil\":string,\"temperature\":string,\"fertilizing\":string,\"pruning\":string,\"toxicity\":{\"pet_friendly\":boolean,\"detail\":string},\"common_issues\":[{\"issue\":string,\"solution\":string}],\"weather_note\":string}}.";
+$prompt = "Create a careful, specific plant care plan. The plant was identified from photos as '{$species}'. Known setup: placement {$setup['placement']}, area {$setup['room']}, available light {$setup['light']}, pot {$setup['pot_size']}, drainage {$drainage}, soil {$setup['soil_condition']}, current moisture {$setup['moisture_level']}, last watered {$setup['last_watered']}. Treat 'not sure', 'unknown', and 'Not specified' as missing information; never claim the customer confirmed those conditions. Recommend a suitable placement and light exposure as advice, not as an observed fact. {$weatherInstruction} Never tell them to water by calendar alone; require a soil check. Return only JSON: {\"description\":string,\"care_plan\":{\"native_region\":string,\"light\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"water\":{\"frequency_days\":number,\"instructions\":string},\"humidity\":{\"level\":\"High\"|\"Medium\"|\"Low\",\"detail\":string},\"soil\":string,\"temperature\":string,\"fertilizing\":string,\"pruning\":string,\"toxicity\":{\"pet_friendly\":boolean,\"detail\":string},\"common_issues\":[{\"issue\":string,\"solution\":string}],\"weather_note\":string}}.";
 $started = microtime(true);
 $geminiKey = pnapana_shared_gemini_key($pdo);
 $generated = $geminiKey !== '' ? gemini_text_json_call($prompt, $geminiKey) : null;
+$providerSucceeded = is_array($generated) && is_array($generated['care_plan'] ?? null);
+$catalogPlan = null;
+$normalizeName = static fn($name) => preg_replace('/[^a-z0-9]+/', ' ', strtolower(trim((string)$name)));
+foreach (get_botanical_catalog('en') as $catalogPlant) {
+    $names = array_merge([$catalogPlant['species'] ?? '', $catalogPlant['common_name'] ?? ''], $catalogPlant['aliases'] ?? []);
+    if (in_array($normalizeName($species), array_map($normalizeName, $names), true)) {
+        $catalogPlan = $catalogPlant['care_plan'] ?? null;
+        break;
+    }
+}
+if ((!is_array($generated) || !is_array($generated['care_plan'] ?? null)) && is_array($catalogPlan)) {
+    $generated = ['care_plan' => $catalogPlan, 'description' => ''];
+}
 $duration = (int)round((microtime(true) - $started) * 1000);
-pnapana_log_api_request($pdo, (int)$user_id, 'gemini', $weatherAvailable ? 'weather_aware_care_plan' : 'baseline_care_plan', null, $duration, is_array($generated), is_array($generated) ? null : ($geminiKey === '' ? 'not_configured' : 'provider_error'), ['weather_available' => $weatherAvailable]);
+pnapana_log_api_request($pdo, (int)$user_id, 'gemini', $weatherAvailable ? 'weather_aware_care_plan' : 'baseline_care_plan', null, $duration, $providerSucceeded, $providerSucceeded ? null : ($geminiKey === '' ? 'not_configured' : 'provider_error'), ['weather_available' => $weatherAvailable, 'catalog_fallback' => !$providerSucceeded && is_array($catalogPlan)]);
 if (!is_array($generated) || !is_array($generated['care_plan'] ?? null)) {
     pnapana_write_application_log($pdo, 'error', 'care_plan_generation_failed', 'Plant care plan could not be generated.', (int)$user_id, ['weather_available' => $weatherAvailable], 503);
     http_response_code(503);
@@ -109,7 +123,7 @@ try {
     $stmt = $pdo->prepare("INSERT INTO plants (user_id, name, species, image_url, water_freq, light_req,
         native_region, light_requirement, water_requirement, humidity, pet_friendly, care_plan, purchased_on, placement,
         setup_completed, setup_completed_at, setup_data, last_watered)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, COALESCE(?, CURRENT_TIMESTAMP))");
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?)");
     $lastWatered = pnapana_setup_last_watered_at($setup['last_watered']);
     $stmt->execute([$user_id, $name, $species, $image_url, $water_freq, $light_req,
         $native_region, $light_requirement, $water_requirement, $humidity, $pet_friendly, $care_plan, $purchased_on, $placement,

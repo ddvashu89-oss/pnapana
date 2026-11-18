@@ -11,6 +11,7 @@ import Loader from '@/components/Loader';
 import PlantSetupWizard, { PlantSetupValues, SetupPlant } from '@/components/PlantSetupWizard';
 import PlantIdentificationWizard, { ConfirmedPlantIdentification } from '@/components/PlantIdentificationWizard';
 import { authFetch } from '@/lib/api';
+import { automaticPlantSetup } from '@/lib/automaticPlantSetup';
 import styles from './Home.module.css';
 
 export default function Home() {
@@ -129,7 +130,7 @@ export default function Home() {
   useEffect(() => {
     const syncNavigation = () => {
       if (new URLSearchParams(window.location.search).get('action') === 'scan') {
-        setIsAddPlantModalOpen(true);
+        setIsIdentificationOpen(true);
         window.history.replaceState(null, '', '/dashboard');
       }
     };
@@ -386,29 +387,28 @@ export default function Home() {
 
   const returnToAddPlant = () => {
     setIsIdentificationOpen(false);
-    setIsAddPlantModalOpen(true);
   };
 
-  const applyConfirmedIdentification = (identified: ConfirmedPlantIdentification) => {
+  const applyConfirmedIdentification = async (identified: ConfirmedPlantIdentification) => {
     const cp = identified.care_plan || {};
-    setNewPlant(prev => ({
-      ...prev,
-      name: prev.name || identified.common_name || identified.species,
-      species: identified.species,
-      image_url: identified.primary_image,
-      native_region: cp.native_region || '',
-      light_requirement: cp.light?.detail || '',
-      water_requirement: cp.water?.instructions || '',
-      humidity: cp.humidity?.level || '',
-      pet_friendly: !!cp.toxicity?.pet_friendly,
-      water_freq: cp.water?.frequency_days || 7,
-      light_req: cp.light?.level || 'Not sure',
-      care_plan: cp,
-    }));
-    setPlantInfo({ species: identified.species, description: identified.description });
-    setCameraMode('identify');
+    const name = identified.common_name || identified.species;
+    const response = await authFetch('add_plant.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        species: identified.species,
+        image_url: identified.primary_image,
+        setup: automaticPlantSetup(cp.water?.frequency_days),
+        weather_location: weatherLocation,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not create the care plan. Please try again.');
     setIsIdentificationOpen(false);
-    setIsAddPlantModalOpen(true);
+    setWelcomePlant({ id: Number(data.plant_id), name });
+    if (user) fetchPlants(user.id);
+    window.dispatchEvent(new Event('pnapana:plant-setup-refresh'));
+    router.push(`/plant?id=${data.plant_id}`);
   };
 
   const removePlant = (id: number) => {
@@ -695,7 +695,7 @@ export default function Home() {
         <div className={styles.sectionHeader}><div><h2>{language === 'hi' ? 'आज अपने पौधों के लिए क्या करें?' : 'What do my plants need today?'}</h2><p>{language === 'hi' ? 'हर पौधे के लिए एक साफ अगला कदम।' : 'One clear next step for each plant.'}</p></div><Link href="/care">{language === 'hi' ? 'सभी देखें' : 'View schedule'} <ArrowUpRight size={14} /></Link></div>
         {careFeedback && <p className={styles.careFeedback} role="status">{careFeedback}</p>}
         {welcomePlant && <div className={styles.welcomeTask} role="status"><Sprout size={24} /><div><strong>{language === 'hi' ? `${welcomePlant.name} आपके बगीचे में है` : `${welcomePlant.name} is in your garden`}</strong><p>{language === 'hi' ? 'इसका देखभाल प्लान देखें और आज इसकी मिट्टी जाँचें।' : 'Meet your plant, review its care plan, and check its soil today.'}</p></div><Link href={`/plant?id=${welcomePlant.id}`}>{language === 'hi' ? 'पौधा देखें' : 'Meet your plant'} <ArrowUpRight size={15} /></Link></div>}
-        {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा जोड़ें।' : 'Your green family starts with one plant.'}</p><button onClick={() => setIsAddPlantModalOpen(true)}>{t('dashboard.addPlant')}</button></div> : plants.map(plant => {
+        {plants.length === 0 ? <div className={styles.todayEmpty}><Sprout size={26} /><p>{language === 'hi' ? 'अपना पहला पौधा स्कैन करें।' : 'Scan your first plant.'}</p><button onClick={() => setIsIdentificationOpen(true)}>{language === 'hi' ? 'पौधा स्कैन करें' : 'Scan a plant'}</button></div> : plants.map(plant => {
           const statusText = String(plant.status || '').trim();
           const statusColor = String(plant.status_color || '').toLowerCase().replace(/[\s-]+/g, '_');
           const isWaterOnlyStatus = /^(?:(?:needs?|due for|time to)\s+)?(?:water|watering)(?:\s+(?:today|now))?[.!]?$/i.test(statusText);
@@ -862,7 +862,7 @@ export default function Home() {
       {/* --- PLANT COLLECTION --- */}
       <section id={carePlant ? 'collection' : 'garden'} className={styles.collectionSection}>
         <div className={styles.sectionHeader}>
-          <h3>{t('dashboard.yourGreenFamily')}</h3><button className={styles.addGardenBtn} onClick={() => setIsAddPlantModalOpen(true)}>+ {t('dashboard.addPlant')}</button>
+          <h3>{t('dashboard.yourGreenFamily')}</h3><button className={styles.addGardenBtn} onClick={() => setIsIdentificationOpen(true)}>+ {language === 'hi' ? 'पौधा स्कैन करें' : 'Scan a plant'}</button>
         </div>
 
         {plants.length > 0 && (
@@ -889,9 +889,9 @@ export default function Home() {
               <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
             </div>
             <p>{t('dashboard.emptyStateText')}</p>
-            <button className={styles.emptyStateBtn} onClick={() => setIsAddPlantModalOpen(true)}>
+            <button className={styles.emptyStateBtn} onClick={() => setIsIdentificationOpen(true)}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-              {t('dashboard.addFirstPlant')}
+              {language === 'hi' ? 'पहला पौधा स्कैन करें' : 'Scan your first plant'}
             </button>
           </div>
         ) : filteredPlants.length === 0 ? (
@@ -958,7 +958,7 @@ export default function Home() {
         )}
       </section>
 
-      <button className={styles.fabButton} onClick={() => setIsAddPlantModalOpen(true)} title={t('dashboard.addPlant')}>
+      <button className={styles.fabButton} onClick={() => setIsIdentificationOpen(true)} title={language === 'hi' ? 'पौधा स्कैन करें' : 'Scan a plant'}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       </button>
 

@@ -24,12 +24,17 @@ if (!preg_match('/^[a-f0-9]{32}$/', $scanId) || $species === '' || mb_strlen($sp
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT * FROM plant_identification_events WHERE id=? AND user_id=? AND confirmed_at IS NULL');
+$stmt = $pdo->prepare('SELECT * FROM plant_identification_events WHERE id=? AND user_id=?');
 $stmt->execute([$scanId, $user['id']]);
 $scan = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$scan) {
     http_response_code(404);
     echo json_encode(['status' => 'error', 'message' => 'This identification has expired or was already confirmed.']);
+    exit;
+}
+if ($scan['confirmed_at'] !== null && strtolower(trim((string)$scan['selected_species'])) !== strtolower($species)) {
+    http_response_code(409);
+    echo json_encode(['status' => 'error', 'message' => 'This scan was already saved with a different identification.']);
     exit;
 }
 
@@ -56,6 +61,8 @@ if (!$knownSelection && !$customCorrection) {
 
 $recommended = (string)($scan['kindwise_top_species'] ?: $scan['gemini_species']);
 $corrected = confirmation_normalize($recommended) !== confirmation_normalize($species);
+$alreadyConfirmed = $scan['confirmed_at'] !== null;
+if (!$alreadyConfirmed) {
 $pdo->beginTransaction();
 try {
     $pdo->prepare('UPDATE plant_identification_events SET selected_species=?,selected_common_name=?,selected_probability=?,corrected=?,confirmed_at=NOW() WHERE id=? AND user_id=? AND confirmed_at IS NULL')
@@ -67,6 +74,7 @@ try {
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     throw $e;
+}
 }
 
 // A confirmed photo match may be added immediately. When the confirmed species
