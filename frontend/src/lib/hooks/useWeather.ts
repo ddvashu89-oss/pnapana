@@ -25,6 +25,14 @@ export type Weather = {
   latitude: number;
   longitude: number;
   locationAccuracyM: number | null;
+  precipitationMm: number | null;
+  rainMm: number | null;
+  rainProbability: number | null;
+  windSpeedKmh: number | null;
+  windDirection: number | null;
+  uvIndex: number | null;
+  hourlyForecast: Array<{ time: string | null; temperature: number | null; rain_probability: number | null; precipitation_mm: number | null; wind_kmh: number | null; uv_index: number | null; weather_code: number | null }>;
+  dailyForecast: Array<{ date: string | null; min_c: number | null; max_c: number | null; rain_probability: number | null; precipitation_mm: number | null; wind_kmh: number | null; wind_direction: number | null; uv_index: number | null; weather_code: number | null }>;
 };
 
 export type WeatherLocation = {
@@ -167,13 +175,12 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
   if (pendingWeather?.key === key) return pendingWeather.promise;
   if (!force && cachedWeather?.key === key && cachedWeather.expiresAt > Date.now()) return cachedWeather.value;
 
-  // Four decimal places preserve roughly street-level coordinates for the
-  // weather grid while avoiding unnecessary raw GPS precision in the URL.
-  const query = new URLSearchParams({ lat: position.lat.toFixed(4), lon: position.lon.toFixed(4) });
-  const url = getApiUrl(`weather.php?${query.toString()}`);
+  // Send rounded coordinates in the request body so precise location is not
+  // embedded in the endpoint URL or routine access logs.
+  const url = getApiUrl('weather.php');
   const promise = (async () => {
     const [response, place] = await Promise.all([
-      fetch(url, { cache: force ? 'no-store' : 'default' }),
+      fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lat: Number(position.lat.toFixed(4)), lon: Number(position.lon.toFixed(4)) }), cache: 'no-store' }),
       position.city
         ? Promise.resolve({ city: position.city, region: position.region || null, country: position.country || null })
         : reverseGeocode(position),
@@ -202,13 +209,6 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
   }
 }
 
-async function fetchAutomaticWeather(force = false): Promise<Weather> {
-  const response = await fetch(getApiUrl(`weather.php?auto=1${force ? '&force=1' : ''}`), { cache: 'no-store' });
-  const data = await response.json() as WeatherApiResponse & { location?: Coordinates };
-  if (!response.ok || data.status !== 'success' || !data.weather) throw new Error(data.message || 'Automatic weather location unavailable.');
-  return { ...data.weather, latitude: Number(data.location?.lat), longitude: Number(data.location?.lon), city: data.location?.city || null, region: data.location?.region || null, country: data.location?.country || null, locationAccuracyM: null };
-}
-
 export function describeWeather(condition: string) {
   return condition || 'Conditions unavailable';
 }
@@ -222,20 +222,11 @@ export function useWeather() {
     setLoading(true);
     setError(null);
     try {
-      // Legacy saved cities had no explicit preference marker. Treat those as
-      // stale and request the device's current location instead of silently
-      // keeping an old city forever.
       const stored = localStorage.getItem(WEATHER_LOCATION_MODE_KEY) === 'manual' ? savedLocation() : null;
       setLocationMode(stored ? 'manual' : 'device');
-      let nextWeather: Weather;
-      try {
-        const position = stored || await bestDeviceLocation(force);
-        nextWeather = await fetchWeather(position, force);
-      } catch {
-        // When the browser cannot expose GPS, let the backend resolve the
-        // public IP to a city automatically. No city selection is required.
-        nextWeather = await fetchAutomaticWeather(force);
-      }
+      const position = stored || await bestDeviceLocation(force);
+      const nextWeather = await fetchWeather(position, force);
+      setError(null);
       setWeather({
         ...nextWeather,
         isDay: isDayAtLocation(nextWeather.timezone, nextWeather.sunrise, nextWeather.sunset, nextWeather.isDay),
@@ -247,6 +238,14 @@ export function useWeather() {
       setLoading(false);
     }
   }, []);
+  const refreshDeviceLocation = useCallback(async () => {
+    localStorage.removeItem(WEATHER_LOCATION_KEY);
+    localStorage.setItem(WEATHER_LOCATION_MODE_KEY, 'device');
+    setLocationMode('device');
+    setWeather(null);
+    setError('');
+    await refresh(true);
+  }, [refresh]);
   const chooseLocation = useCallback(async (location: WeatherLocation) => {
     localStorage.setItem(WEATHER_LOCATION_KEY, JSON.stringify(location));
     localStorage.setItem(WEATHER_LOCATION_MODE_KEY, 'manual');
@@ -265,12 +264,7 @@ export function useWeather() {
       setLoading(false);
     }
   }, []);
-  const switchToDeviceLocation = useCallback(async () => {
-    localStorage.removeItem(WEATHER_LOCATION_KEY);
-    localStorage.setItem(WEATHER_LOCATION_MODE_KEY, 'device');
-    setLocationMode('device');
-    await refresh(true);
-  }, [refresh]);
+  const switchToDeviceLocation = refreshDeviceLocation;
   const clearSavedLocation = useCallback(() => {
     localStorage.removeItem(WEATHER_LOCATION_KEY);
     localStorage.setItem(WEATHER_LOCATION_MODE_KEY, 'device');
@@ -291,5 +285,5 @@ export function useWeather() {
     }, 60_000);
     return () => clearInterval(dayNightTimer);
   }, [refresh]);
-  return { weather, loading, error, locationMode, refresh: () => refresh(true), chooseLocation, switchToDeviceLocation, clearSavedLocation };
+  return { weather, loading, error, locationMode, refresh: () => refresh(true), refreshDeviceLocation, chooseLocation, switchToDeviceLocation, clearSavedLocation };
 }

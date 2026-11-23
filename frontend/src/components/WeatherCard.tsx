@@ -1,8 +1,10 @@
 'use client';
-import { useEffect, useState, type FormEvent } from 'react';
-import { Check, Droplets, MapPin, Navigation, RefreshCw, Search, Sprout, Sun, X } from 'lucide-react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { authFetch } from '@/lib/api';
+import { Check, Droplets, MapPin, Navigation, RefreshCw, Search, Sprout, Sun, X, Bell, BellOff } from 'lucide-react';
 import { useWeather, describeWeather, type WeatherLocation } from '@/lib/hooks/useWeather';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
+import { plantWeatherInsights } from '@/lib/plantWeatherIntelligence';
 import styles from './WeatherCard.module.css';
 
 type CarePlan = { temperature?: string; pruning?: string; light?: { level?: string; detail?: string }; water?: { frequency_days?: number; instructions?: string }; humidity?: { level?: string; detail?: string }; common_issues?: Array<{ issue?: string; solution?: string }> };
@@ -10,7 +12,7 @@ type CarePlant = { id?: number | string; name?: string; species?: string; water_
 type LocationResult = { id: number; name: string; latitude: number; longitude: number; admin1?: string; country?: string };
 
 export default function WeatherCard({ plant, onLocationChange }: { plant?: CarePlant; onLocationChange?: (location: WeatherLocation | null) => void }) {
-  const { weather, loading, error, locationMode, refresh, chooseLocation, switchToDeviceLocation, clearSavedLocation } = useWeather();
+  const { weather, loading, error, locationMode, refresh, refreshDeviceLocation, chooseLocation, switchToDeviceLocation, clearSavedLocation } = useWeather();
   const { language } = useLanguage();
   const hi = language === 'hi';
   const [now, setNow] = useState(() => Date.now());
@@ -19,15 +21,24 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
   const [locationResults, setLocationResults] = useState<LocationResult[]>([]);
   const [locationSearching, setLocationSearching] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  const [notice, setNotice] = useState('');
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
   useEffect(() => {
-    onLocationChange?.(weather?.latitude !== undefined && weather?.longitude !== undefined
+    const tooBroadForLocalAdvice = locationMode === 'device' && weather?.locationAccuracyM !== null && weather?.locationAccuracyM !== undefined && weather.locationAccuracyM > 5000;
+    onLocationChange?.(!tooBroadForLocalAdvice && weather?.latitude !== undefined && weather?.longitude !== undefined
       ? { lat: weather.latitude, lon: weather.longitude, city: weather.city || 'Your area', region: weather.region || null, country: weather.country || null }
       : null);
-  }, [weather, onLocationChange]);
+  }, [weather, error, locationMode, onLocationChange]);
+  useEffect(() => {
+    if (!localStorage.getItem('user')) return;
+    setSignedIn(true);
+    authFetch('weather_preferences.php').then(response => response.json()).then(data => { if (data.status === 'success') setAlertsEnabled(Boolean(data.alerts_enabled)); }).catch(() => {});
+  }, []);
   let plan: CarePlan = {};
   try { plan = typeof plant?.care_plan === 'string' ? JSON.parse(plant.care_plan) : plant?.care_plan || {}; } catch { /* Older plants may have no structured care plan. */ }
   const frequency = Math.max(1, Number(plant?.water_freq || plan.water?.frequency_days) || 7);
@@ -40,9 +51,9 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
   // town, rather than rejecting a usable indoor/mobile reading.
   const approximateLocation = locationMode === 'device' && weather?.locationAccuracyM !== null && weather?.locationAccuracyM !== undefined && weather.locationAccuracyM > 5000;
   const localWeather = approximateLocation ? null : weather;
-  const locationNeedsAttention = !weather && !loading;
+  const locationNeedsAttention = (!weather || approximateLocation) && !loading;
   const condition = approximateLocation ? 'Select your city for accurate weather' : localWeather ? describeWeather(localWeather.condition) : error || 'Checking the weather…';
-  const city = approximateLocation || locationNeedsAttention ? 'Choose your city' : weather?.city || (weather ? 'Your location' : 'Locating…');
+  const city = approximateLocation || locationNeedsAttention ? 'Confirm your city' : weather?.city || (weather ? 'Your location' : 'Locating…');
   const cityRegion = !approximateLocation && weather?.region && weather.region.toLocaleLowerCase() !== city.toLocaleLowerCase()
     ? `${city}, ${weather.region}`
     : city;
@@ -144,6 +155,44 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
     if (approximateLocation || locationNeedsAttention) setLocationOpen(true);
   }, [approximateLocation, locationNeedsAttention]);
 
+  const plantInsights = localWeather ? plantWeatherInsights(localWeather, plant) : [];
+  const weatherAlerts = useMemo(() => localWeather ? buildWeatherAlerts(localWeather) : [], [localWeather]);
+  useEffect(() => {
+    if (!alertsEnabled || !localWeather || !weatherAlerts.length || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const alertKey = `${localWeather.city || localWeather.latitude.toFixed(2)}:${dateKey}:${weatherAlerts.join('|')}`;
+    const storageKey = `pnapana.weatherAlertShown:${alertKey}`;
+    try {
+      if (sessionStorage.getItem(storageKey)) return;
+      const title = plant?.name ? `Weather care for ${plant.name}` : 'Weather care alert';
+      const body = weatherAlerts[0];
+      new Notification(title, { body, icon: '/icon-192.png', tag: alertKey });
+      sessionStorage.setItem(storageKey, '1');
+    } catch { /* In-app alerts remain visible if the browser blocks display. */ }
+  }, [alertsEnabled, localWeather, weatherAlerts, dateKey, plant?.name]);
+  const toggleAlerts = async () => {
+    if (!signedIn) { setNotice('Sign in to save weather alert preferences.'); return; }
+    if (alertsEnabled) {
+      try {
+        const response = await authFetch('weather_preferences.php', { method: 'POST', body: JSON.stringify({ alerts_enabled: false }) });
+        const data = await response.json();
+        if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not update alert settings.');
+      } catch (cause) { setNotice(cause instanceof Error ? cause.message : 'Could not update alert settings.'); return; }
+      setAlertsEnabled(false);
+      setNotice('Weather alerts turned off.');
+      return;
+    }
+    if (!('Notification' in window)) { setNotice('This browser does not support notifications. In-app weather guidance is still available.'); return; }
+    const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
+    if (permission !== 'granted') { setNotice('Notifications are blocked. You can still see weather guidance here.'); return; }
+    try {
+      const response = await authFetch('weather_preferences.php', { method: 'POST', body: JSON.stringify({ alerts_enabled: true }) });
+      const data = await response.json();
+      if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not save alert preference.');
+    } catch (cause) { setNotice(cause instanceof Error ? cause.message : 'Could not save alert preference.'); return; }
+    setAlertsEnabled(true);
+    setNotice('Weather alerts enabled for this browser.');
+  };
+
   const searchLocation = async (event: FormEvent) => {
     event.preventDefault();
     const query = locationQuery.trim();
@@ -179,10 +228,11 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
           <span>{condition}{plant && localWeather ? ` · ${humidityText} Humidity` : ''}</span>
         </div>
         {plant ? <span className={styles.weatherBased}>{localWeather ? 'Weather-based' : 'Location needed'}</span> : <span className={styles.humidity}><Droplets size={14} /> {localWeather?.humidity == null ? '—' : `${localWeather.humidity}%`} {hi ? 'नमी' : 'Humidity'}</span>}
-        <button className={styles.refresh} onClick={refresh} disabled={loading} aria-label={hi ? 'मौसम रिफ्रेश करें' : 'Refresh weather'} title={weather?.location || 'Refresh local weather'}><RefreshCw size={18} className={loading ? styles.spinning : ''} /></button>
+        <button className={styles.refresh} onClick={refreshDeviceLocation} disabled={loading} aria-label="Refresh current location and weather" title="Refresh current location and weather"><Navigation size={17} className={loading ? styles.spinning : ''} /></button>
+        <button className={styles.refresh} onClick={refresh} disabled={loading} aria-label={hi ? 'मौसम रिफ्रेश करें' : 'Refresh weather'} title={weather?.location || 'Refresh weather'}><RefreshCw size={18} className={loading ? styles.spinning : ''} /></button>
       </div>
       {locationOpen && <div className={styles.locationPicker} aria-label="Choose weather location">
-        <div className={styles.locationPickerHeader}><div><strong>{approximateLocation || locationNeedsAttention ? 'Set your city for accurate weather' : 'Set weather location'}</strong><span>{approximateLocation ? 'Your device supplied only an approximate area. Select your actual city below.' : locationNeedsAttention ? 'Location permission was not available. Search for your city, or retry using your device location.' : 'Choose your city if device location is inaccurate.'}</span></div><button type="button" onClick={() => setLocationOpen(false)} aria-label="Close location picker"><X size={17} /></button></div>
+        <div className={styles.locationPickerHeader}><div><strong>{approximateLocation || locationNeedsAttention ? 'Confirm your city for local care' : 'Set weather location'}</strong><span>{approximateLocation ? 'GPS accuracy is too broad for local plant advice. Enter the city where your plants are.' : locationNeedsAttention ? 'Allow location access or enter the city where your plants are.' : 'Use GPS or enter the city where your plants are.'}</span></div><button type="button" onClick={() => setLocationOpen(false)} aria-label="Close location picker"><X size={17} /></button></div>
         <form className={styles.locationSearch} onSubmit={searchLocation}>
           <label htmlFor="weather-city">City or postal code</label>
           <div><input id="weather-city" value={locationQuery} onChange={event => setLocationQuery(event.target.value)} placeholder="e.g. Karnal, Haryana" autoComplete="off" /><button type="submit" disabled={locationSearching}><Search size={16} />{locationSearching ? 'Searching…' : 'Search'}</button></div>
@@ -195,7 +245,7 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
             setLocationResults([]);
           }}><MapPin size={15} /><span><strong>{result.name}</strong><small>{[result.admin1, result.country].filter(Boolean).join(', ')}</small></span></button></li>)}
         </ul>}
-        <button type="button" className={styles.deviceLocation} onClick={async () => { await switchToDeviceLocation(); }} disabled={loading}><Navigation size={16} /> Use my current location{locationMode === 'device' && !locationNeedsAttention ? ' (current)' : ''}</button>
+        <button type="button" className={styles.deviceLocation} onClick={async () => { await switchToDeviceLocation(); }} disabled={loading}><Navigation size={16} /> Use my current location{locationMode === 'device' && !locationNeedsAttention && !approximateLocation ? ' (current)' : ''}</button>
         {locationMode === 'manual' && <button type="button" className={styles.deviceLocation} onClick={() => { clearSavedLocation(); setLocationQuery(''); setLocationResults([]); }}>Clear selected city</button>}
       </div>}
       {weather && <div className={styles.locationMeta}>
@@ -205,6 +255,16 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
         {approximateLocation && <span>Approximate GPS area</span>}
         {weather.updatedAt && <time dateTime={weather.updatedAt}>Updated {formatUpdatedAt(weather.updatedAt)}</time>}
       </div>}
+      {error && <p className={styles.locationError} role="status">{error}</p>}
+      {localWeather && <section className={styles.forecast} aria-label="Weather forecast">
+        <div className={styles.forecastHeading}><div><strong>Local forecast</strong><small>Open-Meteo forecast data · updated {formatUpdatedAt(localWeather.updatedAt || '')}</small></div><button type="button" onClick={toggleAlerts}>{alertsEnabled ? <BellOff size={16} /> : <Bell size={16} />}{alertsEnabled ? 'Turn alerts off' : 'Enable browser alerts'}</button></div>
+        {alertsEnabled && <small className={styles.alertScope}>Browser alerts appear while Pnapana is open. Weather stays on this device and is not saved to your account.</small>}
+        {notice && <p className={styles.locationError} role="status">{notice}</p>}
+        {weatherAlerts.length > 0 && <ul className={styles.alertList}>{weatherAlerts.map(alert => <li key={alert}>{alert}</li>)}</ul>}
+        {plant && plantInsights.length > 0 && <div className={styles.insights}><strong>Plant care guidance</strong>{plantInsights.map(item => <p key={item.kind}>{item.text}</p>)}<small>Guidance uses forecast data and saved plant details. Check the soil before watering.</small></div>}
+        <div className={styles.forecastTitle}>Next 24 hours</div><div className={styles.hourly}>{localWeather.hourlyForecast?.slice(0, 8).map((hour, index) => <div key={`${hour.time}-${index}`}><span>{hour.time ? new Date(hour.time).toLocaleTimeString(undefined,{hour:'numeric'}) : '—'}</span><strong>{hour.temperature === null ? '—' : `${Math.round(hour.temperature)}°`}</strong><small>{hour.rain_probability == null ? '—' : `${hour.rain_probability}% rain`}</small></div>)}</div>
+        <div className={styles.forecastTitle}>7 day outlook</div><div className={styles.daily}>{localWeather.dailyForecast?.map((day, index) => <div key={`${day.date}-${index}`}><strong>{day.date ? new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'}) : '—'}</strong><span>{day.min_c == null ? '—' : Math.round(day.min_c)}° / {day.max_c == null ? '—' : Math.round(day.max_c)}°</span><small>{day.rain_probability == null ? '—' : `${day.rain_probability}% rain`} · UV {day.uv_index ?? '—'}</small></div>)}</div>
+      </section>}
       {!plant ? (
         <div className={styles.tip}><span aria-hidden="true">🌱</span><p><strong>{hi ? 'आज की देखभाल: ' : "Today's Weather Care Tip: "}</strong>{localWeather && <>{localWeather.temp} °C, {humidityText} humidity — </>}{tip}</p></div>
       ) : (
@@ -239,6 +299,21 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
       )}
     </section>
   );
+}
+
+function buildWeatherAlerts(weather: import('@/lib/hooks/useWeather').Weather): string[] {
+  const alerts: string[] = [];
+  const nextHours = weather.hourlyForecast.slice(0, 12);
+  const rainProbability = Math.max(weather.rainProbability ?? 0, weather.dailyForecast[0]?.rain_probability ?? 0, ...nextHours.map(hour => hour.rain_probability ?? 0));
+  const rainMm = weather.dailyForecast[0]?.precipitation_mm ?? weather.rainMm ?? 0;
+  const wind = Math.max(weather.windSpeedKmh ?? 0, weather.dailyForecast[0]?.wind_kmh ?? 0, ...nextHours.map(hour => hour.wind_kmh ?? 0));
+  const uv = Math.max(weather.uvIndex ?? 0, weather.dailyForecast[0]?.uv_index ?? 0, ...nextHours.map(hour => hour.uv_index ?? 0));
+  if (rainProbability >= 60) alerts.push(`Rain is likely today (${Math.round(rainProbability)}%). Check outdoor plants before watering.`);
+  if (wind >= 35) alerts.push(`Strong winds near ${Math.round(wind)} km/h. Protect fragile outdoor plants.`);
+  if (uv >= 8) alerts.push(`Very high UV (${Math.round(uv)}). Shade sensitive plants during peak sun.`);
+  if (weather.temp >= 35 || (weather.dailyForecast[0]?.max_c ?? 0) >= 35) alerts.push(`High temperatures are expected. Check soil moisture more frequently.`);
+  if (rainMm >= 15) alerts.push(`Heavy rain (${Math.round(rainMm)} mm) may waterlog outdoor pots.`);
+  return alerts;
 }
 
 function formatUpdatedAt(value: string) {

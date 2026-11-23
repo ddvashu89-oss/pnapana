@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { ArrowUpRight, Bot, CalendarClock, Droplets, House, Leaf, LoaderCircle, Sun, TriangleAlert } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import Loader from '@/components/Loader';
+import WeatherCard from '@/components/WeatherCard';
+import type { WeatherLocation } from '@/lib/hooks/useWeather';
 import styles from './Manager.module.css';
 
 type Plant = {
@@ -26,6 +28,7 @@ export default function GardenManager() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [asking, setAsking] = useState(false);
+  const [weatherLocation, setWeatherLocation] = useState<WeatherLocation | null>(null);
 
   useEffect(() => {
     if (!localStorage.getItem('user')) { router.push('/login'); return; }
@@ -40,7 +43,7 @@ export default function GardenManager() {
     if (!question.trim()) return;
     setAsking(true); setError(''); setAnswer('');
     try {
-      const response = await authFetch('garden_manager.php', { method: 'POST', body: JSON.stringify({ question: question.trim() }) });
+      const response = await authFetch('garden_manager.php', { method: 'POST', body: JSON.stringify({ question: question.trim(), weather_location: weatherLocation ? { lat: weatherLocation.lat, lon: weatherLocation.lon } : null }) });
       const data = await response.json();
       if (data.status === 'success') setAnswer(data.answer);
       else setError(data.message || 'Your manager could not answer right now.');
@@ -65,8 +68,10 @@ export default function GardenManager() {
       <article><span><CalendarClock size={18} /> Watering logs</span><strong>{summary.waterings_logged_30d}</strong><small>recorded in the last 30 days</small></article>
     </section>}
 
+    <WeatherCard onLocationChange={setWeatherLocation} />
+
     <section className={styles.askCard}>
-      <div className={styles.askHeading}><span className={styles.botIcon}><Bot size={21} /></span><div><h2>Ask about your garden</h2><p>Questions are answered using your saved plant and care history.</p></div></div>
+      <div className={styles.askHeading}><span className={styles.botIcon}><Bot size={21} /></span><div><h2>Ask about your garden</h2><p>Questions use your saved plant history and, when a GPS or chosen city is available, verified local weather.</p></div></div>
       {aiAllowed ? <form onSubmit={askManager} className={styles.askForm}>
         <input maxLength={500} value={question} onChange={event => setQuestion(event.target.value)} placeholder="Which plant needs attention today?" aria-label="Ask your plant manager" />
         <button type="submit" disabled={asking || !question.trim()}>{asking ? <><LoaderCircle size={17} className={styles.spin} /> Thinking…</> : <>Ask manager <ArrowUpRight size={16} /></>}</button>

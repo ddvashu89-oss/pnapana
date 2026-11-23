@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../cors.php';
-pnapana_cors('GET, OPTIONS');
+pnapana_cors('POST, OPTIONS');
 header('Content-Type: application/json; charset=UTF-8');
-header('Cache-Control: public, max-age=120, stale-while-revalidate=300');
+header('Cache-Control: no-store');
 
 function weather_fetch_json(string $url): ?array {
     if (function_exists('curl_init')) {
@@ -43,13 +43,24 @@ function weather_model_data(float $lat, float $lon): ?array {
     $query = http_build_query([
         'latitude' => $lat,
         'longitude' => $lon,
-        'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,cloud_cover,is_day,shortwave_radiation',
-        'hourly' => 'shortwave_radiation',
-        'daily' => 'sunrise,sunset',
-        'forecast_days' => 1,
+        'current' => 'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,is_day,shortwave_radiation',
+        'hourly' => 'temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,rain,weather_code,wind_speed_10m,uv_index,shortwave_radiation',
+        'daily' => 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,wind_direction_10m_dominant,uv_index_max,sunrise,sunset,weather_code',
+        'forecast_days' => 7,
         'timezone' => 'auto',
     ]);
-    return weather_fetch_json('https://api.open-meteo.com/v1/forecast?' . $query);
+    $bucketLat = round($lat, 2);
+    $bucketLon = round($lon, 2);
+    $cacheKey = sys_get_temp_dir() . '/pnapana-weather-' . hash('sha256', $bucketLat . ',' . $bucketLon) . '.json';
+    $cached = null;
+    $cacheAge = is_file($cacheKey) ? time() - (int)filemtime($cacheKey) : PHP_INT_MAX;
+    if ($cacheAge <= 86400) {
+        $cached = json_decode((string)file_get_contents($cacheKey), true);
+        if ($cacheAge <= 600 && is_array($cached)) return $cached;
+    }
+    $result = weather_fetch_json('https://api.open-meteo.com/v1/forecast?' . $query);
+    if (is_array($result)) @file_put_contents($cacheKey, json_encode($result), LOCK_EX);
+    return is_array($result) ? $result : (is_array($cached) ? $cached : null);
 }
 
 function weather_wmo(int $code): array {
@@ -149,24 +160,9 @@ function weather_observation(float $lat, float $lon): ?array {
     ];
 }
 
-$lat = filter_var($_GET['lat'] ?? null, FILTER_VALIDATE_FLOAT);
-$lon = filter_var($_GET['lon'] ?? null, FILTER_VALIDATE_FLOAT);
-$autoLocation = null;
-if (($_GET['auto'] ?? '') === '1' && function_exists('curl_init')) {
-    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
-    if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
-        $geo = weather_fetch_json('https://ipapi.co/' . rawurlencode($ip) . '/json/');
-        if (is_array($geo) && is_numeric($geo['latitude'] ?? null) && is_numeric($geo['longitude'] ?? null)) {
-            $lat = (float)$geo['latitude'];
-            $lon = (float)$geo['longitude'];
-            $autoLocation = [
-                'city' => trim((string)($geo['city'] ?? '')) ?: null,
-                'region' => trim((string)($geo['region'] ?? '')) ?: null,
-                'country' => trim((string)($geo['country_name'] ?? '')) ?: null,
-            ];
-        }
-    }
-}
+$request = json_decode(file_get_contents('php://input'), true);
+$lat = filter_var(is_array($request) ? ($request['lat'] ?? null) : null, FILTER_VALIDATE_FLOAT);
+$lon = filter_var(is_array($request) ? ($request['lon'] ?? null) : null, FILTER_VALIDATE_FLOAT);
 if ($lat === false || $lon === false || $lat === null || $lon === null || $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Valid latitude and longitude are required.']);
@@ -175,7 +171,9 @@ if ($lat === false || $lon === false || $lat === null || $lon === null || $lat <
 
 $model = weather_model_data((float)$lat, (float)$lon);
 $current = is_array($model['current'] ?? null) ? $model['current'] : [];
-$solarValues = is_array($model['hourly']['shortwave_radiation'] ?? null) ? array_filter($model['hourly']['shortwave_radiation'], 'is_numeric') : [];
+$hourly = is_array($model['hourly'] ?? null) ? $model['hourly'] : [];
+$daily = is_array($model['daily'] ?? null) ? $model['daily'] : [];
+$solarValues = is_array($hourly['shortwave_radiation'] ?? null) ? array_filter($hourly['shortwave_radiation'], 'is_numeric') : [];
 $sunrise = $model['daily']['sunrise'][0] ?? null;
 $sunset = $model['daily']['sunset'][0] ?? null;
 $timezone = is_string($model['timezone'] ?? null) ? $model['timezone'] : null;
@@ -198,7 +196,7 @@ if ($weather) {
         'humidity' => (int)round((float)$current['relative_humidity_2m']),
         'condition' => $condition,
         'icon' => $icon,
-        'cloud' => is_numeric($current['cloud_cover'] ?? null) ? (int)$current['cloud_cover'] : 0,
+        'cloud' => is_numeric($current['cloud_cover'] ?? null) ? (int)$current['cloud_cover'] : null,
         'location' => 'Weather model near your location',
         'source' => 'forecast-model',
         'updatedAt' => $updatedAt,
@@ -216,5 +214,30 @@ $weather['sunrise'] = $sunrise;
 $weather['sunset'] = $sunset;
 $weather['timezone'] = $timezone;
 $weather['isDay'] = (int)($current['is_day'] ?? 1) === 1;
-echo json_encode(['status' => 'success', 'weather' => $weather, 'location' => $autoLocation ? array_merge($autoLocation, ['lat' => $lat, 'lon' => $lon]) : null]);
+$hourlyForecast = [];
+$hourlyCount = min(24, count($hourly['time'] ?? []));
+for ($i = 0; $i < $hourlyCount; $i++) {
+    $hourlyForecast[] = ['time' => $hourly['time'][$i] ?? null, 'temperature' => $hourly['temperature_2m'][$i] ?? null,
+        'rain_probability' => $hourly['precipitation_probability'][$i] ?? null, 'precipitation_mm' => $hourly['precipitation'][$i] ?? null,
+        'wind_kmh' => $hourly['wind_speed_10m'][$i] ?? null, 'uv_index' => $hourly['uv_index'][$i] ?? null,
+        'weather_code' => $hourly['weather_code'][$i] ?? null];
+}
+$dailyForecast = [];
+$dailyCount = min(7, count($daily['time'] ?? []));
+for ($i = 0; $i < $dailyCount; $i++) {
+    $dailyForecast[] = ['date' => $daily['time'][$i] ?? null, 'min_c' => $daily['temperature_2m_min'][$i] ?? null,
+        'max_c' => $daily['temperature_2m_max'][$i] ?? null, 'rain_probability' => $daily['precipitation_probability_max'][$i] ?? null,
+        'precipitation_mm' => $daily['precipitation_sum'][$i] ?? null, 'wind_kmh' => $daily['wind_speed_10m_max'][$i] ?? null,
+        'wind_direction' => $daily['wind_direction_10m_dominant'][$i] ?? null, 'uv_index' => $daily['uv_index_max'][$i] ?? null,
+        'weather_code' => $daily['weather_code'][$i] ?? null];
+}
+$weather['precipitationMm'] = is_numeric($current['precipitation'] ?? null) ? (float)$current['precipitation'] : null;
+$weather['rainMm'] = is_numeric($current['rain'] ?? null) ? (float)$current['rain'] : null;
+$weather['rainProbability'] = is_numeric($hourly['precipitation_probability'][0] ?? null) ? (int)$hourly['precipitation_probability'][0] : null;
+$weather['windSpeedKmh'] = is_numeric($current['wind_speed_10m'] ?? null) ? (float)$current['wind_speed_10m'] : null;
+$weather['windDirection'] = is_numeric($current['wind_direction_10m'] ?? null) ? (int)$current['wind_direction_10m'] : null;
+$weather['uvIndex'] = is_numeric($hourly['uv_index'][0] ?? null) ? (float)$hourly['uv_index'][0] : null;
+$weather['hourlyForecast'] = $hourlyForecast;
+$weather['dailyForecast'] = $dailyForecast;
+echo json_encode(['status' => 'success', 'weather' => $weather]);
 ?>

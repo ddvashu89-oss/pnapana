@@ -6,6 +6,7 @@ header('Cache-Control: no-store');
 require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../account_helper.php';
 require_once __DIR__ . '/../gemini_helper.php';
+require_once __DIR__ . '/../care_weather_helper.php';
 require_once __DIR__ . '/auth.php';
 
 $user = authenticate($pdo);
@@ -76,8 +77,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['status' => 'error', 'code' => 'PLAN_REQUIRED', 'message' => 'Personal AI chat is included with Premium. Your garden overview is available here.']);
         exit;
     }
+    $weatherContext = null;
+    $lat = filter_var($data['weather_location']['lat'] ?? null, FILTER_VALIDATE_FLOAT);
+    $lon = filter_var($data['weather_location']['lon'] ?? null, FILTER_VALIDATE_FLOAT);
+    if ($lat !== false && $lon !== false && $lat !== null && $lon !== null && $lat >= -90 && $lat <= 90 && $lon >= -180 && $lon <= 180) {
+        $weatherContext = pnapana_care_weather_context((float)$lat, (float)$lon);
+    }
     $apiKey = pnapana_shared_gemini_key($pdo);
-    $prompt = "You are Pnapana's personal plant-care manager. Answer in the language used by the user. Use only this garden data when making claims about their own plants. If a detail is unknown, say so. Give practical, concise guidance.\n\nGarden data:\n" . json_encode($plants, JSON_UNESCAPED_UNICODE) . "\n\nQuestion: " . $question;
+    $prompt = "You are Pnapana's personal plant-care manager. Answer in the language used by the user. Use only the garden data and verified Open-Meteo weather JSON supplied below for factual claims. Weather readings are observations/forecasts; recommendations are your reasoning. If weather is missing, say it is unavailable and never invent conditions. Use soil moisture and plant care history before advising watering. Give practical, concise guidance.\n\nGarden data:\n" . json_encode($plants, JSON_UNESCAPED_UNICODE) . "\n\nVerified local weather (null means unavailable):\n" . json_encode($weatherContext, JSON_UNESCAPED_UNICODE) . "\n\nQuestion: " . $question;
     $answer = gemini_text_response($prompt, $apiKey);
     if ($answer === null) {
         http_response_code(503);
