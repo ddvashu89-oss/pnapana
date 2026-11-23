@@ -53,6 +53,7 @@ type ReverseGeocodeResponse = {
 let cachedWeather: { key: string; value: Weather; expiresAt: number } | null = null;
 let pendingWeather: { key: string; promise: Promise<Weather> } | null = null;
 const WEATHER_LOCATION_KEY = 'pnapana.weatherLocation';
+const WEATHER_LOCATION_MODE_KEY = 'pnapana.weatherLocationMode';
 
 function savedLocation(): Coordinates | null {
   try {
@@ -210,7 +211,10 @@ export function useWeather() {
     setLoading(true);
     setError(null);
     try {
-      const stored = savedLocation();
+      // Legacy saved cities had no explicit preference marker. Treat those as
+      // stale and request the device's current location instead of silently
+      // keeping an old city forever.
+      const stored = localStorage.getItem(WEATHER_LOCATION_MODE_KEY) === 'manual' ? savedLocation() : null;
       setLocationMode(stored ? 'manual' : 'device');
       const position = stored || await bestDeviceLocation(force);
       const nextWeather = await fetchWeather(position, force);
@@ -227,6 +231,7 @@ export function useWeather() {
   }, []);
   const chooseLocation = useCallback(async (location: WeatherLocation) => {
     localStorage.setItem(WEATHER_LOCATION_KEY, JSON.stringify(location));
+    localStorage.setItem(WEATHER_LOCATION_MODE_KEY, 'manual');
     setLocationMode('manual');
     setLoading(true);
     setError(null);
@@ -244,11 +249,13 @@ export function useWeather() {
   }, []);
   const switchToDeviceLocation = useCallback(async () => {
     localStorage.removeItem(WEATHER_LOCATION_KEY);
+    localStorage.setItem(WEATHER_LOCATION_MODE_KEY, 'device');
     setLocationMode('device');
     await refresh(true);
   }, [refresh]);
   const clearSavedLocation = useCallback(() => {
     localStorage.removeItem(WEATHER_LOCATION_KEY);
+    localStorage.setItem(WEATHER_LOCATION_MODE_KEY, 'device');
     cachedWeather = null;
     setLocationMode('device');
     setWeather(null);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Camera, Check, ImagePlus, Leaf, RotateCcw, Sparkles, X } from 'lucide-react';
 import { authFetch } from '@/lib/api';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
@@ -116,6 +116,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
   const [showCustom, setShowCustom] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const requiredCount = PHOTO_SLOTS.filter(slot => slot.required && photos[slot.id]).length;
   const images = PHOTO_SLOTS.map(slot => photos[slot.id]).filter(Boolean);
   const hasBlockingQuality = false; // Quality notes guide the customer; they do not trap legitimate pale or flowering plants.
@@ -154,15 +155,29 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
       setNeedsCloseup(Boolean(data.uncertain && images.length < 2));
       setSelectedSpecies(data.strong_match ? data.candidates[0]?.species || '' : '');
       setShowCustom(false);
-      if (data.strong_match && data.candidates[0]?.species) {
-        await saveIdentifiedPlant(data, data.candidates[0].species, data.candidates[0].common_name || data.candidates[0].species, false);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Identification failed. Please retake the photos.');
     } finally {
       setBusy(false);
     }
   };
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) { event.preventDefault(); onClose(); }
+      if (event.key !== 'Tab') return;
+      const dialog = document.querySelector('[data-plant-identification-dialog]') as HTMLElement | null;
+      if (!dialog) return;
+      const focusable = [...dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, [href]')].filter(el => !el.hasAttribute('disabled') && el.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0]; const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [busy, onClose]);
 
   const saveIdentifiedPlant = async (result: ScanResult, chosen: string, commonName: string, correction: boolean) => {
       const response = await authFetch('confirm_identification.php', {
@@ -201,11 +216,11 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
 
   return (
     <div className={styles.overlay} role="presentation">
-      <section className={styles.wizard} role="dialog" aria-modal="true" aria-labelledby="plant-id-title">
+      <section className={styles.wizard} data-plant-identification-dialog role="dialog" aria-modal="true" aria-labelledby="plant-id-title">
         <header className={styles.header}>
           <div className={styles.brandMark}><Leaf size={22} /></div>
           <div><span className={styles.eyebrow}>{hi ? 'पौधे की पहचान' : 'PLANT IDENTIFICATION'}</span><h2 id="plant-id-title">{hi ? 'पौधे के संकेतों की फ़ोटो लें' : 'Photograph the clues'}</h2></div>
-          <button type="button" className={styles.close} onClick={onClose} aria-label={hi ? 'पहचान बंद करें' : 'Close plant identification'}><X size={20} /></button>
+          <button ref={closeButtonRef} type="button" className={styles.close} onClick={onClose} aria-label={hi ? 'पहचान बंद करें' : 'Close plant identification'}><X size={20} /></button>
         </header>
 
         {!scan ? (
@@ -237,7 +252,7 @@ export default function PlantIdentificationWizard({ onClose, onConfirmed }: Prop
           <>
             <div className={`${styles.resultBanner} ${scan.strong_match ? styles.strong : styles.uncertain}`}>
               {scan.strong_match ? <Check size={21} /> : <Leaf size={21} />}
-              <div><strong>{scan.strong_match ? (hi ? 'पौधा पहचाना गया' : 'Plant identified') : (hi ? 'हमें पूरी तरह भरोसा नहीं है' : "We’re not fully sure")}</strong><p>{scan.strong_match ? (hi ? 'आपका देखभाल प्लान तैयार हो रहा है…' : 'Your care plan is being prepared…') : needsCloseup ? (hi ? 'करीब से पत्ते या फूल की एक और फ़ोटो जोड़ें।' : 'Add one close-up leaf or flower photo before choosing.') : (hi ? 'नाम, पत्ते और पैटर्न मिलाकर चुनें।' : 'Compare the name, leaf shape, and pattern before choosing.')}</p></div>
+              <div><strong>{scan.strong_match ? (hi ? 'पौधा पहचाना गया' : 'Plant identified') : (hi ? 'हमें पूरी तरह भरोसा नहीं है' : "We’re not fully sure")}</strong><p>{scan.strong_match ? (hi ? 'कृपया पहचान जाँचें—गलत होने पर नीचे सुधारें।' : 'Please review this match. Correct it below if it is wrong.') : needsCloseup ? (hi ? 'करीब से पत्ते या फूल की एक और फ़ोटो जोड़ें।' : 'Add one close-up leaf or flower photo before choosing.') : (hi ? 'नाम, पत्ते और पैटर्न मिलाकर चुनें।' : 'Compare the name, leaf shape, and pattern before choosing.')}</p></div>
             </div>
             <div className={styles.candidates} role="radiogroup" aria-label="Plant identification choices">
               {scan.candidates.map(candidate => (

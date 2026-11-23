@@ -43,17 +43,22 @@ export default function JournalPage() {
   const load = useCallback(async () => {
     if (!localStorage.getItem('user')) { router.replace('/login'); return; }
     try {
-      const [plantsResult, journalResult, diseaseResult, careResult, caregiverResult] = await Promise.allSettled(['get_plants.php', 'plant_journal.php', 'disease_followups.php', 'plant_care_profile.php', 'caregiver_tasks.php'].map(url => authFetch(url).then(result)));
-      if (plantsResult.status === 'rejected') throw plantsResult.reason;
-      const p = plantsResult.value;
+      // Render the workspace as soon as the essential plant list arrives. The
+      // secondary timelines can fill in independently instead of blocking the
+      // whole page behind a multi-request spinner.
+      const p = await authFetch('get_plants.php').then(result);
+      const ps: Plant[] = p.plants || []; const first = ps[0] ? String(ps[0].id) : '';
+      setPlants(ps);
+      setJournal(v => ({ ...v, plant_id: v.plant_id || first })); setRecovery(v => ({ ...v, plant_id: v.plant_id || first })); setCarePlant(v => v || first); setHelper(v => ({ ...v, plant_id: v.plant_id || first }));
+      setLoading(false);
+      const results = await Promise.allSettled(['plant_journal.php', 'disease_followups.php', 'plant_care_profile.php', 'caregiver_tasks.php'].map(url => authFetch(url).then(result)));
+      const [journalResult, diseaseResult, careResult, caregiverResult] = results;
       const j = journalResult.status === 'fulfilled' ? journalResult.value : { entries: [] };
       const d = diseaseResult.status === 'fulfilled' ? diseaseResult.value : { cases: [] };
       const c = careResult.status === 'fulfilled' ? careResult.value : { profiles: [], season: { label: 'Seasonal', message: 'Review light, water, and humidity as the season changes.' } };
       const h = caregiverResult.status === 'fulfilled' ? caregiverResult.value : { sent_invites: [], assigned_tasks: [] };
-      const ps: Plant[] = p.plants || []; const first = ps[0] ? String(ps[0].id) : '';
-      setPlants(ps); setEntries(j.entries || []); setCases(d.cases || []); setProfiles(c.profiles || []); setSeason(c.season || { label: 'Seasonal', message: 'Review light, water, and humidity as the season changes.' }); setInvites(h.sent_invites || []); setTasks(h.assigned_tasks || []);
-      setJournal(v => ({ ...v, plant_id: v.plant_id || first })); setRecovery(v => ({ ...v, plant_id: v.plant_id || first })); setCarePlant(v => v || first); setHelper(v => ({ ...v, plant_id: v.plant_id || first }));
-      if ([journalResult, diseaseResult, careResult, caregiverResult].some(item => item.status === 'rejected')) setNotice({ ok: false, text: 'Some Journal details are temporarily unavailable. You can still use the sections that loaded.' });
+      setEntries(j.entries || []); setCases(d.cases || []); setProfiles(c.profiles || []); setSeason(c.season || { label: 'Seasonal', message: 'Review light, water, and humidity as the season changes.' }); setInvites(h.sent_invites || []); setTasks(h.assigned_tasks || []);
+      if (results.some(item => item.status === 'rejected')) setNotice({ ok: false, text: 'Some Journal details are temporarily unavailable. You can still use the sections that loaded.' });
     } catch (e) { setNotice({ ok: false, text: e instanceof Error ? e.message : 'Could not load the growth workspace.' }); } finally { setLoading(false); }
   }, [router]);
   useEffect(() => { load(); }, [load]);

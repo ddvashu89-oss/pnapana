@@ -33,6 +33,8 @@
   align-items: center;
   gap: 0.8rem;
 }
+.errorState { display:flex; align-items:center; gap:12px; margin:0 0 18px; padding:12px 14px; border:1px solid #e9c6bf; border-radius:12px; background:#fff3f0; color:#7d3c32; font-size:13px; }
+.errorState button { margin-left:auto; border:1px solid #c98d82; border-radius:8px; padding:7px 10px; background:#fff; color:#7d3c32; font-weight:700; cursor:pointer; }
 
 .coinPill {
   display: flex;

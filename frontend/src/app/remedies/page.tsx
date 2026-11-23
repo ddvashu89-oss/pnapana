@@ -92,11 +92,13 @@ export default function HomeRemedies() {
     }
     const params = new URLSearchParams(window.location.search);
     setSelectedPlantId(params.get('plant_id') || '');
+    // General remedies are local, so show them immediately while the optional
+    // plant-specific list loads in the background.
+    setReady(true);
     authFetch('get_plants.php')
       .then(response => response.json())
       .then(data => { if (data.status === 'success' && Array.isArray(data.plants)) setPlants(data.plants); })
-      .catch(() => {})
-      .finally(() => setReady(true));
+      .catch(() => {});
   }, [router]);
 
   const visibleRemedies = useMemo<Remedy[]>(() => {

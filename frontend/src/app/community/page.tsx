@@ -41,11 +41,15 @@ export default function Community() {
   const [isPosting, setIsPosting] = useState(false);
   const [justEarned, setJustEarned] = useState<number | null>(null);
   const [likingIds, setLikingIds] = useState<Set<number>>(new Set());
+  const [loadError, setLoadError] = useState('');
+  const [postError, setPostError] = useState('');
 
   function fetchPosts() {
+    setLoadError('');
     authFetch('get_community_posts.php')
       .then(res => res.json())
-      .then(data => { if (data.status === 'success') setPosts(data.posts); })
+      .then(data => { if (data.status === 'success') setPosts(data.posts); else throw new Error(data.message || 'Could not load the community feed.'); })
+      .catch(error => setLoadError(error instanceof Error ? error.message : 'Could not load the community feed.'))
       .finally(() => setIsLoading(false));
   }
 
@@ -93,6 +97,7 @@ export default function Community() {
     e.preventDefault();
     if (!caption.trim() || !user) return;
     setIsPosting(true);
+    setPostError('');
     try {
       const selectedPlant = myPlants.find(p => String(p.id) === selectedPlantId);
       const res = await authFetch('create_post.php', {
@@ -123,9 +128,11 @@ export default function Community() {
         setJustEarned(data.coins_earned);
         setTimeout(() => setJustEarned(null), 2500);
         setIsComposerOpen(false);
+      } else {
+        setPostError(data.message || 'Could not share this post.');
       }
     } catch (err) {
-      console.error('Failed to create post', err);
+      setPostError(err instanceof Error ? err.message : 'Could not share this post.');
     } finally {
       setIsPosting(false);
     }
@@ -185,6 +192,8 @@ export default function Community() {
           <button className={styles.shareBtn} onClick={openComposer}>{t('community.sharePlant')}</button>
         </div>
       </header>
+      {loadError && <div role="alert" className={styles.errorState}>{loadError} <button type="button" onClick={fetchPosts}>Try again</button></div>}
+      {postError && <div role="alert" className={styles.errorState}>{postError}</div>}
 
       {justEarned !== null && (
         <motion.div
