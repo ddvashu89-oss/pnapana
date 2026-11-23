@@ -108,8 +108,19 @@ async function bestDeviceLocation(force = false): Promise<Coordinates> {
     // GPS can be slow indoors. Once permission is granted, a short network-
     // assisted fallback still gives a city-level result for weather rather
     // than leaving the customer on a loading state.
-    if (!(error instanceof Error) || !error.message.startsWith('Location request timed out')) throw error;
-    return requestDeviceLocation({ enableHighAccuracy: false, timeout: 7_000, maximumAge: force ? 0 : 300_000 });
+    if (error instanceof Error && error.message.startsWith('Location request timed out')) {
+      try {
+        return await requestDeviceLocation({ enableHighAccuracy: false, timeout: 7_000, maximumAge: force ? 0 : 300_000 });
+      } catch { /* Continue to automatic network-location fallback. */ }
+    }
+    // GPS is unavailable in some in-app browsers and on desktops without
+    // location services. Resolve a city automatically from the public IP so
+    // the customer never has to type or choose a city just to see weather.
+    const response = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+    if (!response.ok) throw error;
+    const data = await response.json() as { latitude?: number; longitude?: number; city?: string; region?: string; country_name?: string };
+    if (!Number.isFinite(data.latitude) || !Number.isFinite(data.longitude)) throw error;
+    return { lat: Number(data.latitude), lon: Number(data.longitude), accuracy: null, city: data.city?.trim(), region: data.region?.trim() || null, country: data.country_name?.trim() || null };
   }
 }
 
