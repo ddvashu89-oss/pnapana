@@ -113,14 +113,7 @@ async function bestDeviceLocation(force = false): Promise<Coordinates> {
         return await requestDeviceLocation({ enableHighAccuracy: false, timeout: 7_000, maximumAge: force ? 0 : 300_000 });
       } catch { /* Continue to automatic network-location fallback. */ }
     }
-    // GPS is unavailable in some in-app browsers and on desktops without
-    // location services. Resolve a city automatically from the public IP so
-    // the customer never has to type or choose a city just to see weather.
-    const response = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
-    if (!response.ok) throw error;
-    const data = await response.json() as { latitude?: number; longitude?: number; city?: string; region?: string; country_name?: string };
-    if (!Number.isFinite(data.latitude) || !Number.isFinite(data.longitude)) throw error;
-    return { lat: Number(data.latitude), lon: Number(data.longitude), accuracy: null, city: data.city?.trim(), region: data.region?.trim() || null, country: data.country_name?.trim() || null };
+    throw error;
   }
 }
 
@@ -209,6 +202,13 @@ async function fetchWeather(position: Coordinates, force = false): Promise<Weath
   }
 }
 
+async function fetchAutomaticWeather(force = false): Promise<Weather> {
+  const response = await fetch(getApiUrl(`weather.php?auto=1${force ? '&force=1' : ''}`), { cache: 'no-store' });
+  const data = await response.json() as WeatherApiResponse & { location?: Coordinates };
+  if (!response.ok || data.status !== 'success' || !data.weather) throw new Error(data.message || 'Automatic weather location unavailable.');
+  return { ...data.weather, latitude: Number(data.location?.lat), longitude: Number(data.location?.lon), city: data.location?.city || null, region: data.location?.region || null, country: data.location?.country || null, locationAccuracyM: null };
+}
+
 export function describeWeather(condition: string) {
   return condition || 'Conditions unavailable';
 }
@@ -227,8 +227,15 @@ export function useWeather() {
       // keeping an old city forever.
       const stored = localStorage.getItem(WEATHER_LOCATION_MODE_KEY) === 'manual' ? savedLocation() : null;
       setLocationMode(stored ? 'manual' : 'device');
-      const position = stored || await bestDeviceLocation(force);
-      const nextWeather = await fetchWeather(position, force);
+      let nextWeather: Weather;
+      try {
+        const position = stored || await bestDeviceLocation(force);
+        nextWeather = await fetchWeather(position, force);
+      } catch {
+        // When the browser cannot expose GPS, let the backend resolve the
+        // public IP to a city automatically. No city selection is required.
+        nextWeather = await fetchAutomaticWeather(force);
+      }
       setWeather({
         ...nextWeather,
         isDay: isDayAtLocation(nextWeather.timezone, nextWeather.sunrise, nextWeather.sunset, nextWeather.isDay),

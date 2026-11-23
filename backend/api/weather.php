@@ -151,6 +151,22 @@ function weather_observation(float $lat, float $lon): ?array {
 
 $lat = filter_var($_GET['lat'] ?? null, FILTER_VALIDATE_FLOAT);
 $lon = filter_var($_GET['lon'] ?? null, FILTER_VALIDATE_FLOAT);
+$autoLocation = null;
+if (($_GET['auto'] ?? '') === '1' && function_exists('curl_init')) {
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
+        $geo = weather_fetch_json('https://ipapi.co/' . rawurlencode($ip) . '/json/');
+        if (is_array($geo) && is_numeric($geo['latitude'] ?? null) && is_numeric($geo['longitude'] ?? null)) {
+            $lat = (float)$geo['latitude'];
+            $lon = (float)$geo['longitude'];
+            $autoLocation = [
+                'city' => trim((string)($geo['city'] ?? '')) ?: null,
+                'region' => trim((string)($geo['region'] ?? '')) ?: null,
+                'country' => trim((string)($geo['country_name'] ?? '')) ?: null,
+            ];
+        }
+    }
+}
 if ($lat === false || $lon === false || $lat === null || $lon === null || $lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
     http_response_code(400);
     echo json_encode(['status' => 'error', 'message' => 'Valid latitude and longitude are required.']);
@@ -200,5 +216,5 @@ $weather['sunrise'] = $sunrise;
 $weather['sunset'] = $sunset;
 $weather['timezone'] = $timezone;
 $weather['isDay'] = (int)($current['is_day'] ?? 1) === 1;
-echo json_encode(['status' => 'success', 'weather' => $weather]);
+echo json_encode(['status' => 'success', 'weather' => $weather, 'location' => $autoLocation ? array_merge($autoLocation, ['lat' => $lat, 'lon' => $lon]) : null]);
 ?>
