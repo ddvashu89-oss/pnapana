@@ -26,6 +26,14 @@ function pnapana_care_weather_context(float $lat, float $lon): ?array {
         'hourly_forecast' => array_slice(array_map(static function ($time, $index) use ($data) { return ['time' => $time, 'rain_probability_percent' => $data['hourly']['precipitation_probability'][$index] ?? null, 'precipitation_mm' => $data['hourly']['precipitation'][$index] ?? null, 'wind_speed_kmh' => $data['hourly']['wind_speed_10m'][$index] ?? null, 'uv_index' => $data['hourly']['uv_index'][$index] ?? null]; }, $data['hourly']['time'] ?? [], array_keys($data['hourly']['time'] ?? [])), 0, 24),
         'daily_forecast' => array_map(static function ($date, $index) use ($data) { return ['date' => $date, 'min_c' => $data['daily']['temperature_2m_min'][$index] ?? null, 'max_c' => $data['daily']['temperature_2m_max'][$index] ?? null, 'rain_probability_percent' => $data['daily']['precipitation_probability_max'][$index] ?? null, 'rain_mm' => $data['daily']['precipitation_sum'][$index] ?? null, 'wind_speed_kmh' => $data['daily']['wind_speed_10m_max'][$index] ?? null, 'wind_direction_degrees' => $data['daily']['wind_direction_10m_dominant'][$index] ?? null, 'uv_index_max' => $data['daily']['uv_index_max'][$index] ?? null, 'sunrise' => $data['daily']['sunrise'][$index] ?? null, 'sunset' => $data['daily']['sunset'][$index] ?? null, 'weather_code' => $data['daily']['weather_code'][$index] ?? null]; }, $data['daily']['time'] ?? [], array_keys($data['daily']['time'] ?? [])),
         'timezone' => $data['timezone'] ?? null];
+    $localHour = (new DateTimeImmutable('now', new DateTimeZone($data['timezone'] ?? 'UTC')))->format('Y-m-d\TH:00');
+    $future = [];
+    foreach ($data['hourly']['time'] ?? [] as $i => $time) {
+        if ($time < $localHour) continue;
+        $future[] = ['time'=>$time, 'rain_probability_percent'=>$data['hourly']['precipitation_probability'][$i] ?? null, 'precipitation_mm'=>$data['hourly']['precipitation'][$i] ?? null, 'wind_speed_kmh'=>$data['hourly']['wind_speed_10m'][$i] ?? null, 'uv_index'=>$data['hourly']['uv_index'][$i] ?? null];
+        if (count($future) >= 24) break;
+    }
+    $context['hourly_forecast'] = $future;
     @file_put_contents($cacheFile, json_encode($context), LOCK_EX);
     return $context;
 }

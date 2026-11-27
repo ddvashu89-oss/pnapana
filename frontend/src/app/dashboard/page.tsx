@@ -11,7 +11,6 @@ import Loader from '@/components/Loader';
 import PlantSetupWizard, { PlantSetupValues, SetupPlant } from '@/components/PlantSetupWizard';
 import PlantIdentificationWizard, { ConfirmedPlantIdentification } from '@/components/PlantIdentificationWizard';
 import { authFetch } from '@/lib/api';
-import { automaticPlantSetup } from '@/lib/automaticPlantSetup';
 import styles from './Home.module.css';
 
 export default function Home() {
@@ -390,25 +389,11 @@ export default function Home() {
   };
 
   const applyConfirmedIdentification = async (identified: ConfirmedPlantIdentification) => {
-    const cp = identified.care_plan || {};
-    const name = identified.common_name || identified.species;
-    const response = await authFetch('add_plant.php', {
-      method: 'POST',
-      body: JSON.stringify({
-        name,
-        species: identified.species,
-        image_url: identified.primary_image,
-        setup: automaticPlantSetup(cp.water?.frequency_days),
-        weather_location: weatherLocation,
-      }),
-    });
-    const data = await response.json();
-    if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not create the care plan. Please try again.');
+    const draft = { ...newPlant, placement: '', room: '', name: identified.common_name || identified.species, species: identified.species, image_url: identified.primary_image, care_plan: identified.care_plan || null };
+    setNewPlant(draft);
     setIsIdentificationOpen(false);
-    setWelcomePlant({ id: Number(data.plant_id), name });
-    if (user) fetchPlants(user.id);
-    window.dispatchEvent(new Event('pnapana:plant-setup-refresh'));
-    router.push(`/plant?id=${data.plant_id}`);
+    setSetupDraft(draft);
+    setSetupError('');
   };
 
   const removePlant = (id: number) => {

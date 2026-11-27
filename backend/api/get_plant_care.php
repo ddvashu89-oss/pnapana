@@ -14,7 +14,7 @@ if (!$plantId) {
 }
 $stmt = $pdo->prepare("SELECT e.id, e.event_type, e.details, e.created_at
     FROM care_events e JOIN plants p ON p.id = e.plant_id
-    WHERE e.plant_id = ? AND e.user_id = ? AND p.user_id = ? AND e.event_type IN ('water', 'fertilize')
+    WHERE e.plant_id = ? AND e.user_id = ? AND p.user_id = ? AND e.event_type IN ('water', 'fertilize', 'soil_check')
     ORDER BY e.created_at DESC, e.id DESC LIMIT 100");
 $stmt->execute([$plantId, $user['id'], $user['id']]);
 echo json_encode(['status' => 'success', 'events' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);

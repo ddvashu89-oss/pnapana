@@ -4,11 +4,11 @@ import { authFetch } from '@/lib/api';
 import { Check, Droplets, MapPin, Navigation, RefreshCw, Search, Sprout, Sun, X, Bell, BellOff } from 'lucide-react';
 import { useWeather, describeWeather, type WeatherLocation } from '@/lib/hooks/useWeather';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
-import { plantWeatherInsights } from '@/lib/plantWeatherIntelligence';
+import { plantWeatherInsights, readSetup, type GrowingSetup } from '@/lib/plantWeatherIntelligence';
 import styles from './WeatherCard.module.css';
 
 type CarePlan = { temperature?: string; pruning?: string; light?: { level?: string; detail?: string }; water?: { frequency_days?: number; instructions?: string }; humidity?: { level?: string; detail?: string }; common_issues?: Array<{ issue?: string; solution?: string }> };
-type CarePlant = { id?: number | string; name?: string; species?: string; water_freq?: number; last_watered?: string; setup_completed_at?: string; light_req?: string; light_requirement?: string; water_requirement?: string; humidity?: string; care_plan?: string | CarePlan };
+type CarePlant = { status?: string; status_color?: string; placement?: string; setup_data?: string | GrowingSetup | null; id?: number | string; name?: string; species?: string; water_freq?: number; last_watered?: string; setup_completed_at?: string; light_req?: string; light_requirement?: string; water_requirement?: string; humidity?: string; care_plan?: string | CarePlan };
 type LocationResult = { id: number; name: string; latitude: number; longitude: number; admin1?: string; country?: string };
 
 export default function WeatherCard({ plant, onLocationChange }: { plant?: CarePlant; onLocationChange?: (location: WeatherLocation | null) => void }) {
@@ -24,6 +24,9 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [notice, setNotice] = useState('');
+  const [soilOverride, setSoilOverride] = useState<GrowingSetup | null>(null);
+  const [savingSoil, setSavingSoil] = useState(false);
+  useEffect(() => setSoilOverride(null), [plant?.id, plant?.setup_data]);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => window.clearInterval(timer);
@@ -43,7 +46,9 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
   try { plan = typeof plant?.care_plan === 'string' ? JSON.parse(plant.care_plan) : plant?.care_plan || {}; } catch { /* Older plants may have no structured care plan. */ }
   const frequency = Math.max(1, Number(plant?.water_freq || plan.water?.frequency_days) || 7);
   const lastCheckBaseline = plant?.last_watered || plant?.setup_completed_at;
-  const lastCheckTime = lastCheckBaseline ? new Date(lastCheckBaseline.replace(' ', 'T')).getTime() : NaN;
+  const baselineTime = lastCheckBaseline ? new Date(lastCheckBaseline.replace(' ', 'T')).getTime() : NaN;
+  const soilCheckTime = Date.parse((soilOverride || readSetup(plant?.setup_data)).moisture_checked_at || '');
+  const lastCheckTime = Number.isFinite(soilCheckTime) && soilCheckTime <= now ? Math.max(Number.isFinite(baselineTime) ? baselineTime : 0, soilCheckTime) : baselineTime;
   const elapsed = Number.isFinite(lastCheckTime) ? Math.max(0, Math.floor((now - lastCheckTime) / 86400000)) : null;
   const remaining = elapsed === null ? null : Math.max(0, frequency - elapsed);
   // A few kilometres is still a meaningful weather-grid location. Require a
@@ -94,59 +99,26 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
     ? Math.round((Number(fahrenheitRange[2]) - 32) * 5 / 9)
     : genericRange ? Number(genericRange[2]) : null;
   const growing = localWeather && minTemp !== null && maxTemp !== null ? localWeather.temp >= minTemp && localWeather.temp <= maxTemp : null;
-  const hotterThanPreferred = localWeather && maxTemp !== null && localWeather.temp > maxTemp;
-  const coolerThanPreferred = localWeather && minTemp !== null && localWeather.temp < minTemp;
   const plantLabel = plant?.name || plant?.species || 'this plant';
-  const wateringAdvice = !localWeather
-    ? 'Check the soil before watering and follow this plant’s care plan.'
-    : hotterThanPreferred || localWeather.temp >= 33
-      ? `Warm conditions can dry ${plant?.name ? `${plant.name}’s` : 'the pot’s'} soil faster. Check it more often, but water only when the top layer is dry.`
-      : coolerThanPreferred || localWeather.temp < 15
-        ? 'Cool conditions can keep this plant’s soil wet longer. Check the soil before watering and avoid watering on the calendar alone.'
-        : plan.water?.instructions || 'Weather does not change this plant’s usual schedule. Finger-test the soil and water when the top inch is dry.';
   const temperaturePosition = localWeather ? Math.max(2, Math.min(96, localWeather.temp / 50 * 100)) : null;
   const tip = !localWeather ? approximateLocation ? 'choose your city above before using weather-based care advice.' : 'check the soil before watering and follow each plant’s care plan.' : !localWeather.isDay ? 'a calm evening. Keep to the usual care routine and water only if the soil is dry.' : localWeather.temp >= 33 ? 'a warm day. Check soil moisture and protect tender leaves from harsh afternoon sun.' : localWeather.temp < 15 ? 'a cool day. Keep tender plants sheltered and check the soil before watering.' : 'a mild day. Check each plant’s soil before watering and follow its light needs.';
   const dateKey = new Date(now).toLocaleDateString('en-CA');
-  const adviceSeed = `${plant?.id || plant?.species || plant?.name || 'plant'}:${dateKey}`;
-  const issues = (plan.common_issues || []).filter(issue => issue.issue || issue.solution);
-  const issue = issues.length ? issues[stableIndex(`${adviceSeed}:issue`, issues.length)] : null;
-  const humidityNeed = plan.humidity?.detail || plant?.humidity || (plan.humidity?.level ? `${plantLabel} prefers ${plan.humidity.level.toLowerCase()} humidity.` : '');
-  const plantAdvice = [
-    {
-      kind: 'water',
-      title: `Check ${plantLabel}’s soil`,
-      body: wateringAdvice,
-      meta: `Usual interval: every ${frequency} days`,
-    },
-    {
-      kind: 'light',
-      title: `Check ${plantLabel}’s light`,
-      body: plan.light?.detail || plant?.light_requirement || lightAdvice,
-      meta: `Listed preference: ${plant?.light_req || plan.light?.level || 'follow its care plan'}`,
-    },
-    humidityNeed ? {
-      kind: 'humidity',
-      title: `Humidity for ${plantLabel}`,
-      body: humidityNeed,
-      meta: localWeather ? `Local outdoor humidity: ${humidityText}` : 'Compare with the air around the plant',
-    } : null,
-    issue ? {
-      kind: 'issue',
-      title: `Watch ${plantLabel} for ${issue.issue || 'common stress'}`,
-      body: issue.solution || 'Inspect the leaves and soil before changing its routine.',
-      meta: 'Plant-specific issue to monitor',
-    } : null,
-    plan.pruning || plan.temperature ? {
-      kind: 'growth',
-      title: `Support ${plantLabel}’s growth`,
-      body: plan.pruning || `Keep it within its preferred temperature range: ${plan.temperature}.`,
-      meta: plan.temperature ? `Preferred temperature: ${plan.temperature}` : 'Follow its pruning guidance',
-    } : null,
-  ].filter((advice): advice is { kind: string; title: string; body: string; meta: string } => Boolean(advice));
-  const rotatingAdvice = plantAdvice[stableIndex(adviceSeed, plantAdvice.length)];
-  const dailyAdvice = hotterThanPreferred || coolerThanPreferred || (localWeather && (localWeather.temp >= 33 || localWeather.temp < 15))
-    ? plantAdvice[0]
-    : rotatingAdvice;
+  const effectivePlant = plant ? { ...plant, setup_data: soilOverride || plant.setup_data } : undefined;
+  const dailyInsights = plantWeatherInsights(localWeather, effectivePlant, now);
+  const primary = dailyInsights.find(item => item.kind === 'water') || dailyInsights[0];
+  const dailyAdvice = { kind: 'water', title: `Today’s care for ${plantLabel}`, body: primary.text, meta: 'Based on the latest soil check and care history' };
+  async function recordSoil(moisture: string) {
+    if (!plant?.id) return;
+    setSavingSoil(true);
+    try {
+      const response = await authFetch('plant_moisture.php', { method: 'POST', body: JSON.stringify({ plant_id: plant.id, moisture }) });
+      const data = await response.json();
+      if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not save soil check.');
+      setSoilOverride(readSetup(data.setup)); setNotice('Soil check saved. Today’s guidance is updated.');
+      window.dispatchEvent(new Event('pnapana:plants-changed'));
+    } catch (cause) { setNotice(cause instanceof Error ? cause.message : 'Could not save soil check.'); }
+    finally { setSavingSoil(false); }
+  }
 
   useEffect(() => {
     // A website cannot obtain precise GPS without browser permission. Never
@@ -155,7 +127,6 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
     if (approximateLocation || locationNeedsAttention) setLocationOpen(true);
   }, [approximateLocation, locationNeedsAttention]);
 
-  const plantInsights = localWeather ? plantWeatherInsights(localWeather, plant) : [];
   const weatherAlerts = useMemo(() => localWeather ? buildWeatherAlerts(localWeather) : [], [localWeather]);
   useEffect(() => {
     if (!alertsEnabled || !localWeather || !weatherAlerts.length || !('Notification' in window) || Notification.permission !== 'granted') return;
@@ -261,10 +232,11 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
         {alertsEnabled && <small className={styles.alertScope}>Browser alerts appear while Pnapana is open. Weather stays on this device and is not saved to your account.</small>}
         {notice && <p className={styles.locationError} role="status">{notice}</p>}
         {weatherAlerts.length > 0 && <ul className={styles.alertList}>{weatherAlerts.map(alert => <li key={alert}>{alert}</li>)}</ul>}
-        {plant && plantInsights.length > 0 && <div className={styles.insights}><strong>Plant care guidance</strong>{plantInsights.map(item => <p key={item.kind}>{item.text}</p>)}<small>Guidance uses forecast data and saved plant details. Check the soil before watering.</small></div>}
-        <div className={styles.forecastTitle}>Next 24 hours</div><div className={styles.hourly}>{localWeather.hourlyForecast?.slice(0, 8).map((hour, index) => <div key={`${hour.time}-${index}`}><span>{hour.time ? new Date(hour.time).toLocaleTimeString(undefined,{hour:'numeric'}) : '—'}</span><strong>{hour.temperature === null ? '—' : `${Math.round(hour.temperature)}°`}</strong><small>{hour.rain_probability == null ? '—' : `${hour.rain_probability}% rain`}</small></div>)}</div>
+
+        <div className={styles.forecastTitle}>Next 24 hours</div><div className={styles.hourly}>{localWeather.hourlyForecast?.slice(0, 24).map((hour, index) => <div key={`${hour.time}-${index}`}><span>{hour.time ? new Date(hour.time).toLocaleTimeString(undefined,{hour:'numeric'}) : '—'}</span><strong>{hour.temperature === null ? '—' : `${Math.round(hour.temperature)}°`}</strong><small>{hour.rain_probability == null ? '—' : `${hour.rain_probability}% rain`}</small></div>)}</div>
         <div className={styles.forecastTitle}>7 day outlook</div><div className={styles.daily}>{localWeather.dailyForecast?.map((day, index) => <div key={`${day.date}-${index}`}><strong>{day.date ? new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined,{weekday:'short'}) : '—'}</strong><span>{day.min_c == null ? '—' : Math.round(day.min_c)}° / {day.max_c == null ? '—' : Math.round(day.max_c)}°</span><small>{day.rain_probability == null ? '—' : `${day.rain_probability}% rain`} · UV {day.uv_index ?? '—'}</small></div>)}</div>
       </section>}
+      {plant && <section className={styles.insights} aria-label="Daily plant actions"><strong>Today’s actions and reasons</strong>{dailyInsights.map(item => <p key={item.kind}>{item.text}</p>)}{plant.id && <div><p>Check the soil now:</p>{['dry','moist','wet'].map(level => <button type="button" key={level} disabled={savingSoil} onClick={() => void recordSoil(level)} style={{marginRight:8,padding:10,border:'1px solid #bfd5c4',borderRadius:8}}>Soil {level}</button>)}</div>}{notice && <p role="status">{notice}</p>}</section>}
       {!plant ? (
         <div className={styles.tip}><span aria-hidden="true">🌱</span><p><strong>{hi ? 'आज की देखभाल: ' : "Today's Weather Care Tip: "}</strong>{localWeather && <>{localWeather.temp} °C, {humidityText} humidity — </>}{tip}</p></div>
       ) : (
@@ -292,8 +264,8 @@ export default function WeatherCard({ plant, onLocationChange }: { plant?: CareP
             <h3><Sprout size={20} /> How it will grow</h3>
             <div className={styles.growthScale}>{temperaturePosition !== null && localWeather && <span style={{ left: `${temperaturePosition}%` }}>▲ {localWeather.temp}°</span>}</div>
             <div className={styles.scaleLabels}><span>Cold</span><span>Growing</span><span>Heat</span></div>
-            <span className={styles.pill}>{growing === true ? 'Actively growing' : growing === false ? 'Outside its comfort zone' : 'Follow its care plan'}</span>
-            <p><strong>{growing === true ? 'Growing weather.' : growing === false ? 'A little extra care.' : 'Every plant has its own pace.'}</strong> {growing === true ? `Active growth at this temperature. ${plan.pruning || 'Keep a steady care routine and watch for fresh growth.'}` : plan.temperature ? `Preferred temperature: ${plan.temperature} ${plan.pruning || ''}` : 'Temperature, light, and soil moisture all shape growth. Follow the care plan below for this plant’s needs.'}</p>
+            <span className={styles.pill}>{growing === true ? 'Within listed temperature range' : growing === false ? 'Outside its comfort zone' : 'Follow its care plan'}</span>
+            <p><strong>{growing === true ? 'Growing weather.' : growing === false ? 'A little extra care.' : 'Every plant has its own pace.'}</strong> {growing === true ? `Outdoor temperature is within the listed range; actual growth also depends on light, soil and season. ${plan.pruning || 'Keep a steady care routine and watch for fresh growth.'}` : plan.temperature ? `Preferred temperature: ${plan.temperature} ${plan.pruning || ''}` : 'Temperature, light, and soil moisture all shape growth. Follow the care plan below for this plant’s needs.'}</p>
           </div>
         </>
       )}
@@ -320,11 +292,4 @@ function formatUpdatedAt(value: string) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
-}
-
-function stableIndex(value: string, length: number) {
-  if (length <= 1) return 0;
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) hash = Math.imul(31, hash) + value.charCodeAt(index) | 0;
-  return Math.abs(hash) % length;
 }

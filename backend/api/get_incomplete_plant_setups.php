@@ -9,7 +9,7 @@ require_once __DIR__ . '/auth.php';
 
 $user = authenticate($pdo);
 $stmt = $pdo->prepare("SELECT id, name, species, image_url, placement, light_req, water_freq, care_plan, setup_data
-    FROM plants WHERE user_id = ? AND setup_completed = 0 ORDER BY id ASC");
+    FROM plants WHERE user_id = ?  ORDER BY id ASC");
 $stmt->execute([$user['id']]);
 $plants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 foreach ($plants as &$plant) {
@@ -17,5 +17,6 @@ foreach ($plants as &$plant) {
     $plant['setup_data'] = json_decode((string)($plant['setup_data'] ?? ''), true) ?: null;
 }
 unset($plant);
+$plants = array_values(array_filter($plants, static function ($plant) { return empty($plant['setup_data']['spot_verified']); }));
 
 echo json_encode(['status' => 'success', 'plants' => $plants, 'remaining' => count($plants)]);

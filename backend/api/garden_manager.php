@@ -11,7 +11,7 @@ require_once __DIR__ . '/auth.php';
 
 $user = authenticate($pdo);
 $plantsStmt = $pdo->prepare("SELECT p.id, p.name, p.species, p.image_url, p.placement, p.light_req, p.light_requirement,
-        p.water_freq, p.last_watered, p.setup_completed_at, p.care_plan, p.status, p.status_color,
+        p.water_freq, p.last_watered, p.setup_completed_at, p.setup_data, p.care_plan, p.status, p.status_color,
         (SELECT COUNT(*) FROM care_events ce WHERE ce.plant_id = p.id AND ce.user_id = p.user_id
             AND ce.event_type = 'water' AND ce.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS waterings_30d,
         (SELECT ps.created_at FROM plant_scans ps WHERE ps.plant_id = p.id AND ps.status IN ('issue', 'unhealthy')
@@ -52,7 +52,8 @@ foreach ($plants as &$plant) {
     $soilCheckBaseline = $plant['last_watered'] ?: $plant['setup_completed_at'];
     $due += $soilCheckBaseline && strtotime($soilCheckBaseline . ' +' . $plant['water_freq'] . ' days') <= time() ? 1 : 0;
     $disease += $plant['last_issue_at'] ? 1 : 0;
-    unset($plant['care_plan']);
+    $plant['care_plan'] = $carePlan;
+    $plant['setup_data'] = json_decode((string)$plant['setup_data'], true) ?: [];
 }
 unset($plant);
 
@@ -84,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $weatherContext = pnapana_care_weather_context((float)$lat, (float)$lon);
     }
     $apiKey = pnapana_shared_gemini_key($pdo);
-    $prompt = "You are Pnapana's personal plant-care manager. Answer in the language used by the user. Use only the garden data and verified Open-Meteo weather JSON supplied below for factual claims. Weather readings are observations/forecasts; recommendations are your reasoning. If weather is missing, say it is unavailable and never invent conditions. Use soil moisture and plant care history before advising watering. Give practical, concise guidance.\n\nGarden data:\n" . json_encode($plants, JSON_UNESCAPED_UNICODE) . "\n\nVerified local weather (null means unavailable):\n" . json_encode($weatherContext, JSON_UNESCAPED_UNICODE) . "\n\nQuestion: " . $question;
+    $prompt = "You are Pnapana's personal plant-care manager. Answer in the language used by the user. Use only the garden data and verified Open-Meteo weather JSON supplied below for factual claims. Weather readings are observations/forecasts; recommendations are your reasoning. If weather is missing, say it is unavailable and never invent conditions. Use soil moisture and plant care history before advising watering. Ignore soil readings older than 24 hours or predating last watering. Actual placement comes only from confirmed setup_data; recommended placement is not an observed fact. Outdoor forecasts do not measure indoor conditions. Never vary advice just to make it different each day. Give practical, concise guidance.\n\nGarden data:\n" . json_encode($plants, JSON_UNESCAPED_UNICODE) . "\n\nVerified local weather (null means unavailable):\n" . json_encode($weatherContext, JSON_UNESCAPED_UNICODE) . "\n\nQuestion: " . $question;
     $answer = gemini_text_response($prompt, $apiKey);
     if ($answer === null) {
         http_response_code(503);

@@ -262,7 +262,7 @@ function PlantDetailsInner() {
       const response = await authFetch('complete_plant_setup.php', { method: 'POST', body: JSON.stringify({ plant_id: plant.id, name, setup }) });
       const data = await response.json();
       if (!response.ok || data.status !== 'success') throw new Error(data.message || 'Could not save care details.');
-      setPlant((previous: any) => ({ ...previous, name, placement: setup.placement, light_req: setup.light, water_freq: setup.soil_check_days, setup_data: JSON.stringify(setup) }));
+      setPlant((previous: any) => ({ ...previous, name, placement: setup.placement, light_req: setup.light, water_freq: setup.soil_check_days, setup_data: JSON.stringify(data.setup || setup) }));
       setEditSetupOpen(false);
       window.dispatchEvent(new Event('pnapana:plants-changed'));
     } catch (error) {

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Bell, Check, Droplets, HeartPulse, Leaf, Lightbulb, PawPrint, RotateCw, Sprout, Sun, Thermometer, Wind } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import styles from './PlantSetupWizard.module.css';
+import GrowingSpotAssessment from './GrowingSpotAssessment';
 
 export type SetupPlant = {
   id?: number | string;
@@ -19,6 +20,9 @@ export type SetupPlant = {
 };
 
 export type PlantSetupValues = {
+  spot_verified?: boolean;
+  sunlight_timing?: 'morning' | 'afternoon' | 'both' | 'none' | 'unknown';
+  moisture_checked_at?: string;
   placement: 'indoor' | 'outdoor' | 'unknown';
   room: string;
   light: 'Direct sun' | 'Full sun' | 'Bright indirect' | 'Medium' | 'Low light' | 'Not sure';
@@ -95,7 +99,7 @@ export default function PlantSetupWizard({
     if (values.notification_mode === 'browser' && 'Notification' in window && Notification.permission === 'default') {
       await Notification.requestPermission();
     }
-    await onComplete({ name: name.trim(), setup: values });
+    await onComplete({ name: name.trim(), setup: { ...values, spot_verified: true } });
   };
 
   const lightMismatch = placementWarning(values.light, care.light?.level || plant.light_req || '');
@@ -123,6 +127,7 @@ export default function PlantSetupWizard({
               <p className={styles.eyebrow}>{hi ? 'आपका पौधा' : 'YOUR PLANT'}</p>
               <h1>{editing ? (hi ? 'देखभाल की जानकारी बदलें।' : 'Update this plant’s care.') : (hi ? 'अपने पौधे से शुरुआत करें।' : 'Let’s welcome your plant.')}</h1>
               <p className={styles.intro}>{hi ? 'नाम और जगह तय करें। बाकी जानकारी बाद में भी जोड़ सकते हैं।' : 'Confirm its name and where it lives. You can add the details later.'}</p>
+              <GrowingSpotAssessment onConfirm={assessment => setValues(previous => ({ ...previous, placement: assessment.placement, room: assessment.room }))} />
               <div className={styles.identity}>
                 <img src={image} alt={plant.name || plant.species} />
                 <div><strong>{plant.species}</strong><span><Sprout size={15} /> {hi ? 'इसे आपकी देखभाल सूची में जोड़ेंगे' : 'We’ll add it to your care list'}</span></div>
@@ -133,7 +138,9 @@ export default function PlantSetupWizard({
                 <label className={styles.field}><span>{hi ? 'कमरा या जगह' : 'Room or area'}</span><select value={values.room} onChange={event => update('room', event.target.value)}>{[['Not specified','अभी पता नहीं'],['Living room','लिविंग रूम'],['Bedroom','बेडरूम'],['Kitchen','रसोई'],['Bathroom','बाथरूम'],['Office','ऑफिस'],['Balcony','बालकनी'],['Terrace','छत'],['Garden','बगीचा']].map(([value,label]) => <option key={value} value={value}>{hi ? label : value}</option>)}</select></label>
                 <label className={`${styles.field} ${styles.wide}`}><span>{hi ? 'रोशनी कैसी है? (वैकल्पिक)' : 'How much light? (optional)'}</span><select value={values.light} onChange={event => update('light', event.target.value as PlantSetupValues['light'])}>{[['Not sure','पता नहीं'],['Bright indirect','तेज़ परोक्ष रोशनी'],['Direct sun','सीधी धूप'],['Full sun','पूरी धूप'],['Medium','मध्यम'],['Low light','कम रोशनी']].map(([value,label]) => <option key={value} value={value}>{hi ? label : value}</option>)}</select></label>
               </div>
-              {values.light !== 'Not sure' && <div className={`${styles.fitNote} ${lightMismatch ? styles.warning : ''}`}><Lightbulb size={19} /><div><strong>{lightMismatch ? (hi ? 'रोशनी की जाँच करें' : 'Check this light choice') : (hi ? 'यह जगह ठीक लगती है' : 'Placement looks suitable')}</strong><p>{lightMismatch || care.light?.detail || (hi ? 'इस जगह के अनुसार देखभाल तय करेंगे।' : 'We’ll use this placement to personalize its routine.')}</p></div></div>}
+              <label className={styles.field}><span>When does direct sun reach this exact spot?</span><select value={values.sunlight_timing || 'unknown'} onChange={event => update('sunlight_timing', event.target.value as PlantSetupValues['sunlight_timing'])}><option value="unknown">Not sure — help me check over the day</option><option value="morning">Morning only</option><option value="afternoon">Afternoon only</option><option value="both">Morning and afternoon</option><option value="none">No direct sun</option></select></label>
+              <p>Confirm the current location above. Placement recommendations do not mean the plant has already been moved.</p>
+              {values.light !== 'Not sure' && <div className={`${styles.fitNote} ${lightMismatch ? styles.warning : ''}`}><Lightbulb size={19} /><div><strong>{lightMismatch ? (hi ? 'रोशनी की जाँच करें' : 'Check this light choice') : (hi ? 'यह जगह ठीक लगती है' : 'Compare with its care plan')}</strong><p>{lightMismatch || care.light?.detail || (hi ? 'इस जगह के अनुसार देखभाल तय करेंगे।' : 'We’ll use this placement to personalize its routine.')}</p></div></div>}
             </>}
 
             {step === 2 && <>
@@ -225,7 +232,8 @@ function initialValues(plant: SetupPlant): PlantSetupValues {
 
 function validateStep(step: number, name: string, values: PlantSetupValues) {
   if (step === 1 && !name.trim()) return 'Give your plant a nickname to continue.';
-  if (step === 1 && !values.room) return 'Choose where this plant will live.';
+  if (step === 1 && values.placement === 'unknown') return 'Confirm whether this spot is indoors or outdoors.';
+  if (step === 1 && (!values.room || values.room === 'Not specified')) return 'Choose where this plant will live.';
   if (step === 2 && !values.pot_size) return 'Complete the current growing conditions.';
   if (step === 3 && !values.reminder_time) return 'Choose a reminder time.';
   return '';

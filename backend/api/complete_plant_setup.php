@@ -26,24 +26,25 @@ try {
     exit;
 }
 
-$owned = $pdo->prepare('SELECT id FROM plants WHERE id = ? AND user_id = ?');
+$owned = $pdo->prepare('SELECT id, setup_data FROM plants WHERE id = ? AND user_id = ?');
 $owned->execute([$plantId, $user['id']]);
-if (!$owned->fetchColumn()) {
+if (!($previousPlant = $owned->fetch(PDO::FETCH_ASSOC))) {
     http_response_code(404);
     echo json_encode(['status' => 'error', 'message' => 'Plant not found.']);
     exit;
 }
 
-$lastWatered = pnapana_setup_last_watered_at($setup['last_watered']);
+$previous = json_decode((string)$previousPlant['setup_data'], true) ?: [];
+// Editing placement must not rewrite historical watering or refresh old moisture readings.
+$setup['moisture_checked_at'] = $previous['moisture_checked_at'] ?? null;
+if ($setup['moisture_level'] !== ($previous['moisture_level'] ?? 'not-sure')) {
+    $setup['moisture_checked_at'] = $setup['moisture_level'] !== 'not-sure' ? date(DATE_ATOM) : null;
+}
 $sql = 'UPDATE plants SET name = ?, placement = ?, light_req = ?, water_freq = ?, setup_data = ?, setup_completed_at = CASE WHEN setup_completed = 1 THEN setup_completed_at ELSE NOW() END, setup_completed = 1';
 $params = [$name, $setup['placement'], $setup['light'], $setup['soil_check_days'], json_encode($setup)];
-if ($lastWatered !== null) {
-    $sql .= ', last_watered = ?';
-    $params[] = $lastWatered;
-}
 $sql .= ' WHERE id = ? AND user_id = ?';
 $params[] = $plantId;
 $params[] = $user['id'];
 $pdo->prepare($sql)->execute($params);
 
-echo json_encode(['status' => 'success', 'message' => 'Plant setup completed.', 'plant_id' => (int)$plantId]);
+echo json_encode(['status' => 'success', 'message' => 'Plant setup completed.', 'plant_id' => (int)$plantId, 'setup' => $setup]);

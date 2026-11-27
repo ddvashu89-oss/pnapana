@@ -215,8 +215,13 @@ $weather['sunset'] = $sunset;
 $weather['timezone'] = $timezone;
 $weather['isDay'] = (int)($current['is_day'] ?? 1) === 1;
 $hourlyForecast = [];
-$hourlyCount = min(24, count($hourly['time'] ?? []));
-for ($i = 0; $i < $hourlyCount; $i++) {
+// Provider hours start at midnight; select the current hour and the next 23.
+$localNow = new DateTimeImmutable('now', new DateTimeZone($timezone ?: 'UTC'));
+$currentHour = $localNow->format('Y-m-d\TH:00');
+$hourlyStart = 0;
+foreach ($hourly['time'] ?? [] as $index => $time) { if ($time <= $currentHour) $hourlyStart = $index; }
+$hourlyCount = min($hourlyStart + 24, count($hourly['time'] ?? []));
+for ($i = $hourlyStart; $i < $hourlyCount; $i++) {
     $hourlyForecast[] = ['time' => $hourly['time'][$i] ?? null, 'temperature' => $hourly['temperature_2m'][$i] ?? null,
         'rain_probability' => $hourly['precipitation_probability'][$i] ?? null, 'precipitation_mm' => $hourly['precipitation'][$i] ?? null,
         'wind_kmh' => $hourly['wind_speed_10m'][$i] ?? null, 'uv_index' => $hourly['uv_index'][$i] ?? null,
@@ -233,10 +238,10 @@ for ($i = 0; $i < $dailyCount; $i++) {
 }
 $weather['precipitationMm'] = is_numeric($current['precipitation'] ?? null) ? (float)$current['precipitation'] : null;
 $weather['rainMm'] = is_numeric($current['rain'] ?? null) ? (float)$current['rain'] : null;
-$weather['rainProbability'] = is_numeric($hourly['precipitation_probability'][0] ?? null) ? (int)$hourly['precipitation_probability'][0] : null;
+$weather['rainProbability'] = is_numeric($hourly['precipitation_probability'][$hourlyStart] ?? null) ? (int)$hourly['precipitation_probability'][$hourlyStart] : null;
 $weather['windSpeedKmh'] = is_numeric($current['wind_speed_10m'] ?? null) ? (float)$current['wind_speed_10m'] : null;
 $weather['windDirection'] = is_numeric($current['wind_direction_10m'] ?? null) ? (int)$current['wind_direction_10m'] : null;
-$weather['uvIndex'] = is_numeric($hourly['uv_index'][0] ?? null) ? (float)$hourly['uv_index'][0] : null;
+$weather['uvIndex'] = is_numeric($hourly['uv_index'][$hourlyStart] ?? null) ? (float)$hourly['uv_index'][$hourlyStart] : null;
 $weather['hourlyForecast'] = $hourlyForecast;
 $weather['dailyForecast'] = $dailyForecast;
 echo json_encode(['status' => 'success', 'weather' => $weather]);

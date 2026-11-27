@@ -32,7 +32,13 @@ function pnapana_normalize_plant_setup($value) {
         throw new InvalidArgumentException('Choose a valid reminder time.');
     }
 
+    if (($value['spot_verified'] ?? false) === true && (!in_array($value['placement'] ?? '', ['indoor','outdoor'], true) || $room === 'Not specified')) {
+        throw new InvalidArgumentException('Confirm the actual growing spot before marking it verified.');
+    }
     return [
+        'spot_verified' => ($value['spot_verified'] ?? false) === true,
+        'sunlight_timing' => in_array($value['sunlight_timing'] ?? '', ['morning','afternoon','both','none'], true) ? $value['sunlight_timing'] : 'unknown',
+        'moisture_checked_at' => null,
         'placement' => $pick('placement', ['indoor', 'outdoor', 'unknown']),
         'room' => $room,
         'light' => $pick('light', ['Direct sun', 'Full sun', 'Bright indirect', 'Medium', 'Low light', 'Not sure']),
